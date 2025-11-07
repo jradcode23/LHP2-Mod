@@ -1,0 +1,63 @@
+﻿using Reloaded.Hooks.ReloadedII.Interfaces;
+using Reloaded.Mod.Interfaces;
+using LHP_Archi_Mod.Template;
+using LHP_Archi_Mod.Configuration;
+#if DEBUG
+using System.Diagnostics;
+#endif
+
+namespace LHP_Archi_Mod;
+
+public class Mod : ModBase // <= Do not Remove.
+{
+    private readonly IModLoader _modLoader;
+    private readonly IReloadedHooks? _hooks;
+    private readonly ILogger _logger;
+    private readonly IMod _owner;
+    private Config? Configuration { get; set; }
+    private readonly IModConfig _modConfig;
+    public static UIntPtr BaseAddress;
+    public Mod(ModContext context)
+    {
+        _modLoader = context.ModLoader;
+        _hooks = context.Hooks;
+        _logger = context.Logger;
+        _owner = context.Owner;
+        Configuration = context.Configuration;
+        _modConfig = context.ModConfig;
+
+#if DEBUG
+        // Attaches debugger in debug mode; ignored in release.
+        Debugger.Launch();
+#endif
+
+        // For more information about this template, please see
+        // https://reloaded-project.github.io/Reloaded-II/ModTemplate/
+
+        // If you want to implement e.g. unload support in your mod,
+        // and some other neat features, override the methods in ModBase.
+
+        // TODO: Implement some mod logic
+        BaseAddress = (UIntPtr) Process.GetCurrentProcess().MainModule!.BaseAddress;
+        if (Configuration == null)
+            return;
+        Console.WriteLine($"Base Address: 0x{BaseAddress:x}");
+        _logger.WriteLine($"[{_modConfig.ModId}] Mod Initialized with Server: {Configuration.ArchipelagoOptions.Server}, Port: {Configuration.ArchipelagoOptions.Port}, Slot: {Configuration.ArchipelagoOptions.Slot}");                                                        
+    }
+
+    #region Standard Overrides
+    public override void ConfigurationUpdated(Config configuration)
+    {
+        // Apply settings from configuration.
+        // ... your code here.
+        Configuration = configuration;
+        _logger.WriteLine($"[{_modConfig.ModId}] Config Updated: Applying");
+    }
+    #endregion
+
+    #region For Exports, Serialization etc.
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+    public Mod() { }
+#pragma warning restore CS8618
+    #endregion
+}
