@@ -2,6 +2,7 @@
 using Reloaded.Mod.Interfaces;
 using LHP_Archi_Mod.Template;
 using LHP_Archi_Mod.Configuration;
+using System.Threading;
 #if DEBUG
 using System.Diagnostics;
 #endif
@@ -38,11 +39,14 @@ public class Mod : ModBase // <= Do not Remove.
         // and some other neat features, override the methods in ModBase.
 
         // TODO: Implement some mod logic
+        Game GameInstance = new Game();
         BaseAddress = (UIntPtr) Process.GetCurrentProcess().MainModule!.BaseAddress;
         if (Configuration == null)
             return;
         Console.WriteLine($"Base Address: 0x{BaseAddress:x}");
-        _logger.WriteLine($"[{_modConfig.ModId}] Mod Initialized with Server: {Configuration.ArchipelagoOptions.Server}, Port: {Configuration.ArchipelagoOptions.Port}, Slot: {Configuration.ArchipelagoOptions.Slot}");                                                        
+        _logger.WriteLine($"[{_modConfig.ModId}] Mod Initialized with Server: {Configuration.ArchipelagoOptions.Server}, Port: {Configuration.ArchipelagoOptions.Port}, Slot: {Configuration.ArchipelagoOptions.Slot}");
+        Thread thread1 = new Thread(GameInstance.GameLoaded);
+        thread1.Start();
     }
 
     #region Standard Overrides
