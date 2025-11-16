@@ -54,15 +54,9 @@ public class Level
 
     public static unsafe void UpdateLevelData(LevelData level)
     {
-        // Mod.BaseAddress is assumed to be an IntPtr-like value.
-        // Read the int stored at Mod.BaseAddress + 0xC55F2C (platform-safe).
-        nint modBase = (nint)Mod.BaseAddress;
-        int levelBaseAddress = *(int*)(modBase + 0xC55F2C);
-
-        // Use platform-sized arithmetic and explicitly cast the enum to int.
+        int levelBaseAddress = *(int*)(Mod.BaseAddress + 0xC55F2C);
         byte* ptr = (byte*)((nint)levelBaseAddress + (int)level);
 
-        // Print the pointer in a platform-safe way.
         Console.WriteLine($"Unlocking Level: {level} at Address: 0x{((ulong)(nuint)ptr):X}");
         *ptr |= (byte)(BitMask.StoryUnlocked | BitMask.FreeplayUnlocked);
         Console.WriteLine($"Level Unlocked: New Value: 0x{*ptr:X}");
