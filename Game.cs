@@ -3,6 +3,8 @@ using Reloaded.Memory;
 using Reloaded.Memory.Interfaces;
 using Reloaded.Hooks.Definitions.Enums;
 using Microsoft.VisualBasic;
+using LHP_Archi_Mod.Template;
+using LHP_Archi_Mod.Configuration;
 
 namespace LHP_Archi_Mod;
 
@@ -11,13 +13,13 @@ public class Game
 
     public void GameLoaded()
     {
-        Console.WriteLine("Testing InGame");
+        Console.WriteLine("Checking to see if save file is loaded");
         while (!InGame())
         {
             System.Threading.Thread.Sleep(2000);
-            Console.WriteLine("Retesting InGame");
+            Console.WriteLine("Checking again to see if save file is loaded");
         }
-        Console.WriteLine("You are in-game!");
+        Console.WriteLine("Save File loaded!");
     }
 
 

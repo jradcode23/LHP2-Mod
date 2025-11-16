@@ -17,7 +17,10 @@ public class Mod : ModBase // <= Do not Remove.
     private readonly IMod _owner;
     private Config? Configuration { get; set; }
     private readonly IModConfig _modConfig;
+
     public static UIntPtr BaseAddress;
+    public static LHP_Archipelago? LHP_Archipelago;
+
     public Mod(ModContext context)
     {
         _modLoader = context.ModLoader;
@@ -41,12 +44,25 @@ public class Mod : ModBase // <= Do not Remove.
         // TODO: Implement some mod logic
         Game GameInstance = new Game();
         BaseAddress = (UIntPtr) Process.GetCurrentProcess().MainModule!.BaseAddress;
+
         if (Configuration == null)
             return;
+        LHP_Archipelago = new LHP_Archipelago(Configuration.ArchipelagoOptions.Server, Configuration.ArchipelagoOptions.Port, Configuration.ArchipelagoOptions.Slot, Configuration.ArchipelagoOptions.Password);
         Console.WriteLine($"Base Address: 0x{BaseAddress:x}");
         _logger.WriteLine($"[{_modConfig.ModId}] Mod Initialized with Server: {Configuration.ArchipelagoOptions.Server}, Port: {Configuration.ArchipelagoOptions.Port}, Slot: {Configuration.ArchipelagoOptions.Slot}");
-        Thread thread1 = new Thread(GameInstance.GameLoaded);
-        thread1.Start();
+
+        var t = new Thread(start: () =>
+        {
+            while (true)
+            {
+                if (!LHP_Archipelago.IsConnecting && !LHP_Archipelago.IsConnected)
+                {
+                    LHP_Archipelago.InitConnect();
+                }
+                Thread.Sleep(2500);
+            }
+        });
+        t.Start();
     }
 
     #region Standard Overrides
