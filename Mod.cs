@@ -20,6 +20,8 @@ public class Mod : ModBase // <= Do not Remove.
 
     public static UIntPtr BaseAddress;
     public static LHP_Archipelago? LHP_Archipelago;
+    public static Game? GameInstance;
+    public static Level? Levels;
 
     public Mod(ModContext context)
     {
@@ -42,7 +44,8 @@ public class Mod : ModBase // <= Do not Remove.
         // and some other neat features, override the methods in ModBase.
 
         // TODO: Implement some mod logic
-        Game GameInstance = new Game();
+        GameInstance = new Game();
+        Levels = new Level();
         BaseAddress = (UIntPtr) Process.GetCurrentProcess().MainModule!.BaseAddress;
 
         if (Configuration == null)
@@ -51,7 +54,7 @@ public class Mod : ModBase // <= Do not Remove.
         Console.WriteLine($"Base Address: 0x{BaseAddress:x}");
         _logger.WriteLine($"[{_modConfig.ModId}] Mod Initialized with Server: {Configuration.ArchipelagoOptions.Server}, Port: {Configuration.ArchipelagoOptions.Port}, Slot: {Configuration.ArchipelagoOptions.Slot}");
 
-        var t = new Thread(start: () =>
+        var thread1 = new Thread(start: () =>
         {
             while (true)
             {
@@ -62,7 +65,9 @@ public class Mod : ModBase // <= Do not Remove.
                 Thread.Sleep(2500);
             }
         });
-        t.Start();
+        thread1.Start();
+
+
     }
 
     #region Standard Overrides
