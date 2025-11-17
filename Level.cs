@@ -52,13 +52,49 @@ public class Level
         TheFlawInThePlan = 0x226,
     }
 
-    public static unsafe void UpdateLevelData(LevelData level)
+    public static readonly LevelData[] LevelUnlockOrder = new LevelData[]
+    {
+    LevelData.DarkTimes,
+    LevelData.DumbeldoresArmy,
+    LevelData.Focus,
+    LevelData.KreacherDiscomforts,
+    LevelData.AGiantVirtuoso,
+    LevelData.AVeiledThreat,
+    LevelData.OutOfRetirement,
+    LevelData.JustDesserts,
+    LevelData.ANotSoMerryChristmas,
+    LevelData.LoveHurts,
+    LevelData.FelixFelicis,
+    LevelData.TheHorcruxAndTheHand,
+    LevelData.TheSevenHarrys,
+    LevelData.MagicIsMight,
+    LevelData.InGraveDanger,
+    LevelData.SwordAndLocket,
+    LevelData.LovegoodsLunacy,
+    LevelData.Dobby,
+    LevelData.TheThiefsDownfall,
+    LevelData.BackToSchool,
+    LevelData.BurningBridges,
+    LevelData.FiendfyreFrenzy,
+    LevelData.SnapesTears,
+    LevelData.TheFlawInThePlan,
+    };
+
+    public static void ConvertIDToLeveData(int id)
+    {
+        if (id < 0 || id >= LevelUnlockOrder.Length)
+        {
+            Console.WriteLine($"Invalid level ID: {id}");
+            return;
+        }
+        LevelData level = LevelUnlockOrder[id];
+        UnlockLevel(level);
+    }
+
+    public static unsafe void UnlockLevel(LevelData level)
     {
         int levelBaseAddress = *(int*)(Mod.BaseAddress + 0xC55F2C);
         byte* ptr = (byte*)((nint)levelBaseAddress + (int)level);
-
-        Console.WriteLine($"Unlocking Level: {level} at Address: 0x{((ulong)(nuint)ptr):X}");
         *ptr |= (byte)(BitMask.StoryUnlocked | BitMask.FreeplayUnlocked);
-        Console.WriteLine($"Level Unlocked: New Value: 0x{*ptr:X}");
     }
 }

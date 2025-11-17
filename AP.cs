@@ -91,7 +91,6 @@ public class LHP_Archipelago
             //Mod.InitOnConnect();
             Mod.GameInstance.GameLoaded();
             new Thread(RunCheckLocationsFromList).Start();
-            Level.UpdateLevelData(Level.LevelData.OutOfRetirement);
             //resync here
             return true;
         }
@@ -111,7 +110,7 @@ public class LHP_Archipelago
             var itemIndex = helper.Index;
             var item = helper.DequeueItem();
 
-            //Mod.ItemHandler?.HandleItem(itemIndex, item);
+            Mod.GameInstance.ManageItem(itemIndex, item);
         }
     }
 
