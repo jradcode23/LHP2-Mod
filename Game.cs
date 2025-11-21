@@ -11,23 +11,27 @@ namespace LHP_Archi_Mod;
 
 public class Game
 {
+    public int PrevLevelID { get; private set; } = -1;
+    public int LevelID { get; private set; } = -1;
+    public int PrevMapID { get; private set; } = -1;
+    public int MapID { get; private set; } = -1;
 
-    public void GameLoaded()
+    public static void GameLoaded()
     {
         Console.WriteLine("Checking to see if save file is loaded");
         while (!PlayerControllable())
         {
             System.Threading.Thread.Sleep(2000);
-            Console.WriteLine("Checking again to see if save file is loaded");
+            Console.WriteLine("Waiting for save file to load");
         }
         Console.WriteLine("Save File loaded!");
     }
 
-    public unsafe bool PlayerControllable()
+    public static unsafe bool PlayerControllable()
     {
         try
         {
-            byte** basePtr = (byte**)(Mod.BaseAddress + 0xC53934);
+            byte** basePtr = (byte**)(Mod.BaseAddress + 0xC5763C);
             if (basePtr == null || *basePtr == null)
                 return false;
 
@@ -65,6 +69,46 @@ public class Game
                 default:
                     Console.WriteLine($"Unknown item received: {itemName}, {newItemID}");
                     break;
+        }
+    }
+
+    public void SetCurrentLevelID()
+    {
+        unsafe
+        {
+            int* levelIDPtr = (int*)(Mod.BaseAddress + 0xADDB7C);
+            if (levelIDPtr == null) return;
+            if (*levelIDPtr != LevelID)
+            {
+                PrevLevelID = LevelID;
+                LevelID = *levelIDPtr;
+                Console.WriteLine($"Level ID changed to: {LevelID}");
             }
+        }
+    }
+
+    public void SetCurrentMapID()
+    {
+        unsafe
+        {
+            int* MapIDPtr = (int*)(Mod.BaseAddress + 0xC5B374);
+            if (MapIDPtr == null) return;
+            if (*MapIDPtr != MapID)
+            {
+                PrevMapID = MapID;
+                MapID = *MapIDPtr;
+                Console.WriteLine($"Map ID changed to: {MapID}");
+            }
+        }
+    }
+
+    public void GameLoop()
+    {
+        while (true)
+        {
+            SetCurrentLevelID();
+            SetCurrentMapID();
+            Thread.Sleep(500);
+        }
     }
 }

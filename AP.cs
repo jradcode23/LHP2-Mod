@@ -89,8 +89,9 @@ public class LHP_Archipelago
             _loginSuccessful = (LoginSuccessful)result;
             //SlotData = new SlotData(_loginSuccessful.SlotData);
             //Mod.InitOnConnect();
-            Mod.GameInstance.GameLoaded();
+            Game.GameLoaded();
             new Thread(RunCheckLocationsFromList).Start();
+            new Thread(Mod.GameInstance!.GameLoop).Start();
             //resync here
             return true;
         }
@@ -110,7 +111,7 @@ public class LHP_Archipelago
             var itemIndex = helper.Index;
             var item = helper.DequeueItem();
 
-            Mod.GameInstance.ManageItem(itemIndex, item);
+            Mod.GameInstance!.ManageItem(itemIndex, item);
         }
     }
 
