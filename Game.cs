@@ -1,7 +1,8 @@
-using Reloaded.Hooks.Definitions;
 using Reloaded.Memory;
 using Reloaded.Memory.Interfaces;
+using Reloaded.Hooks.Definitions;
 using Reloaded.Hooks.Definitions.Enums;
+using Reloaded.Hooks.Definitions.X86;
 using Microsoft.VisualBasic;
 using Archipelago.MultiClient.Net.Models;
 using LHP_Archi_Mod.Template;
@@ -64,6 +65,7 @@ public class Game
                     break;
                 case < 475:
                     // Todo: Update so that we don't have to subtract 450 every time
+                    Console.WriteLine($"Received Level Unlock: {itemName}, {newItemID}");
                     Level.ConvertIDToLeveData(newItemID - 450);
                     break;
                 default:
@@ -102,6 +104,7 @@ public class Game
         }
     }
 
+    // TODO: Hook this instead of having a thread
     public void GameLoop()
     {
         while (true)
@@ -110,5 +113,48 @@ public class Game
             SetCurrentMapID();
             Thread.Sleep(500);
         }
+    }
+
+    private static List<IAsmHook> _asmHooks = new List<IAsmHook>();
+    private static IReverseWrapper<LevelComplete> _reverseWrapOnLevelComplete = default!;
+
+    public void SetupHooks(IReloadedHooks hooks)
+    {
+        string[] completeLevelHook =
+        {
+            "use32",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnLevelComplete, out _reverseWrapOnLevelComplete)}",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(completeLevelHook, (int)(Mod.BaseAddress + 0x4B80CB), AsmHookBehaviour.ExecuteFirst).Activate());
+    }
+
+    [Function(CallingConventions.Cdecl)]
+    public delegate void LevelComplete();
+
+    private static void OnLevelComplete()
+    {
+        int level = Mod.GameInstance!.LevelID;
+        int prevLevel = Mod.GameInstance!.PrevLevelID;
+
+        int? apID = level switch
+        {
+            > 4 => level - 4 + 450,
+            0 => level + 450,
+            > 0 and < 5 when prevLevel == 0 => prevLevel + 450,
+            > 0 and < 5 when prevLevel > 4 => prevLevel + 450 - 4,
+            _ => null
+        };
+
+        if (apID is int id)
+            CheckAndReportLocation(id);
+    }
+
+    private static void CheckAndReportLocation(int apID)
+    {
+        if (Mod.LHP_Archipelago!.IsLocationChecked(apID))
+            return;
+
+        Console.WriteLine($"Checking location for AP ID: {apID}");
+        Mod.LHP_Archipelago?.CheckLocation(apID);
     }
 }

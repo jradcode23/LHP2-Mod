@@ -88,10 +88,10 @@ public class LHP_Archipelago
         {
             _loginSuccessful = (LoginSuccessful)result;
             //SlotData = new SlotData(_loginSuccessful.SlotData);
-            //Mod.InitOnConnect();
             Game.GameLoaded();
             new Thread(RunCheckLocationsFromList).Start();
             new Thread(Mod.GameInstance!.GameLoop).Start();
+            Mod.InitOnConnect();
             //resync here
             return true;
         }

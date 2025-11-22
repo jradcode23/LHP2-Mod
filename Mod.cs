@@ -1,4 +1,4 @@
-﻿using Reloaded.Hooks.ReloadedII.Interfaces;
+﻿using Reloaded.Hooks.Definitions;
 using Reloaded.Mod.Interfaces;
 using LHP_Archi_Mod.Template;
 using LHP_Archi_Mod.Configuration;
@@ -12,7 +12,7 @@ namespace LHP_Archi_Mod;
 public class Mod : ModBase // <= Do not Remove.
 {
     private readonly IModLoader _modLoader;
-    private readonly IReloadedHooks? _hooks;
+    private static IReloadedHooks? _hooks;
     private readonly ILogger _logger;
     private readonly IMod _owner;
     private Config? Configuration { get; set; }
@@ -78,6 +78,14 @@ public class Mod : ModBase // <= Do not Remove.
         Configuration = configuration;
         _logger.WriteLine($"[{_modConfig.ModId}] Config Updated: Applying");
     }
+
+    public static void InitOnConnect()
+    {
+        //GameHandler?.ModifyInstructions();
+        if (Mod._hooks != null)
+            GameInstance?.SetupHooks(Mod._hooks);
+    }
+
     #endregion
 
     #region For Exports, Serialization etc.
