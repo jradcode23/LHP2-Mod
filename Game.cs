@@ -49,14 +49,42 @@ public class Game
         }
     }
 
+    public void ModifyInstructions()
+    {
+        unsafe
+        {
+            int* cutsceneBaseAddress = (int*)(Mod.BaseAddress + 0xC5D5F4);
+            nuint ptr = (nuint)(*cutsceneBaseAddress + 0x12);
+
+            // Make all cutscenes skippable (except Lesson Outros) TODO: look into NOCLIP to make it better
+            Memory.Instance.SafeWrite(ptr, new byte[]
+            { 0x81, 0xFF, 0xFF, 0x76, 0xBF, 0xB7, 0xEF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF, 0x77, 0xFF, 0xFF, 0xDF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x1F});
+
+            // NOP GB Corrector #1
+            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x332694, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+            // NOP GB Corrector #2
+            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x42EB8B, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+            //// NOP GB Corrector #3 (crashes game?)
+            //Memory.Instance.SafeWrite(Mod.BaseAddress + 0x42EB90, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+            // Unlock Current Level Story
+            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B817E, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+            // Unlock Current Level Freeplay
+            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B8165, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+            //NOP Unlock Next Story Level
+            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B809C, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+        }
+    }
+
     public void ManageItem(int index, ItemInfo item)
     {
         var itemName = item.ItemName;
         var newItemID = (int)(item.ItemId - 400000);
-
-        // implement logic for in shop or not controllable
-        if (!PlayerControllable())
-            return;
+        
+        //// implement logic for in shop or not controllable
+        //if (!PlayerControllable())
+        //    return;
 
         switch(newItemID)
         {

@@ -93,8 +93,9 @@ public class Level
 
     public static unsafe void UnlockLevel(LevelData level)
     {
-        int levelBaseAddress = *(int*)(Mod.BaseAddress + 0xC55F2C);
-        byte* ptr = (byte*)((nint)levelBaseAddress + (int)level);
+        int* levelBaseAddress = (int*)(Mod.BaseAddress + 0xC55F2C);
+        byte* ptr = (byte*)(*levelBaseAddress) + (ushort)level;
+
         *ptr |= (byte)(BitMask.StoryUnlocked | BitMask.FreeplayUnlocked);
     }
 }

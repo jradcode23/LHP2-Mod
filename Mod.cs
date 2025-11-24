@@ -18,10 +18,10 @@ public class Mod : ModBase // <= Do not Remove.
     private Config? Configuration { get; set; }
     private readonly IModConfig _modConfig;
 
-    public static UIntPtr BaseAddress;
     public static LHP_Archipelago? LHP_Archipelago;
     public static Game? GameInstance;
     public static Level? Levels;
+    public static nuint BaseAddress;
 
     public Mod(ModContext context)
     {
@@ -46,7 +46,7 @@ public class Mod : ModBase // <= Do not Remove.
         // TODO: Implement some mod logic
         GameInstance = new Game();
         Levels = new Level();
-        BaseAddress = (UIntPtr) Process.GetCurrentProcess().MainModule!.BaseAddress;
+        BaseAddress = (nuint)Process.GetCurrentProcess().MainModule!.BaseAddress;
 
         if (Configuration == null)
             return;
@@ -81,7 +81,7 @@ public class Mod : ModBase // <= Do not Remove.
 
     public static void InitOnConnect()
     {
-        //GameHandler?.ModifyInstructions();
+        GameInstance?.ModifyInstructions();
         if (Mod._hooks != null)
             GameInstance?.SetupHooks(Mod._hooks);
     }
