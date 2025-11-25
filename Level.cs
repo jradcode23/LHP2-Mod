@@ -3,6 +3,8 @@ namespace LHP_Archi_Mod;
 
 public class Level
 {
+    private static unsafe readonly byte* levelBaseAddress = (byte*)(*(int*)(Mod.BaseAddress + 0xC55F2C));
+
     [Flags]
     public enum BitMask
     {
@@ -80,22 +82,46 @@ public class Level
         LevelData.TheFlawInThePlan,
     };
 
-    public static void ConvertIDToLeveData(int id)
+    public static LevelData ConvertIDToLeveData(int id)
     {
-        if (id < 0 || id >= LevelUnlockOrder.Length)
-        {
-            Console.WriteLine($"Invalid level ID: {id}");
-            return;
-        }
         LevelData level = LevelUnlockOrder[id];
-        UnlockLevel(level);
+        return level;
     }
 
     public static unsafe void UnlockLevel(LevelData level)
     {
-        int* levelBaseAddress = (int*)(Mod.BaseAddress + 0xC55F2C);
-        byte* ptr = (byte*)(*levelBaseAddress) + (ushort)level;
-
+        byte* ptr = levelBaseAddress + (ushort)level;
+        Console.WriteLine($"Unlocking level at address: 0x{(ulong)ptr:X}");
         *ptr |= (byte)(BitMask.StoryUnlocked | BitMask.FreeplayUnlocked);
+    }
+
+    public static unsafe void UnlockGryffindorCrest(LevelData level)
+    {
+        byte* ptr = levelBaseAddress + (ushort)level;
+        *ptr |= (byte)(BitMask.GryfCrest);
+    }
+
+    public static unsafe void UnlockSlytherinCrest(LevelData level)
+    {
+        byte* ptr = levelBaseAddress + (ushort)level;
+        *ptr |= (byte)(BitMask.SlythCrest);
+    }
+
+    public static unsafe void UnlockRavenclawCrest(LevelData level)
+    {
+        byte* ptr = levelBaseAddress + (ushort)level;
+        *ptr |= (byte)(BitMask.RavenCrest);
+    }
+
+    public static unsafe void UnlockHufflepuffCrest(LevelData level)
+    {
+        byte* ptr = levelBaseAddress + (ushort)level;
+        *ptr |= (byte)(BitMask.HuffleCrest);
+    }
+
+    public static unsafe void UnlockStudentInPeril(LevelData level)
+    {
+        byte* ptr = levelBaseAddress + (ushort)level;
+        *ptr |= (byte)(BitMask.StudentInPeril);
     }
 }

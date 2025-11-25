@@ -86,6 +86,8 @@ public class Game
         //if (!PlayerControllable())
         //    return;
 
+        Level.LevelData level;
+
         switch(newItemID)
         {
                 case < 450:
@@ -94,9 +96,35 @@ public class Game
                 case < 475:
                     // Todo: Update so that we don't have to subtract 450 every time
                     Console.WriteLine($"Received Level Unlock: {itemName}, {newItemID}");
-                    Level.ConvertIDToLeveData(newItemID - 450);
+                    level = Level.ConvertIDToLeveData(newItemID - 450);
+                    Level.UnlockLevel(level);
                     break;
-                default:
+                case < 550:
+                    Console.WriteLine("Student in Peril Received");
+                    level = Level.ConvertIDToLeveData(newItemID - 475);
+                    Level.UnlockStudentInPeril(level);
+                    break;
+                case < 574:
+                    Console.WriteLine($"Gryffindor Crest Received");
+                    level = Level.ConvertIDToLeveData(newItemID - 550);
+                    Level.UnlockGryffindorCrest(level);
+                    break;
+                case < 598:
+                    Console.WriteLine($"Slytherin Crest Received");
+                    level = Level.ConvertIDToLeveData(newItemID - 574);
+                    Level.UnlockSlytherinCrest(level);
+                    break;
+                case < 622:
+                    Console.WriteLine($"Ravenclaw Crest Received");
+                    level = Level.ConvertIDToLeveData(newItemID - 598);
+                    Level.UnlockRavenclawCrest(level);
+                    break;
+                case < 646:
+                    Console.WriteLine($"Hufflepuff Crest Received");
+                    level = Level.ConvertIDToLeveData(newItemID - 622);
+                    Level.UnlockHufflepuffCrest(level);
+                    break;
+            default:
                     Console.WriteLine($"Unknown item received: {itemName}, {newItemID}");
                     break;
         }
@@ -143,8 +171,21 @@ public class Game
         }
     }
 
+    public static int? GetApID(int level, int prevLevel)
+    {
+        return level switch
+        {
+            > 4 => level - 4,
+            0 => level,
+            > 0 and < 5 when prevLevel == 0 => prevLevel,
+            > 0 and < 5 when prevLevel > 4 => prevLevel - 4,
+            _ => null
+        };
+    }
+
     private static List<IAsmHook> _asmHooks = new List<IAsmHook>();
     private static IReverseWrapper<LevelComplete> _reverseWrapOnLevelComplete = default!;
+    private static IReverseWrapper<LevelSIPComplete> _reverseWrapOnLevelSIP = default!;
 
     public void SetupHooks(IReloadedHooks hooks)
     {
@@ -154,6 +195,18 @@ public class Game
             $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnLevelComplete, out _reverseWrapOnLevelComplete)}",
         };
         _asmHooks.Add(hooks.CreateAsmHook(completeLevelHook, (int)(Mod.BaseAddress + 0x4B80CB), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] completeLevelSIPHook =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnLevelSIP, out _reverseWrapOnLevelSIP)}",
+            "popad",
+            "popfd",
+
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(completeLevelSIPHook, (int)(Mod.BaseAddress + 0x313967), AsmHookBehaviour.ExecuteAfter).Activate());
     }
 
     [Function(CallingConventions.Cdecl)]
@@ -164,17 +217,20 @@ public class Game
         int level = Mod.GameInstance!.LevelID;
         int prevLevel = Mod.GameInstance!.PrevLevelID;
 
-        int? apID = level switch
-        {
-            > 4 => level - 4 + 450,
-            0 => level + 450,
-            > 0 and < 5 when prevLevel == 0 => prevLevel + 450,
-            > 0 and < 5 when prevLevel > 4 => prevLevel + 450 - 4,
-            _ => null
-        };
-
+        int? apID = GetApID(level, prevLevel) + 450;
         if (apID is int id)
             CheckAndReportLocation(id);
+    }
+
+    [Function(CallingConventions.Fastcall)]
+    public delegate void LevelSIPComplete();
+        private static void OnLevelSIP()
+    {
+        int level = Mod.GameInstance!.LevelID;
+
+        int? apID = GetApID(level, 0); // SIP shouldn't need prev level so just pass 0
+        if (apID is int id)
+            CheckAndReportLocation(id + 475);
     }
 
     private static void CheckAndReportLocation(int apID)
