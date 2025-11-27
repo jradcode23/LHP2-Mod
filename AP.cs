@@ -75,8 +75,8 @@ public class LHP_Archipelago
                 game: GAME_NAME,
                 name: Slot,
                 itemsHandlingFlags: ItemsHandlingFlags.AllItems,
-                //version: new Version(1, 0, 0),
-                //tags: new string[] { },
+                version: new Version(1, 0, 0),
+                tags: new string[] { },
                 password: Password
             ).Result;
         }
@@ -122,12 +122,12 @@ public class LHP_Archipelago
 
     public void CheckLocations(Int64[] ids)
     {
-        ids.ToList().ForEach(id => _locationsToCheck.Enqueue(id + 0x61A80));
+        ids.ToList().ForEach(id => _locationsToCheck.Enqueue(id + 400000));
     }
 
     public void CheckLocation(Int64 id)
     {
-        _locationsToCheck.Enqueue(0x61A80 + id);
+        _locationsToCheck.Enqueue(id + 400000);
     }
 
     private ConcurrentQueue<Int64> _locationsToCheck = new();
@@ -147,13 +147,13 @@ public class LHP_Archipelago
 
     public bool IsLocationChecked(Int64 id)
     {
-        return _session.Locations.AllLocationsChecked.Contains(id + 0x61A80);
+        return _session.Locations.AllLocationsChecked.Contains(id + 400000);
     }
 
     public int CountLocationsCheckedInRange(Int64 start, Int64 end)
     {
-        var startId = start + 0x61A80;
-        var endId = end + 0x61A80;
+        var startId = start + 400000;
+        var endId = end + 400000;
         return _session.Locations.AllLocationsChecked.Count(loc => loc >= startId && loc < endId);
     }
 

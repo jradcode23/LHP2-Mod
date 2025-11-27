@@ -16,6 +16,13 @@ public class Game
     public int LevelID { get; private set; } = -1;
     public int PrevMapID { get; private set; } = -1;
     public int MapID { get; private set; } = -1;
+    public const int levelOffset = 450;
+    public const int SIPOffset = 475;
+    public const int GryfCrestOffset = 550;
+    public const int SlythCrestOffset = 574;
+    public const int RavenCrestOffset = 598;
+    public const int HuffleCrestOffset = 622;
+    public const int TrueWizardOffset = 675;
 
     public static void GameLoaded()
     {
@@ -93,38 +100,42 @@ public class Game
                 case < 450:
                     Console.WriteLine($"Unknown item received: {itemName}, {newItemID}");
                     break;
-                case < 475:
-                    // Todo: Update so that we don't have to subtract 450 every time
+                case < 475: // Levels
                     Console.WriteLine($"Received Level Unlock: {itemName}, {newItemID}");
-                    level = Level.ConvertIDToLeveData(newItemID - 450);
+                    level = Level.ConvertIDToLeveData(newItemID - levelOffset);
                     Level.UnlockLevel(level);
                     break;
                 case < 550:
                     Console.WriteLine("Student in Peril Received");
-                    level = Level.ConvertIDToLeveData(newItemID - 475);
+                    level = Level.ConvertIDToLeveData(newItemID - SIPOffset);
                     Level.UnlockStudentInPeril(level);
                     break;
                 case < 574:
                     Console.WriteLine($"Gryffindor Crest Received");
-                    level = Level.ConvertIDToLeveData(newItemID - 550);
+                    level = Level.ConvertIDToLeveData(newItemID - GryfCrestOffset);
                     Level.UnlockGryffindorCrest(level);
                     break;
                 case < 598:
                     Console.WriteLine($"Slytherin Crest Received");
-                    level = Level.ConvertIDToLeveData(newItemID - 574);
+                    level = Level.ConvertIDToLeveData(newItemID - SlythCrestOffset);
                     Level.UnlockSlytherinCrest(level);
                     break;
                 case < 622:
                     Console.WriteLine($"Ravenclaw Crest Received");
-                    level = Level.ConvertIDToLeveData(newItemID - 598);
+                    level = Level.ConvertIDToLeveData(newItemID - RavenCrestOffset);
                     Level.UnlockRavenclawCrest(level);
                     break;
                 case < 646:
                     Console.WriteLine($"Hufflepuff Crest Received");
-                    level = Level.ConvertIDToLeveData(newItemID - 622);
+                    level = Level.ConvertIDToLeveData(newItemID - HuffleCrestOffset);
                     Level.UnlockHufflepuffCrest(level);
                     break;
-            default:
+                case < 700:
+                    Console.WriteLine($"True Wizard Received");
+                    level = Level.ConvertIDToLeveData(newItemID - TrueWizardOffset);
+                    Level.UnlockTrueWizard(level);
+                    break;
+                default:
                     Console.WriteLine($"Unknown item received: {itemName}, {newItemID}");
                     break;
         }
@@ -186,13 +197,20 @@ public class Game
     private static List<IAsmHook> _asmHooks = new List<IAsmHook>();
     private static IReverseWrapper<LevelComplete> _reverseWrapOnLevelComplete = default!;
     private static IReverseWrapper<LevelSIPComplete> _reverseWrapOnLevelSIP = default!;
+    private static IReverseWrapper<TrueWizardComplete> _reverseWrapOnTrueWizard = default!;
+    private static IReverseWrapper<CrestsComplete> _reverseWrapOnCrests = default!;
+
 
     public void SetupHooks(IReloadedHooks hooks)
     {
         string[] completeLevelHook =
         {
             "use32",
+            "pushfd",
+            "pushad",
             $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnLevelComplete, out _reverseWrapOnLevelComplete)}",
+            "popad",
+            "popfd",
         };
         _asmHooks.Add(hooks.CreateAsmHook(completeLevelHook, (int)(Mod.BaseAddress + 0x4B80CB), AsmHookBehaviour.ExecuteFirst).Activate());
 
@@ -207,6 +225,29 @@ public class Game
 
         };
         _asmHooks.Add(hooks.CreateAsmHook(completeLevelSIPHook, (int)(Mod.BaseAddress + 0x313967), AsmHookBehaviour.ExecuteAfter).Activate());
+
+        string [] completeTrueWizardHook =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnTrueWizard, out _reverseWrapOnTrueWizard)}",
+            "popad",
+            "popfd",
+        };
+         _asmHooks.Add(hooks.CreateAsmHook(completeTrueWizardHook, (int)(Mod.BaseAddress + 0x5B2A83), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] completeHogwartsCrestHook =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnHouseCrest, out _reverseWrapOnCrests)}",
+            "popad",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(completeHogwartsCrestHook, (int)(Mod.BaseAddress + 0x16C0A), AsmHookBehaviour.ExecuteFirst).Activate());
+
     }
 
     [Function(CallingConventions.Cdecl)]
@@ -217,28 +258,75 @@ public class Game
         int level = Mod.GameInstance!.LevelID;
         int prevLevel = Mod.GameInstance!.PrevLevelID;
 
-        int? apID = GetApID(level, prevLevel) + 450;
+        int? apID = GetApID(level, prevLevel);
         if (apID is int id)
-            CheckAndReportLocation(id);
+            CheckAndReportLocation(id + levelOffset);
     }
 
     [Function(CallingConventions.Fastcall)]
     public delegate void LevelSIPComplete();
-        private static void OnLevelSIP()
+    private static void OnLevelSIP()
     {
         int level = Mod.GameInstance!.LevelID;
 
         int? apID = GetApID(level, 0); // SIP shouldn't need prev level so just pass 0
         if (apID is int id)
-            CheckAndReportLocation(id + 475);
+            CheckAndReportLocation(id + SIPOffset);
+    }
+
+    [Function(CallingConventions.Fastcall)]
+    public delegate void TrueWizardComplete();
+    private static void OnTrueWizard()
+    {
+        int level = Mod.GameInstance!.LevelID;
+
+        int? apID = GetApID(level, 0); // True Wizard shouldn't need prev level so just pass 0
+        if (apID is int id)
+            CheckAndReportLocation(id + TrueWizardOffset);
+    }
+
+    [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.eax }, 
+        FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void CrestsComplete(int value);
+    private static void OnHouseCrest(int value)
+    {
+        int level = Mod.GameInstance!.LevelID;
+        int? apID = GetApID(level, 0); // Crests shouldn't need prev level so just pass 0
+        if (apID is int id)
+        {
+            switch (value)
+            {
+                case 0x21C:
+                    CheckAndReportLocation(id + GryfCrestOffset);
+                    Console.WriteLine("Gryffindor Crest Completed");
+                    break;
+                case 0x21E:
+                    CheckAndReportLocation(id + SlythCrestOffset);
+                    Console.WriteLine("Sltyherin Crest Completed");
+                    break;
+                case 0x220:
+                    CheckAndReportLocation(id + RavenCrestOffset);
+                    Console.WriteLine("Ravenclaw Crest Completed");
+                    break;
+                case 0x222:
+                    CheckAndReportLocation(id + HuffleCrestOffset);
+                    Console.WriteLine("Hufflepuff Crest Completed");
+                    break;
+                default:
+                    Console.WriteLine($"Unknown Crest Completed value: {value}");
+                    break;
+            }
+        }
     }
 
     private static void CheckAndReportLocation(int apID)
     {
         if (Mod.LHP_Archipelago!.IsLocationChecked(apID))
+        {
+            Console.WriteLine($"Location for AP ID: {apID} already checked");
             return;
-
+        }
         Console.WriteLine($"Checking location for AP ID: {apID}");
-        Mod.LHP_Archipelago?.CheckLocation(apID);
+        Mod.LHP_Archipelago!.CheckLocation(apID);
     }
 }

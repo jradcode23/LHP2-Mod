@@ -124,4 +124,12 @@ public class Level
         byte* ptr = levelBaseAddress + (ushort)level;
         *ptr |= (byte)(BitMask.StudentInPeril);
     }
+
+    public static unsafe void UnlockTrueWizard(LevelData level)
+    {
+        byte* story = levelBaseAddress + (ushort)level - 6;
+        byte* freeplay = story + 1;
+        *story = 1;
+        *freeplay = 1;
+    }
 }
