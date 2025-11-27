@@ -16,6 +16,7 @@ public class Game
     public int LevelID { get; private set; } = -1;
     public int PrevMapID { get; private set; } = -1;
     public int MapID { get; private set; } = -1;
+    public bool PrevInShop { get; private set; } = false;
     public const int levelOffset = 450;
     public const int SIPOffset = 475;
     public const int GryfCrestOffset = 550;
@@ -60,6 +61,12 @@ public class Game
     {
         unsafe
         {
+            Mod.GameInstance!.LevelID = Memory.Instance.Read<int>(Mod.BaseAddress + 0xADDB7C);
+            Mod.GameInstance!.MapID = Memory.Instance.Read<int>(Mod.BaseAddress + 0xC5B374);
+            Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
+            Mod.GameInstance!.PrevMapID = Mod.GameInstance!.MapID;
+            Console.WriteLine($"Initial Level ID: {Mod.GameInstance!.LevelID}, Map ID: {Mod.GameInstance!.MapID}");
+
             int* cutsceneBaseAddress = (int*)(Mod.BaseAddress + 0xC5D5F4);
             nuint ptr = (nuint)(*cutsceneBaseAddress + 0x12);
 
@@ -171,17 +178,6 @@ public class Game
         }
     }
 
-    // TODO: Hook this instead of having a thread
-    public void GameLoop()
-    {
-        while (true)
-        {
-            SetCurrentLevelID();
-            SetCurrentMapID();
-            Thread.Sleep(500);
-        }
-    }
-
     public static int? GetApID(int level, int prevLevel)
     {
         return level switch
@@ -199,6 +195,9 @@ public class Game
     private static IReverseWrapper<LevelSIPComplete> _reverseWrapOnLevelSIP = default!;
     private static IReverseWrapper<TrueWizardComplete> _reverseWrapOnTrueWizard = default!;
     private static IReverseWrapper<CrestsComplete> _reverseWrapOnCrests = default!;
+    private static IReverseWrapper<UpdateLevel> _reverseWrapOnLevelUpdate = default!;
+    private static IReverseWrapper<UpdateMap> _reverseWrapOnMapUpdate = default!;
+    private static IReverseWrapper<OpenCloseShop> _reverseWrapOnShopUpdate = default!;
 
 
     public void SetupHooks(IReloadedHooks hooks)
@@ -248,6 +247,38 @@ public class Game
         };
         _asmHooks.Add(hooks.CreateAsmHook(completeHogwartsCrestHook, (int)(Mod.BaseAddress + 0x16C0A), AsmHookBehaviour.ExecuteFirst).Activate());
 
+        string[] updateLevelHook =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnLevelChange, out _reverseWrapOnLevelUpdate)}",
+            "popad",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(updateLevelHook, (int)(Mod.BaseAddress + 0x574661), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] updateMapIDHook =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnMapChange, out _reverseWrapOnMapUpdate)}",
+            "popad",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(updateMapIDHook, (int)(Mod.BaseAddress + 0x356424), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] openCloseShopHook =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(onShopChange, out _reverseWrapOnShopUpdate)}",
+            "popad",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(openCloseShopHook, (int)(Mod.BaseAddress + 0x417074), AsmHookBehaviour.ExecuteFirst).Activate());
     }
 
     [Function(CallingConventions.Cdecl)]
@@ -313,9 +344,52 @@ public class Game
                     Console.WriteLine("Hufflepuff Crest Completed");
                     break;
                 default:
-                    Console.WriteLine($"Unknown Crest Completed value: {value}");
+                    Console.WriteLine($"Unknown Crest Completed value: {value}. Please report to the devs.");
                     break;
             }
+        }
+    }
+
+    [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.eax }, 
+    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void UpdateLevel(int value);
+    private static void OnLevelChange(int value)
+    {
+        Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
+        Mod.GameInstance!.LevelID = value;
+        Console.WriteLine($"Level ID updated to {value}.");
+    }
+
+    [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.ecx }, 
+    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void UpdateMap(int value);
+    private static void OnMapChange(int value)
+    {
+        Mod.GameInstance!.PrevMapID = Mod.GameInstance!.MapID;
+        Mod.GameInstance!.MapID = value;
+        Console.WriteLine($"Map ID updated to {value}.");
+    }
+
+    [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.eax }, 
+    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void OpenCloseShop(int eax);
+    private static void onShopChange(int eax)
+    {
+        bool bit0Set = (eax & 1) != 0;
+
+        if(bit0Set)
+        {
+            Mod.GameInstance!.PrevInShop = true;
+            Console.WriteLine("Shop opened");
+        }
+        else if(!bit0Set && Mod.GameInstance!.PrevInShop)
+        {
+            Mod.GameInstance!.PrevInShop = false;
+            Console.WriteLine("Shop closed");
+        }
+        else
+        {
+            return;
         }
     }
 
