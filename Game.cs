@@ -3,10 +3,6 @@ using Reloaded.Memory.Interfaces;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Hooks.Definitions.Enums;
 using Reloaded.Hooks.Definitions.X86;
-using Microsoft.VisualBasic;
-using Archipelago.MultiClient.Net.Models;
-using LHP_Archi_Mod.Template;
-using LHP_Archi_Mod.Configuration;
 
 namespace LHP_Archi_Mod;
 
@@ -24,6 +20,8 @@ public class Game
     public const int RavenCrestOffset = 598;
     public const int HuffleCrestOffset = 622;
     public const int TrueWizardOffset = 675;
+    public const int startingItem = 450;
+    public const int TotalItems = 700;
 
     public static void GameLoaded()
     {
@@ -66,7 +64,8 @@ public class Game
             Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
             Mod.GameInstance!.PrevMapID = Mod.GameInstance!.MapID;
             Console.WriteLine($"Initial Level ID: {Mod.GameInstance!.LevelID}, Map ID: {Mod.GameInstance!.MapID}");
-
+            Level.MakeAllBoardsVisible();
+            //TODO: Look into having shop open when you first load in
             int* cutsceneBaseAddress = (int*)(Mod.BaseAddress + 0xC5D5F4);
             nuint ptr = (nuint)(*cutsceneBaseAddress + 0x12);
 
@@ -91,90 +90,51 @@ public class Game
         }
     }
 
-    public void ManageItem(int index, ItemInfo item)
+    public void ManageItem(int ItemID)
     {
-        var itemName = item.ItemName;
-        var newItemID = (int)(item.ItemId - 400000);
-        
+    
         //// implement logic for in shop or not controllable
         //if (!PlayerControllable())
         //    return;
 
         Level.LevelData level;
 
-        switch(newItemID)
+        switch(ItemID)
         {
                 case < 450:
-                    Console.WriteLine($"Unknown item received: {itemName}, {newItemID}");
+                    Console.WriteLine($"Unknown item received: {ItemID}");
                     break;
                 case < 475: // Levels
-                    Console.WriteLine($"Received Level Unlock: {itemName}, {newItemID}");
-                    level = Level.ConvertIDToLeveData(newItemID - levelOffset);
+                    level = Level.ConvertIDToLeveData(ItemID - levelOffset);
                     Level.UnlockLevel(level);
                     break;
                 case < 550:
-                    Console.WriteLine("Student in Peril Received");
-                    level = Level.ConvertIDToLeveData(newItemID - SIPOffset);
+                    level = Level.ConvertIDToLeveData(ItemID - SIPOffset);
                     Level.UnlockStudentInPeril(level);
                     break;
                 case < 574:
-                    Console.WriteLine($"Gryffindor Crest Received");
-                    level = Level.ConvertIDToLeveData(newItemID - GryfCrestOffset);
+                    level = Level.ConvertIDToLeveData(ItemID - GryfCrestOffset);
                     Level.UnlockGryffindorCrest(level);
                     break;
                 case < 598:
-                    Console.WriteLine($"Slytherin Crest Received");
-                    level = Level.ConvertIDToLeveData(newItemID - SlythCrestOffset);
+                    level = Level.ConvertIDToLeveData(ItemID - SlythCrestOffset);
                     Level.UnlockSlytherinCrest(level);
                     break;
                 case < 622:
-                    Console.WriteLine($"Ravenclaw Crest Received");
-                    level = Level.ConvertIDToLeveData(newItemID - RavenCrestOffset);
+                    level = Level.ConvertIDToLeveData(ItemID - RavenCrestOffset);
                     Level.UnlockRavenclawCrest(level);
                     break;
                 case < 646:
-                    Console.WriteLine($"Hufflepuff Crest Received");
-                    level = Level.ConvertIDToLeveData(newItemID - HuffleCrestOffset);
+                    level = Level.ConvertIDToLeveData(ItemID - HuffleCrestOffset);
                     Level.UnlockHufflepuffCrest(level);
                     break;
                 case < 700:
-                    Console.WriteLine($"True Wizard Received");
-                    level = Level.ConvertIDToLeveData(newItemID - TrueWizardOffset);
+                    level = Level.ConvertIDToLeveData(ItemID - TrueWizardOffset);
                     Level.UnlockTrueWizard(level);
                     break;
                 default:
-                    Console.WriteLine($"Unknown item received: {itemName}, {newItemID}");
+                    Console.WriteLine($"Unknown item received: {ItemID}");
                     break;
-        }
-    }
-
-    public void SetCurrentLevelID()
-    {
-        unsafe
-        {
-            int* levelIDPtr = (int*)(Mod.BaseAddress + 0xADDB7C);
-            if (levelIDPtr == null) return;
-            if (*levelIDPtr != LevelID)
-            {
-                PrevLevelID = LevelID;
-                LevelID = *levelIDPtr;
-                Console.WriteLine($"Level ID changed to: {LevelID}");
-            }
-        }
-    }
-
-    public void SetCurrentMapID()
-    {
-        unsafe
-        {
-            int* MapIDPtr = (int*)(Mod.BaseAddress + 0xC5B374);
-            if (MapIDPtr == null) return;
-            if (*MapIDPtr != MapID)
-            {
-                PrevMapID = MapID;
-                MapID = *MapIDPtr;
-                Console.WriteLine($"Map ID changed to: {MapID}");
-            }
         }
     }
 
@@ -329,19 +289,15 @@ public class Game
             {
                 case 0x21C:
                     CheckAndReportLocation(id + GryfCrestOffset);
-                    Console.WriteLine("Gryffindor Crest Completed");
                     break;
                 case 0x21E:
                     CheckAndReportLocation(id + SlythCrestOffset);
-                    Console.WriteLine("Sltyherin Crest Completed");
                     break;
                 case 0x220:
                     CheckAndReportLocation(id + RavenCrestOffset);
-                    Console.WriteLine("Ravenclaw Crest Completed");
                     break;
                 case 0x222:
                     CheckAndReportLocation(id + HuffleCrestOffset);
-                    Console.WriteLine("Hufflepuff Crest Completed");
                     break;
                 default:
                     Console.WriteLine($"Unknown Crest Completed value: {value}. Please report to the devs.");
@@ -358,6 +314,12 @@ public class Game
         Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
         Mod.GameInstance!.LevelID = value;
         Console.WriteLine($"Level ID updated to {value}.");
+        // Game enters a level before thinking you are out of shop, resetting level here in those cases to make sure House Crests load in properly
+        if(value != 1 || value != 2 || value != 3 || value !=4)
+        {
+            Level.ResetLevels();
+            Mod.LHP_Archipelago!.UpdateLocationsChecked();
+        }
     }
 
     [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.ecx }, 
@@ -381,15 +343,18 @@ public class Game
         {
             Mod.GameInstance!.PrevInShop = true;
             Console.WriteLine("Shop opened");
+            Level.ResetLevels();
+            Mod.LHP_Archipelago!.UpdateItemsReceived();
         }
         else if(!bit0Set && Mod.GameInstance!.PrevInShop)
         {
             Mod.GameInstance!.PrevInShop = false;
             Console.WriteLine("Shop closed");
-        }
-        else
-        {
-            return;
+            if (Mod.GameInstance!.LevelID == 1 || Mod.GameInstance!.LevelID == 2 || Mod.GameInstance!.LevelID == 3 || Mod.GameInstance!.LevelID == 4)
+            {
+                Level.ResetLevels();
+                Mod.LHP_Archipelago!.UpdateLocationsChecked();
+            }
         }
     }
 

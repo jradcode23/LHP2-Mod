@@ -91,7 +91,6 @@ public class Level
     public static unsafe void UnlockLevel(LevelData level)
     {
         byte* ptr = levelBaseAddress + (ushort)level;
-        Console.WriteLine($"Unlocking level at address: 0x{(ulong)ptr:X}");
         *ptr |= (byte)(BitMask.StoryUnlocked | BitMask.FreeplayUnlocked);
     }
 
@@ -131,5 +130,26 @@ public class Level
         byte* freeplay = story + 1;
         *story = 1;
         *freeplay = 1;
+    }
+    
+    public static unsafe void ResetLevels()
+    {
+        for(int i = 0; i < LevelUnlockOrder.Length; i++)
+        {
+            byte* level = levelBaseAddress + (ushort)LevelUnlockOrder[i];
+            byte* story = level - 6;
+            byte* freeplay = story + 1;
+            *level = 0;
+            *story = 0;
+            *freeplay = 0;
+        }
+    }
+
+    public static void MakeAllBoardsVisible()
+    {
+        UnlockLevel(LevelData.DarkTimes); 
+        UnlockLevel(LevelData.OutOfRetirement);
+        UnlockLevel(LevelData.TheSevenHarrys);
+        UnlockLevel(LevelData.TheThiefsDownfall);
     }
 }

@@ -2,7 +2,6 @@
 using Reloaded.Mod.Interfaces;
 using LHP_Archi_Mod.Template;
 using LHP_Archi_Mod.Configuration;
-using System.Threading;
 #if DEBUG
 using System.Diagnostics;
 #endif
@@ -51,7 +50,6 @@ public class Mod : ModBase // <= Do not Remove.
         if (Configuration == null)
             return;
         LHP_Archipelago = new LHP_Archipelago(Configuration.ArchipelagoOptions.Server, Configuration.ArchipelagoOptions.Port, Configuration.ArchipelagoOptions.Slot, Configuration.ArchipelagoOptions.Password);
-        Console.WriteLine($"Base Address: 0x{BaseAddress:x}");
         _logger.WriteLine($"[{_modConfig.ModId}] Mod Initialized with Server: {Configuration.ArchipelagoOptions.Server}, Port: {Configuration.ArchipelagoOptions.Port}, Slot: {Configuration.ArchipelagoOptions.Slot}");
 
         var thread1 = new Thread(start: () =>

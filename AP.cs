@@ -1,12 +1,9 @@
 using System.Collections.Concurrent;
-using System.Globalization;
 using Archipelago.MultiClient.Net;
-using Archipelago.MultiClient.Net.Converters;
 using Archipelago.MultiClient.Net.Enums;
 using Archipelago.MultiClient.Net.Helpers;
 using Archipelago.MultiClient.Net.MessageLog.Messages;
-using Archipelago.MultiClient.Net.Models;
-using Archipelago.MultiClient.Net.Packets;
+
 
 namespace LHP_Archi_Mod;
 
@@ -109,7 +106,8 @@ public class LHP_Archipelago
         {
             var itemIndex = helper.Index;
             var item = helper.DequeueItem();
-            Mod.GameInstance?.ManageItem(itemIndex, item);
+            // Mod.GameInstance?.ManageItem(itemIndex, item); //TODO: Add back in once non collectible items are a thing
+            // TODO: add check to see if in shop when receiving item
         }
     }
 
@@ -147,6 +145,24 @@ public class LHP_Archipelago
     public bool IsLocationChecked(Int64 id)
     {
         return _session.Locations.AllLocationsChecked.Contains(id + 400000);
+    }
+
+    public void UpdateItemsReceived()
+    {
+        foreach (var item in _session.Items.AllItemsReceived)
+        {
+            var gameId = item.ItemId - 400000;
+            Mod.GameInstance!.ManageItem((int)gameId);
+        }
+    }
+
+    public void UpdateLocationsChecked()
+    {
+        foreach (var location in _session.Locations.AllLocationsChecked)
+        {
+            var gameId = location - 400000;
+            Mod.GameInstance!.ManageItem((int)gameId);
+        }
     }
 
     public int CountLocationsCheckedInRange(Int64 start, Int64 end)
