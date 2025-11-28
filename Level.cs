@@ -1,5 +1,5 @@
 
-namespace LHP_Archi_Mod;
+namespace LHP2_Archi_Mod;
 
 public class Level
 {

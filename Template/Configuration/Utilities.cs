@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace LHP_Archi_Mod.Template.Configuration;
+namespace LHP2_Archi_Mod.Template.Configuration;
 
 public class Utilities
 {

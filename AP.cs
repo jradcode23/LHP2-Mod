@@ -5,11 +5,11 @@ using Archipelago.MultiClient.Net.Helpers;
 using Archipelago.MultiClient.Net.MessageLog.Messages;
 
 
-namespace LHP_Archi_Mod;
+namespace LHP2_Archi_Mod;
 
 // Thank you Sonic Heros AP Devs for being the implementation example
 
-public class LHP_Archipelago
+public class LHP2_Archipelago
 {
     private const string GAME_NAME = "Lego Harry Potter 5-7";
     private ArchipelagoSession _session;
@@ -25,7 +25,7 @@ public class LHP_Archipelago
     public static bool IsConnected;
     public static bool IsConnecting;
 
-    public LHP_Archipelago(string server, int port, string slot, string password)
+    public LHP2_Archipelago(string server, int port, string slot, string password)
     {
         Server = server;
         Port = port;

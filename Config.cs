@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
-using LHP_Archi_Mod.Template.Configuration;
+using LHP2_Archi_Mod.Template.Configuration;
 
-namespace LHP_Archi_Mod.Configuration;
+namespace LHP2_Archi_Mod.Configuration;
 
 public class Config : Configurable<Config>
 {

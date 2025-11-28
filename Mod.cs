@@ -1,12 +1,12 @@
 ﻿using Reloaded.Hooks.Definitions;
 using Reloaded.Mod.Interfaces;
-using LHP_Archi_Mod.Template;
-using LHP_Archi_Mod.Configuration;
+using LHP2_Archi_Mod.Template;
+using LHP2_Archi_Mod.Configuration;
 #if DEBUG
 using System.Diagnostics;
 #endif
 
-namespace LHP_Archi_Mod;
+namespace LHP2_Archi_Mod;
 
 public class Mod : ModBase // <= Do not Remove.
 {
@@ -17,7 +17,7 @@ public class Mod : ModBase // <= Do not Remove.
     private Config? Configuration { get; set; }
     private readonly IModConfig _modConfig;
 
-    public static LHP_Archipelago? LHP_Archipelago;
+    public static LHP2_Archipelago? LHP2_Archipelago;
     public static Game? GameInstance;
     public static Level? Levels;
     public static nuint BaseAddress;
@@ -49,16 +49,16 @@ public class Mod : ModBase // <= Do not Remove.
 
         if (Configuration == null)
             return;
-        LHP_Archipelago = new LHP_Archipelago(Configuration.ArchipelagoOptions.Server, Configuration.ArchipelagoOptions.Port, Configuration.ArchipelagoOptions.Slot, Configuration.ArchipelagoOptions.Password);
+        LHP2_Archipelago = new LHP2_Archipelago(Configuration.ArchipelagoOptions.Server, Configuration.ArchipelagoOptions.Port, Configuration.ArchipelagoOptions.Slot, Configuration.ArchipelagoOptions.Password);
         _logger.WriteLine($"[{_modConfig.ModId}] Mod Initialized with Server: {Configuration.ArchipelagoOptions.Server}, Port: {Configuration.ArchipelagoOptions.Port}, Slot: {Configuration.ArchipelagoOptions.Slot}");
 
         var thread1 = new Thread(start: () =>
         {
             while (true)
             {
-                if (!LHP_Archipelago.IsConnecting && !LHP_Archipelago.IsConnected)
+                if (!LHP2_Archipelago.IsConnecting && !LHP2_Archipelago.IsConnected)
                 {
-                    LHP_Archipelago.InitConnect();
+                    LHP2_Archipelago.InitConnect();
                 }
                 Thread.Sleep(2500);
             }

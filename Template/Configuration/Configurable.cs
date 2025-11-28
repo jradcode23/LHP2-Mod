@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace LHP_Archi_Mod.Template.Configuration;
+namespace LHP2_Archi_Mod.Template.Configuration;
 
 public class Configurable<TParentType> : IUpdatableConfigurable where TParentType : Configurable<TParentType>, new()
 {

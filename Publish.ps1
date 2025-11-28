@@ -162,8 +162,8 @@ param (
     $UseScriptDirectory=$True,
 
     ## => User Config <= ## 
-    $ProjectPath = "LHP_Archi_Mod.csproj",
-    $PackageName = "LHP_Archi_Mod",
+    $ProjectPath = "LHP2_Archi_Mod.csproj",
+    $PackageName = "LHP2_Archi_Mod",
     $PublishOutputDir = "Publish/ToUpload",
 
     ## => User: Delta Config
@@ -180,7 +180,7 @@ param (
 
     $GameBananaItemId = 333681, # From mod page URL.
 
-    $NuGetPackageId = "LHP_Archi_Mod",
+    $NuGetPackageId = "LHP2_Archi_Mod",
     $NuGetFeedUrl = "https://packages.sewer56.moe/v3/index.json",
     $NuGetAllowUnlisted = $False,
 

@@ -1,7 +1,7 @@
 ﻿using Reloaded.Mod.Interfaces;
-using LHP_Archi_Mod.Configuration;
+using LHP2_Archi_Mod.Configuration;
 
-namespace LHP_Archi_Mod.Template.Configuration;
+namespace LHP2_Archi_Mod.Template.Configuration;
 
 public class Configurator : IConfiguratorV3
 {

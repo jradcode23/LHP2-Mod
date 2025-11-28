@@ -1,6 +1,6 @@
-﻿using LHP_Archi_Mod.Configuration;
+﻿using LHP2_Archi_Mod.Configuration;
 
-namespace LHP_Archi_Mod.Template;
+namespace LHP2_Archi_Mod.Template;
 
 /// <summary>
 /// Base class for implementing mod functionality.

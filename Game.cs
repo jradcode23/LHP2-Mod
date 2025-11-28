@@ -4,7 +4,7 @@ using Reloaded.Hooks.Definitions;
 using Reloaded.Hooks.Definitions.Enums;
 using Reloaded.Hooks.Definitions.X86;
 
-namespace LHP_Archi_Mod;
+namespace LHP2_Archi_Mod;
 
 public class Game
 {
@@ -69,7 +69,7 @@ public class Game
             int* cutsceneBaseAddress = (int*)(Mod.BaseAddress + 0xC5D5F4);
             nuint ptr = (nuint)(*cutsceneBaseAddress + 0x12);
 
-            // Make all cutscenes skippable (except Lesson Outros) TODO: look into NOCLIP to make it better
+            // Make all cutscenes skippable (except Lesson Outros) TODO: look into N0CUT5 to make it better
             Memory.Instance.SafeWrite(ptr, new byte[]
             { 0x81, 0xFF, 0xFF, 0x76, 0xBF, 0xB7, 0xEF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
                 0xFF, 0xFF, 0xFF, 0xFF, 0x77, 0xFF, 0xFF, 0xDF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
@@ -318,7 +318,7 @@ public class Game
         if(value != 1 || value != 2 || value != 3 || value !=4)
         {
             Level.ResetLevels();
-            Mod.LHP_Archipelago!.UpdateLocationsChecked();
+            Mod.LHP2_Archipelago!.UpdateLocationsChecked();
         }
     }
 
@@ -344,7 +344,7 @@ public class Game
             Mod.GameInstance!.PrevInShop = true;
             Console.WriteLine("Shop opened");
             Level.ResetLevels();
-            Mod.LHP_Archipelago!.UpdateItemsReceived();
+            Mod.LHP2_Archipelago!.UpdateItemsReceived();
         }
         else if(!bit0Set && Mod.GameInstance!.PrevInShop)
         {
@@ -353,19 +353,19 @@ public class Game
             if (Mod.GameInstance!.LevelID == 1 || Mod.GameInstance!.LevelID == 2 || Mod.GameInstance!.LevelID == 3 || Mod.GameInstance!.LevelID == 4)
             {
                 Level.ResetLevels();
-                Mod.LHP_Archipelago!.UpdateLocationsChecked();
+                Mod.LHP2_Archipelago!.UpdateLocationsChecked();
             }
         }
     }
 
     private static void CheckAndReportLocation(int apID)
     {
-        if (Mod.LHP_Archipelago!.IsLocationChecked(apID))
+        if (Mod.LHP2_Archipelago!.IsLocationChecked(apID))
         {
             Console.WriteLine($"Location for AP ID: {apID} already checked");
             return;
         }
         Console.WriteLine($"Checking location for AP ID: {apID}");
-        Mod.LHP_Archipelago!.CheckLocation(apID);
+        Mod.LHP2_Archipelago!.CheckLocation(apID);
     }
 }

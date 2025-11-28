@@ -1,8 +1,8 @@
 ﻿using Reloaded.Mod.Interfaces;
 using IReloadedHooks = Reloaded.Hooks.ReloadedII.Interfaces.IReloadedHooks;
-using LHP_Archi_Mod.Configuration;
+using LHP2_Archi_Mod.Configuration;
 
-namespace LHP_Archi_Mod.Template;
+namespace LHP2_Archi_Mod.Template;
 
 /// <summary>
 /// Represents information passed in from the mod loader template to the implementing mod.

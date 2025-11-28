@@ -6,10 +6,10 @@
 using Reloaded.Hooks.ReloadedII.Interfaces;
 using Reloaded.Mod.Interfaces;
 using Reloaded.Mod.Interfaces.Internal;
-using LHP_Archi_Mod.Template.Configuration;
-using LHP_Archi_Mod.Configuration;
+using LHP2_Archi_Mod.Template.Configuration;
+using LHP2_Archi_Mod.Configuration;
 
-namespace LHP_Archi_Mod.Template;
+namespace LHP2_Archi_Mod.Template;
 
 public class Startup : IMod
 {
