@@ -36,13 +36,6 @@ public class Mod : ModBase // <= Do not Remove.
         Debugger.Launch();
 #endif
 
-        // For more information about this template, please see
-        // https://reloaded-project.github.io/Reloaded-II/ModTemplate/
-
-        // If you want to implement e.g. unload support in your mod,
-        // and some other neat features, override the methods in ModBase.
-
-        // TODO: Implement some mod logic
         GameInstance = new Game();
         Levels = new Level();
         BaseAddress = (nuint)Process.GetCurrentProcess().MainModule!.BaseAddress;
@@ -71,13 +64,11 @@ public class Mod : ModBase // <= Do not Remove.
     #region Standard Overrides
     public override void ConfigurationUpdated(Config configuration)
     {
-        // Apply settings from configuration.
-        // ... your code here.
         Configuration = configuration;
         _logger.WriteLine($"[{_modConfig.ModId}] Config Updated: Applying");
     }
 
-    public static void InitOnConnect()
+    public static void InitOnMenu()
     {
         GameInstance?.ModifyInstructions();
         if (Mod._hooks != null)

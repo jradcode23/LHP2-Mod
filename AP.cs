@@ -87,7 +87,6 @@ public class LHP2_Archipelago
             _loginSuccessful = (LoginSuccessful)result;
             //SlotData = new SlotData(_loginSuccessful.SlotData);
             new Thread(RunCheckLocationsFromList).Start();
-            Mod.InitOnConnect();
             //resync here
             return true;
         }

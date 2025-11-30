@@ -22,18 +22,44 @@ public class Game
     public const int TrueWizardOffset = 675;
     public const int startingItem = 450;
     public const int TotalItems = 700;
-
     public static void GameLoaded()
     {
-        Console.WriteLine("Checking to see if save file is loaded");
-        while (!PlayerControllable())
+        Console.WriteLine("Checking to see if game is loaded");
+        int rewriteNumber = 0;
+        while(!MenuLoaded())
         {
-            System.Threading.Thread.Sleep(2000);
-            Console.WriteLine("Waiting for save file to load");
+            if (rewriteNumber % 10 == 0)
+                Console.WriteLine("Waiting for menu to load");
+            rewriteNumber++;
+            System.Threading.Thread.Sleep(500);
+
         }
-        Console.WriteLine("Save File loaded!");
+        Console.WriteLine("Menu loaded");
+        Mod.InitOnMenu();
     }
 
+    public static unsafe bool MenuLoaded()
+    {
+        try
+        {
+            byte** basePtr = (byte**)(Mod.BaseAddress + 0xC4ED1C);
+            if (basePtr == null || *basePtr == null)
+                return false;
+
+            byte* finalPtr = (byte*)(*basePtr + 0x190);
+            if (finalPtr == null)
+                return false;
+
+            return *finalPtr != 0;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in checking if menu is loaded: {ex.Message}");
+            return false;
+        }
+    }
+
+    // Currently unused, but leaving in for future items that are instant benefit/detriment and not collectables
     public static unsafe bool PlayerControllable()
     {
         try
@@ -55,6 +81,17 @@ public class Game
         }
     }
 
+    public static void writeN0CUT5Flag()
+    {
+        unsafe
+        {
+            int* cutsceneBaseAddress = (int*)(Mod.BaseAddress + 0xB06F2C);
+            nuint ptr = (nuint)(*cutsceneBaseAddress + 0xA4);
+
+            // Write N0CUT5 flag to game
+            Memory.Instance.Write(ptr, (byte) 0x01 );
+        }
+    }
     public void ModifyInstructions()
     {
         unsafe
@@ -64,16 +101,7 @@ public class Game
             Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
             Mod.GameInstance!.PrevMapID = Mod.GameInstance!.MapID;
             Console.WriteLine($"Initial Level ID: {Mod.GameInstance!.LevelID}, Map ID: {Mod.GameInstance!.MapID}");
-            Level.MakeAllBoardsVisible();
-            //TODO: Look into having shop open when you first load in
-            int* cutsceneBaseAddress = (int*)(Mod.BaseAddress + 0xC5D5F4);
-            nuint ptr = (nuint)(*cutsceneBaseAddress + 0x12);
-
-            // Make all cutscenes skippable (except Lesson Outros) TODO: look into N0CUT5 to make it better
-            Memory.Instance.SafeWrite(ptr, new byte[]
-            { 0x81, 0xFF, 0xFF, 0x76, 0xBF, 0xB7, 0xEF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-                0xFF, 0xFF, 0xFF, 0xFF, 0x77, 0xFF, 0xFF, 0xDF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x1F});
+            writeN0CUT5Flag();
 
             // NOP GB Corrector #1
             Memory.Instance.SafeWrite(Mod.BaseAddress + 0x332694, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
@@ -314,8 +342,9 @@ public class Game
         Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
         Mod.GameInstance!.LevelID = value;
         Console.WriteLine($"Level ID updated to {value}.");
+
         // Game enters a level before thinking you are out of shop, resetting level here in those cases to make sure House Crests load in properly
-        if(value != 1 || value != 2 || value != 3 || value !=4)
+        if(value <= 1 && value >= 4)
         {
             Level.ResetLevels();
             Mod.LHP2_Archipelago!.UpdateLocationsChecked();
@@ -330,6 +359,10 @@ public class Game
         Mod.GameInstance!.PrevMapID = Mod.GameInstance!.MapID;
         Mod.GameInstance!.MapID = value;
         Console.WriteLine($"Map ID updated to {value}.");
+        if(value == 386 || value == 380 || value == 374 || value == 368) // TODO: break out into own function once more map based logic is needed
+        {
+            Level.MakeAllBoardsVisible();
+        }
     }
 
     [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.eax }, 
@@ -350,7 +383,9 @@ public class Game
         {
             Mod.GameInstance!.PrevInShop = false;
             Console.WriteLine("Shop closed");
-            if (Mod.GameInstance!.LevelID == 1 || Mod.GameInstance!.LevelID == 2 || Mod.GameInstance!.LevelID == 3 || Mod.GameInstance!.LevelID == 4)
+
+            // Game enters a level before thinking you are out of shop, so if we stay in hub, resetting levels here
+            if (Mod.GameInstance!.LevelID >= 1 && Mod.GameInstance!.LevelID <= 4)
             {
                 Level.ResetLevels();
                 Mod.LHP2_Archipelago!.UpdateLocationsChecked();
