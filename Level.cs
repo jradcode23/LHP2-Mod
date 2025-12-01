@@ -91,36 +91,60 @@ public class Level
     public static unsafe void UnlockLevel(LevelData level)
     {
         byte* ptr = levelBaseAddress + (ushort)level;
+        if (ptr == null || levelBaseAddress == null) 
+        {
+            Console.WriteLine($"Can't Unlock Level, null pointer at 0x{(nuint)ptr:X}");
+        } 
         *ptr |= (byte)(BitMask.StoryUnlocked | BitMask.FreeplayUnlocked);
     }
 
     public static unsafe void UnlockGryffindorCrest(LevelData level)
     {
         byte* ptr = levelBaseAddress + (ushort)level;
+        if (ptr == null || levelBaseAddress == null) 
+        {
+            Console.WriteLine($"Can't Unlock GC, null pointer at 0x{(nuint)ptr:X}");
+        } 
         *ptr |= (byte)(BitMask.GryfCrest);
     }
 
     public static unsafe void UnlockSlytherinCrest(LevelData level)
     {
         byte* ptr = levelBaseAddress + (ushort)level;
+        if (ptr == null || levelBaseAddress == null) 
+        {
+            Console.WriteLine($"Can't Unlock SC, null pointer at 0x{(nuint)ptr:X}");
+        } 
         *ptr |= (byte)(BitMask.SlythCrest);
     }
 
     public static unsafe void UnlockRavenclawCrest(LevelData level)
     {
         byte* ptr = levelBaseAddress + (ushort)level;
+        if (ptr == null || levelBaseAddress == null) 
+        {
+            Console.WriteLine($"Can't Unlock RC, null pointer at 0x{(nuint)ptr:X}");
+        } 
         *ptr |= (byte)(BitMask.RavenCrest);
     }
 
     public static unsafe void UnlockHufflepuffCrest(LevelData level)
     {
         byte* ptr = levelBaseAddress + (ushort)level;
+        if (ptr == null || levelBaseAddress == null) 
+        {
+            Console.WriteLine($"Can't Unlock HC, null pointer at 0x{(nuint)ptr:X}");
+        } 
         *ptr |= (byte)(BitMask.HuffleCrest);
     }
 
     public static unsafe void UnlockStudentInPeril(LevelData level)
     {
         byte* ptr = levelBaseAddress + (ushort)level;
+        if (ptr == null || levelBaseAddress == null) 
+        {
+            Console.WriteLine($"Can't Unlock SIP, null pointer at 0x{(nuint)ptr:X}");
+        } 
         *ptr |= (byte)(BitMask.StudentInPeril);
     }
 
@@ -128,6 +152,10 @@ public class Level
     {
         byte* story = levelBaseAddress + (ushort)level - 6;
         byte* freeplay = story + 1;
+        if (story == null || freeplay == null || levelBaseAddress == null) 
+        {
+            Console.WriteLine($"Can't Unlock TW, null pointer at 0x{(nuint)story:X}");
+        } 
         *story = 1;
         *freeplay = 1;
     }

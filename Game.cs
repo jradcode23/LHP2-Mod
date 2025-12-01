@@ -108,14 +108,15 @@ public class Game
             Memory.Instance.SafeWrite(Mod.BaseAddress + 0x332694, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
             // NOP GB Corrector #2
             Memory.Instance.SafeWrite(Mod.BaseAddress + 0x42EB8B, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
-            //// NOP GB Corrector #3 (crashes game?)
+            //// NOP GB Corrector #3 (crashes game? - only used when GB >200 so not end of world)
             //Memory.Instance.SafeWrite(Mod.BaseAddress + 0x42EB90, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+            // TODO: One of these 3 crashes Dark Times upon completion if you don't leave to level first. Initial guess is next story level
             // Unlock Current Level Story
-            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B817E, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+            // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B817E, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
             // Unlock Current Level Freeplay
-            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B8165, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+            // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B8165, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
             //NOP Unlock Next Story Level
-            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B809C, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+            // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B809C, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
         }
     }
 
@@ -202,7 +203,7 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(completeLevelHook, (int)(Mod.BaseAddress + 0x4B80CB), AsmHookBehaviour.ExecuteFirst).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(completeLevelHook, (int)(Mod.BaseAddress + 0x4B80CB), AsmHookBehaviour.ExecuteAfter).Activate());
 
         string[] completeLevelSIPHook =
         {
@@ -225,7 +226,7 @@ public class Game
             "popad",
             "popfd",
         };
-         _asmHooks.Add(hooks.CreateAsmHook(completeTrueWizardHook, (int)(Mod.BaseAddress + 0x5B2A83), AsmHookBehaviour.ExecuteFirst).Activate());
+         _asmHooks.Add(hooks.CreateAsmHook(completeTrueWizardHook, (int)(Mod.BaseAddress + 0x5B2A83), AsmHookBehaviour.ExecuteAfter).Activate());
 
         string[] completeHogwartsCrestHook =
         {
@@ -236,7 +237,7 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(completeHogwartsCrestHook, (int)(Mod.BaseAddress + 0x16C0A), AsmHookBehaviour.ExecuteFirst).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(completeHogwartsCrestHook, (int)(Mod.BaseAddress + 0x16C0A), AsmHookBehaviour.ExecuteAfter).Activate());
 
         string[] updateLevelHook =
         {
@@ -294,7 +295,7 @@ public class Game
         _asmHooks.Add(hooks.CreateAsmHook(CloseMenuHook, (int)(Mod.BaseAddress + 0x218347), AsmHookBehaviour.ExecuteAfter).Activate());
     }
 
-    [Function(CallingConventions.Cdecl)]
+     [Function(CallingConventions.Fastcall)]
     public delegate void LevelComplete();
 
     private static void OnLevelComplete()
