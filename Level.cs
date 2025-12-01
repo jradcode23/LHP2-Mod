@@ -147,7 +147,7 @@ public class Level
 
     public static void MakeAllBoardsVisible()
     {
-        UnlockLevel(LevelData.DarkTimes); 
+        // UnlockLevel(LevelData.DarkTimes); 
         UnlockLevel(LevelData.OutOfRetirement);
         UnlockLevel(LevelData.TheSevenHarrys);
         UnlockLevel(LevelData.TheThiefsDownfall);
