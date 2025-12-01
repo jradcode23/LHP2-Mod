@@ -152,4 +152,26 @@ public class Level
         UnlockLevel(LevelData.TheSevenHarrys);
         UnlockLevel(LevelData.TheThiefsDownfall);
     }
+
+    //TODO: Brainstorm how to not have this run on every map change. 
+    public static void ImplementMapLogic(int map)
+    {
+        switch (map)
+        {
+            case 368:
+            case 374:
+            case 380:
+            case 386:
+                Level.ResetLevels();
+                Mod.LHP2_Archipelago!.UpdateLocationsChecked();
+                MakeAllBoardsVisible();
+                break;
+            case 402:
+                break;
+            default:
+                Level.ResetLevels();
+                Mod.LHP2_Archipelago!.UpdateLocationsChecked();
+                break;
+        }
+    }
 }

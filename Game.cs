@@ -13,6 +13,7 @@ public class Game
     public int PrevMapID { get; private set; } = -1;
     public int MapID { get; private set; } = -1;
     public bool PrevInShop { get; private set; } = false;
+    public bool PrevInMenu { get; private set; } = false;
     public const int levelOffset = 450;
     public const int SIPOffset = 475;
     public const int GryfCrestOffset = 550;
@@ -186,6 +187,8 @@ public class Game
     private static IReverseWrapper<UpdateLevel> _reverseWrapOnLevelUpdate = default!;
     private static IReverseWrapper<UpdateMap> _reverseWrapOnMapUpdate = default!;
     private static IReverseWrapper<OpenCloseShop> _reverseWrapOnShopUpdate = default!;
+    private static IReverseWrapper<OpenMenu> _reverseWrapOnOpenMenu = default!;
+    private static IReverseWrapper<CloseMenu> _reverseWrapOnCloseMenu = default!;
 
 
     public void SetupHooks(IReloadedHooks hooks)
@@ -267,6 +270,28 @@ public class Game
             "popfd",
         };
         _asmHooks.Add(hooks.CreateAsmHook(openCloseShopHook, (int)(Mod.BaseAddress + 0x417074), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] OpenMenuHook =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(onOpenMenu, out _reverseWrapOnOpenMenu)}",
+            "popad",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(OpenMenuHook, (int)(Mod.BaseAddress + 0x212145), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] CloseMenuHook =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(onCloseMenu, out _reverseWrapOnCloseMenu)}",
+            "popad",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(CloseMenuHook, (int)(Mod.BaseAddress + 0x218347), AsmHookBehaviour.ExecuteAfter).Activate());
     }
 
     [Function(CallingConventions.Cdecl)]
@@ -342,13 +367,6 @@ public class Game
         Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
         Mod.GameInstance!.LevelID = value;
         Console.WriteLine($"Level ID updated to {value}.");
-
-        // Game enters a level before thinking you are out of shop, resetting level here in those cases to make sure House Crests load in properly
-        if(value <= 1 && value >= 4)
-        {
-            Level.ResetLevels();
-            Mod.LHP2_Archipelago!.UpdateLocationsChecked();
-        }
     }
 
     [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.ecx }, 
@@ -359,10 +377,7 @@ public class Game
         Mod.GameInstance!.PrevMapID = Mod.GameInstance!.MapID;
         Mod.GameInstance!.MapID = value;
         Console.WriteLine($"Map ID updated to {value}.");
-        if(value == 386 || value == 380 || value == 374 || value == 368) // TODO: break out into own function once more map based logic is needed
-        {
-            Level.MakeAllBoardsVisible();
-        }
+        Level.ImplementMapLogic(value);
     }
 
     [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.eax }, 
@@ -375,14 +390,14 @@ public class Game
         if(bit0Set)
         {
             Mod.GameInstance!.PrevInShop = true;
-            Console.WriteLine("Shop opened");
+            Console.WriteLine("Shop Opened");
             Level.ResetLevels();
             Mod.LHP2_Archipelago!.UpdateItemsReceived();
         }
         else if(!bit0Set && Mod.GameInstance!.PrevInShop)
         {
             Mod.GameInstance!.PrevInShop = false;
-            Console.WriteLine("Shop closed");
+            Console.WriteLine("Shop Closed");
 
             // Game enters a level before thinking you are out of shop, so if we stay in hub, resetting levels here
             if (Mod.GameInstance!.LevelID >= 1 && Mod.GameInstance!.LevelID <= 4)
@@ -391,6 +406,43 @@ public class Game
                 Mod.LHP2_Archipelago!.UpdateLocationsChecked();
             }
         }
+    }
+
+    // Picking up a collectable in hub triggers menu? edi was always 2 when pausing and EBP was always 6 when pausing.
+    [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.edi }, 
+    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void OpenMenu(int edi);
+    private static void onOpenMenu(int edi)
+    {
+        if(edi != 2)
+        {
+            return;
+        }
+        // Take into account that menu opens when selecting freeplay/story. Additionally, ignore if not in hub
+        if(Mod.GameInstance!.PrevInShop == true || Mod.GameInstance!.LevelID < 1 || Mod.GameInstance!.LevelID > 4)
+        {
+            return;
+        }
+        Console.WriteLine("Menu Opened");
+        Mod.GameInstance!.PrevInMenu = true;
+        Level.ResetLevels();
+        Mod.LHP2_Archipelago!.UpdateItemsReceived();
+    }
+
+    [Function(CallingConventions.Fastcall)]
+    public delegate void CloseMenu();
+    private static void onCloseMenu()
+    {
+        // Take into account that this code runs multiple times. Additionally, ignore if not in hub
+        if(!Mod.GameInstance!.PrevInMenu || Mod.GameInstance!.LevelID < 1 || Mod.GameInstance!.LevelID > 4)
+        {
+            return;
+        }
+        Mod.GameInstance!.PrevInMenu = false;
+        Console.WriteLine("Menu Closed");
+        Level.ResetLevels();
+        Mod.LHP2_Archipelago!.UpdateLocationsChecked();
+
     }
 
     private static void CheckAndReportLocation(int apID)
