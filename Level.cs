@@ -181,28 +181,21 @@ public class Level
         UnlockLevel(LevelData.TheThiefsDownfall);
     }
 
-    //TODO: Brainstorm how to not have this run on every map change. 
+    //TODO: Update for shop putchase logic - i.e. receive purchase before completing location
     public static void ImplementMapLogic(int map)
     {
         switch (map)
         {
+            // Leaky Cauldron
             case 368:
             case 374:
             case 380:
             case 386:
-                Level.ResetLevels();
-                Character.ResetTokens();
-                Character.ResetUnlocks();
-                Mod.LHP2_Archipelago!.UpdateLocationsChecked();
                 MakeAllBoardsVisible();
                 break;
             case 402:
                 break;
             default:
-                Level.ResetLevels();
-                Character.ResetTokens();
-                Character.ResetUnlocks();
-                Mod.LHP2_Archipelago!.UpdateLocationsChecked();
                 break;
         }
     }

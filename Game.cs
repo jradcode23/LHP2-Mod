@@ -3,6 +3,7 @@ using Reloaded.Memory.Interfaces;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Hooks.Definitions.Enums;
 using Reloaded.Hooks.Definitions.X86;
+using System.Resources;
 
 namespace LHP2_Archi_Mod;
 
@@ -37,7 +38,17 @@ public class Game
 
         }
         Console.WriteLine("Menu loaded");
+        rewriteNumber =0;
         Mod.InitOnMenu();
+        while(!PlayerControllable())
+        {
+            if (rewriteNumber % 10 == 0)
+                Console.WriteLine("Waiting for game to be loaded");
+            rewriteNumber++;
+            System.Threading.Thread.Sleep(500);
+
+        }
+        ResetToLocations(Mod.GameInstance!.MapID);
     }
 
     public static unsafe bool MenuLoaded()
@@ -383,37 +394,40 @@ public class Game
         Mod.GameInstance!.PrevMapID = Mod.GameInstance!.MapID;
         Mod.GameInstance!.MapID = value;
         Console.WriteLine($"Map ID updated to {value}.");
-        Level.ImplementMapLogic(value);
+        ResetToLocations(value);
     }
 
-    [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.eax }, 
+    [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.eax, FunctionAttribute.Register.esp}, 
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
-    public delegate void OpenCloseShop(int eax);
-    private static void onShopChange(int eax)
+    public delegate void OpenCloseShop(int eax, int esp);
+    private static void onShopChange(int eax, int esp)
     {
-        bool bit0Set = (eax & 1) != 0;
+        bool eaxBit0Set = (eax & 1) != 0;
+        int lastNibble = esp & 0xF;
+        Console.WriteLine($"Last Nibble: {lastNibble}");
 
-        if(bit0Set)
+        //TODO: Test in different years
+        if(eaxBit0Set && lastNibble == 0x08)
+        {
+            Mod.GameInstance!.PrevInShop = true;
+            Console.WriteLine("Level Selector Opened");
+            ResetToItems(Mod.GameInstance!.MapID);
+        }
+        if(eaxBit0Set && lastNibble == 0x0C)
         {
             Mod.GameInstance!.PrevInShop = true;
             Console.WriteLine("Shop Opened");
-            Level.ResetLevels();
-            Character.ResetTokens();
-            Character.ResetUnlocks();
-            Mod.LHP2_Archipelago!.UpdateItemsReceived();
+            ResetToItems(Mod.GameInstance!.MapID);
         }
-        else if(!bit0Set && Mod.GameInstance!.PrevInShop)
+        else if(!eaxBit0Set && Mod.GameInstance!.PrevInShop)
         {
             Mod.GameInstance!.PrevInShop = false;
-            Console.WriteLine("Shop Closed");
+            Console.WriteLine("Shop or Level Selector Closed");
 
             // Game enters a level before thinking you are out of shop, so if we stay in hub, resetting levels here
             if (Mod.GameInstance!.LevelID >= 1 && Mod.GameInstance!.LevelID <= 4)
             {
-                Level.ResetLevels();
-                Character.ResetTokens();
-                Character.ResetUnlocks();
-                Mod.LHP2_Archipelago!.UpdateLocationsChecked();
+                ResetToLocations(Mod.GameInstance!.MapID);
             }
         }
     }
@@ -435,10 +449,7 @@ public class Game
         }
         Console.WriteLine("Menu Opened");
         Mod.GameInstance!.PrevInMenu = true;
-        Level.ResetLevels();
-        Character.ResetTokens();
-        Character.ResetUnlocks();
-        Mod.LHP2_Archipelago!.UpdateItemsReceived();
+        ResetToItems(Mod.GameInstance!.MapID);
     }
 
     [Function(CallingConventions.Fastcall)]
@@ -452,12 +463,25 @@ public class Game
         }
         Mod.GameInstance!.PrevInMenu = false;
         Console.WriteLine("Menu Closed");
-        //TODO: Make this its own function instead of calling it multiple times
+        ResetToLocations(Mod.GameInstance!.MapID);
+    }
+
+    private static void ResetToItems(int mapID)
+    {
+        Level.ResetLevels();
+        Character.ResetTokens();
+        Character.ResetUnlocks();
+        Mod.LHP2_Archipelago!.UpdateItemsReceived();
+        Level.ImplementMapLogic(mapID);
+    }
+
+    private static void ResetToLocations(int mapID)
+    {
         Level.ResetLevels();
         Character.ResetTokens();
         Character.ResetUnlocks();
         Mod.LHP2_Archipelago!.UpdateLocationsChecked();
-
+        Level.ImplementMapLogic(mapID);
     }
 
     private static void CheckAndReportLocation(int apID)
