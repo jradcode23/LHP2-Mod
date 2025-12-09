@@ -192,6 +192,7 @@ public class Level
             case 386:
                 Level.ResetLevels();
                 Character.ResetTokens();
+                Character.ResetUnlocks();
                 Mod.LHP2_Archipelago!.UpdateLocationsChecked();
                 MakeAllBoardsVisible();
                 break;
@@ -200,6 +201,7 @@ public class Level
             default:
                 Level.ResetLevels();
                 Character.ResetTokens();
+                Character.ResetUnlocks();
                 Mod.LHP2_Archipelago!.UpdateLocationsChecked();
                 break;
         }

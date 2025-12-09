@@ -133,11 +133,11 @@ public class Game
         switch(ItemID)
         {
                 case < 213:
-                    Console.WriteLine($"Unknown item received: {ItemID}");
+                    Character.UnlockCharacter(ItemID);
                     break;
                 case < 426:
                     int token = ItemID - tokenOffset;
-                    Character.UnlockCharacterPurchase(token);
+                    Character.UnlockToken(token);
                     break;
                 case < 475: // Levels
                     level = Level.ConvertIDToLeveData(ItemID - levelOffset);
@@ -399,6 +399,7 @@ public class Game
             Console.WriteLine("Shop Opened");
             Level.ResetLevels();
             Character.ResetTokens();
+            Character.ResetUnlocks();
             Mod.LHP2_Archipelago!.UpdateItemsReceived();
         }
         else if(!bit0Set && Mod.GameInstance!.PrevInShop)
@@ -411,6 +412,7 @@ public class Game
             {
                 Level.ResetLevels();
                 Character.ResetTokens();
+                Character.ResetUnlocks();
                 Mod.LHP2_Archipelago!.UpdateLocationsChecked();
             }
         }
@@ -435,6 +437,7 @@ public class Game
         Mod.GameInstance!.PrevInMenu = true;
         Level.ResetLevels();
         Character.ResetTokens();
+        Character.ResetUnlocks();
         Mod.LHP2_Archipelago!.UpdateItemsReceived();
     }
 
@@ -452,6 +455,7 @@ public class Game
         //TODO: Make this its own function instead of calling it multiple times
         Level.ResetLevels();
         Character.ResetTokens();
+        Character.ResetUnlocks();
         Mod.LHP2_Archipelago!.UpdateLocationsChecked();
 
     }
