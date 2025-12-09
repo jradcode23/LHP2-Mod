@@ -13,7 +13,64 @@ public class Character
         {2, 0x45}, // Hagrid Wedding
         {3, 0xA2}, // Professor Flitwick
         {4, 0xA5}, // Madam Malkin
-        {5, 0xA7}, // Dobby Token
+        {5, 0xA7}, // Dobby
+        {6, 0xA9}, // Kreacher
+        {7, 0xAA}, // Tom Riddle Orphanage
+        {8, 0xAB}, // Bogrod
+        {9, 0xAD}, // Mundungus Fletcher
+        {10, 0xAF}, // Griphook
+        {11, 0xB4}, // Professor McGonagall
+        {12, 0xB5}, // Madam Irma Pince
+        {13, 0xB6}, // Professor Sprout
+        {14, 0xB8}, // Madam Pomfrey
+        {15, 0xB9}, // Professor Trelawny
+        {16, 0xBB}, // Madam Rosmerta
+        {17, 0xBC}, // Fat Friar
+        {18, 0xBD}, // The Grey Lady
+        {19, 0xBF}, // Fat Lady
+        {20, 0xC2}, // Hermione (Ball Gown)
+        {21, 0xC4}, // Bellatrix Lestrange
+        {22, 0xC5}, // Emmeline Vance
+        {23, 0xC6}, // Narcissa Malfoy
+        {24, 0xC7}, // McGonagall (Pyjamas)
+        {25, 0xCB}, // Mary Cattermole
+        {26, 0xCE}, // McGonagall (Black)
+        {27, 0xCF}, // Hermione (Gringotts)
+        {28, 0xD1}, // Professor Grubbly-Plank
+        {29, 0xD2}, // Bellatrix (Azkaban)
+        {30, 0xD4}, // Death Eater
+        {31, 0xD5}, // Dudley (Grey Top)
+        {32, 0xD6}, // Professory Dumbledore
+        {33, 0xD7}, // Harry Potter
+        {34, 0xD8}, // Hermione Granger
+        {35, 0xD9}, // Argus Filch
+        {36, 0xDD}, // Madam Hooch
+        {37, 0xDE}, // Vincent Crabbe
+        {38, 0xDF}, // Gregory Goyle
+        {39, 0xE8}, // Ginny Weasley
+        {40, 0xE9}, // Arthur Weasley
+        {41, 0xEA}, // Katie Bell
+        {42, 0xEB}, // Lily Potter
+        {43, 0xED}, // The Bloody Baron
+        {44, 0xEE}, // Cornelius Fudge
+        {45, 0xEF}, // Justin Finch-Fletchley
+        {46, 0xF1}, // Cho Chang
+        {47, 0xF2}, // Dean Thomas
+        {48, 0xF7}, // Draco Malfoy
+        {49, 0xFA}, // Lucius Malfoy
+        {50, 0xFB}, // Draco (Suit)
+        {51, 0xFC}, // Custom A
+        {52, 0xFD}, // Custom B
+        {53, 0xFE}, // Custom C
+        {54, 0xFF}, // Custom D
+        {55, 0x100}, // Custom E
+        {56, 0x101}, // Custom G
+        {57, 0x102}, // Custom H
+        {58, 0x103}, // Custom I
+        {59, 0x104}, // Custom J
+        {60, 0x10A}, // Harry (Pyjamas)
+
+
 
         {189, 0x246}, // Mrs. Black
 
