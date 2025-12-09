@@ -175,7 +175,7 @@ public class Level
 
     public static void MakeAllBoardsVisible()
     {
-        // UnlockLevel(LevelData.DarkTimes); 
+        UnlockLevel(LevelData.DarkTimes); 
         UnlockLevel(LevelData.OutOfRetirement);
         UnlockLevel(LevelData.TheSevenHarrys);
         UnlockLevel(LevelData.TheThiefsDownfall);
@@ -191,6 +191,7 @@ public class Level
             case 380:
             case 386:
                 Level.ResetLevels();
+                Character.ResetTokens();
                 Mod.LHP2_Archipelago!.UpdateLocationsChecked();
                 MakeAllBoardsVisible();
                 break;
@@ -198,6 +199,7 @@ public class Level
                 break;
             default:
                 Level.ResetLevels();
+                Character.ResetTokens();
                 Mod.LHP2_Archipelago!.UpdateLocationsChecked();
                 break;
         }

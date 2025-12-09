@@ -14,6 +14,7 @@ public class Game
     public int MapID { get; private set; } = -1;
     public bool PrevInShop { get; private set; } = false;
     public bool PrevInMenu { get; private set; } = false;
+    public const int tokenOffset = 213;
     public const int levelOffset = 450;
     public const int SIPOffset = 475;
     public const int GryfCrestOffset = 550;
@@ -110,11 +111,11 @@ public class Game
             Memory.Instance.SafeWrite(Mod.BaseAddress + 0x42EB8B, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
             //// NOP GB Corrector #3 (crashes game? - only used when GB >200 so not end of world)
             //Memory.Instance.SafeWrite(Mod.BaseAddress + 0x42EB90, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
-            // TODO: One of these 3 crashes Dark Times upon completion if you don't leave to level first. Initial guess is next story level
+
             // Unlock Current Level Story
-            // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B817E, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B817E, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
             // Unlock Current Level Freeplay
-            // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B8165, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B8165, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
             //NOP Unlock Next Story Level
             // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B809C, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
         }
@@ -131,8 +132,12 @@ public class Game
 
         switch(ItemID)
         {
-                case < 450:
+                case < 213:
                     Console.WriteLine($"Unknown item received: {ItemID}");
+                    break;
+                case < 426:
+                    int token = ItemID - tokenOffset;
+                    Character.UnlockCharacterPurchase(token);
                     break;
                 case < 475: // Levels
                     level = Level.ConvertIDToLeveData(ItemID - levelOffset);
@@ -393,6 +398,7 @@ public class Game
             Mod.GameInstance!.PrevInShop = true;
             Console.WriteLine("Shop Opened");
             Level.ResetLevels();
+            Character.ResetTokens();
             Mod.LHP2_Archipelago!.UpdateItemsReceived();
         }
         else if(!bit0Set && Mod.GameInstance!.PrevInShop)
@@ -404,6 +410,7 @@ public class Game
             if (Mod.GameInstance!.LevelID >= 1 && Mod.GameInstance!.LevelID <= 4)
             {
                 Level.ResetLevels();
+                Character.ResetTokens();
                 Mod.LHP2_Archipelago!.UpdateLocationsChecked();
             }
         }
@@ -427,6 +434,7 @@ public class Game
         Console.WriteLine("Menu Opened");
         Mod.GameInstance!.PrevInMenu = true;
         Level.ResetLevels();
+        Character.ResetTokens();
         Mod.LHP2_Archipelago!.UpdateItemsReceived();
     }
 
@@ -441,7 +449,9 @@ public class Game
         }
         Mod.GameInstance!.PrevInMenu = false;
         Console.WriteLine("Menu Closed");
+        //TODO: Make this its own function instead of calling it multiple times
         Level.ResetLevels();
+        Character.ResetTokens();
         Mod.LHP2_Archipelago!.UpdateLocationsChecked();
 
     }
