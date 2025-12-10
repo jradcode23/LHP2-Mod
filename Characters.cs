@@ -69,8 +69,43 @@ public class Character
         {58, 0x103}, // Custom I
         {59, 0x104}, // Custom J
         {60, 0x10A}, // Harry (Pyjamas)
-
-
+        {61, 0x10F}, // Moaning Myrtle
+        {62, 0x11C}, // James Potter (Ghost)
+        {63, 0x120}, // Mad-Eye Moody
+        {64, 0x121}, // Hannah Abbot
+        {65, 0x122}, // Custom F
+        {66, 0x127}, // Kingsley Shacklebolt
+        {67, 0x128}, // Aberforth Dumbledore
+        {68, 0x129}, // Albert Runcorn
+        {69, 0x12A}, // Alecto Carrow
+        {70, 0x12B}, // Amycus Carrow
+        {71, 0x12C}, // Anthony Goldstein
+        {72, 0x12D}, // Bathilda (Snake)
+        {73, 0x12E}, // Blaise Zabini
+        {74, 0x12F}, // Charity Burbage
+        {75, 0x130}, // Charlie Weasley
+        {76, 0x131}, // Cormac McLaggen
+        {77, 0x132}, // Dedalus Diggle
+        {78, 0x133}, // Dirk Cresswell
+        {79, 0x134}, // Antonin Dolohov
+        {80, 0x135}, // Dragomir Despard
+        {81, 0x136}, // Elphias Doge
+        {82, 0x137}, // Fenrir Greyback
+        {83, 0x138}, // Grindelwald (Young)
+        {84, 0x189}, // Grindelwald (Old)
+        {85, 0x18B}, // Gregorovitch
+        {86, 0x13D}, // Hestia Jones
+        {87, 0x13E}, // Professor Slughorn
+        {88, 0x13F}, // James Potter (Young)
+        {89, 0x140}, // Lavender Brown
+        {90, 0x142}, // Mafalda Hopkirk
+        {91, 0x143}, // Marcus Belby
+        {92, 0x14A}, // Luna (Purple Coat)
+        {93, 0x14B}, // Hermione (Grey Coat)
+        {94, 0x14C}, // Harry (Godric's Hollow)
+        {95, 0x14D}, // Professor Umbridge
+        {96, 0x14E}, // Fred Weasley
+        {97, 0x14F}, // George Weasley
 
         {189, 0x246}, // Mrs. Black
 
