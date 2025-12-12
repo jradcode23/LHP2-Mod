@@ -106,9 +106,120 @@ public class Character
         {95, 0x14D}, // Professor Umbridge
         {96, 0x14E}, // Fred Weasley
         {97, 0x14F}, // George Weasley
-
+        {98, 0x150}, // Molly (Apron)
+        {99, 0x151}, // Crabbe (Jumper)
+        {100, 0x152}, // Draco (Sweater)
+        {101, 0x158}, // Goyle (Jumper)
+        {102, 0x162}, // Milk Man
+        {103, 0x165}, // SLytherin Twin #2
+        {104, 0x167}, // Hermione (Mafalda)
+        {105, 0x168}, // Ministry Guard
+        {106, 0x169}, // Harry (Winter)
+        {107, 0x16B}, // Arthur (Torn Suit)
+        {108, 0x16C}, // Fred (Winter)
+        {109, 0x16D}, // Cho (Winter)
+        {110, 0x16E}, // George (Winter)
+        {111, 0x16F}, // Hermione (Scarf)
+        {112, 0x173}, // Luna (Blue Jumper)
+        {113, 0x174}, // Fred (Owls)
+        {114, 0x176}, // Fred (Pyjamas)
+        {115, 0x177}, // George (Owls)
+        {116, 0x178}, // George (Pyjamas)
+        {117, 0x17A}, // Hermione (Jumper)
+        {118, 0x17C}, // Fudge (Wizengamot)
+        {119, 0x17D}, // Dudley Dursley
+        {120, 0x17E}, // Dudley's Gang Member
+        {121, 0x183}, // Harry (Albert Runcorn)
+        {122, 0x184}, // Harry (Brown Jacket)
+        {123, 0x186}, // Dumbledore (Cursed)
+        {124, 0x187}, // Lucius (Death Eater)
+        {125, 0x189}, // Luna Lovegood
+        {126, 0x18A}, // Umbridge (Wizengamot)
+        {127, 0x18B}, // Dolohov (Workman)
+        {128, 0x193}, // Michael Corner
+        {129, 0x194}, // Dean (Winter)
+        {130, 0x196}, // Arthur (Cardigan)
+        {131, 0x198}, // Luna (Pink Dress)
+        {132, 0x19A}, // Marietta Edgecombe
+        {133, 0x19B}, // Dumbledore (Young)
+        {134, 0x19C}, // Slughorn (Young)
+        {135, 0x19D}, // Slughorn (Pajamas)
+        {136, 0x19E}, // Lily (Young Casual)
+        {137, 0x19F}, // Ginny (Dress)
+        {138, 0x1A0}, // Ginny (Pyjamas)
+        {139, 0x1A3}, // Blaise (Black Shirt)
+        {140, 0x1A5}, // Cormac (Suit)
+        {141, 0x1A6}, // Muggle Orphan
+        {142, 0x1A7}, // Luna (Overalls)
+        {143, 0x1A8}, // Molly Weasley
+        {144, 0x1AC}, // Hermione (Cardigan)
+        {145, 0x1AE}, // Luna (Yellow Dress)
+        {146, 0x1B0}, // Dudley (Shirt)
+        {147, 0x1B3}, // Bill Weasley (Wedding)
+        {148, 0x1B4}, // Fleur Delacour
+        {149, 0x1B5}, // Hermione (Red Dress)
+        {150, 0x1BD}, // Mrs Figg
+        {151, 0x1C0}, // Harry (Locket)
+        {152, 0x1C2}, // Slytherin Twin #1
+        {153, 0x1C7}, // Mrs Cole
+        {154, 0x1CA}, // Hermione (Ministry)
+        {155, 0x1E6}, // Arthur (Suit)
+        {156, 0x1E8}, // Harry (Christmas)
+        {157, 0x1F1}, // Ernie Prang
+        {158, 0x1FC}, // Professor Snape
+        {159, 0x1FE}, // Neville Longbottom
+        {160, 0x1FF}, // Ron Weasley
+        {161, 0x201}, // Ron (Quidditch)
+        {162, 0x207}, // Vernon Dursley
+        {163, 0x20B}, // Tom Riddle
+        {164, 0x20C}, // Sirius Black
+        {165, 0x20D}, // Remus Lupin
+        {166, 0x20E}, // Wormtail
+        {167, 0x20F}, // Rita Skeeter
+        {168, 0x212}, // Padma Patil
+        {169, 0x214}, // Station Guard
+        {170, 0x215}, // Professor Binns
+        {171, 0x223}, // Penelope Clearwater
+        {172, 0x224}, // Susan Bones
+        {173, 0x226}, // Nymphadora Tonks
+        {174, 0x227}, // Pius Thicknesse
+        {175, 0x229}, // Reg Cattermole
+        {176, 0x22A}, // Regulus Black
+        {177, 0x22C}, // Rufus Scrimgeour
+        {178, 0x22E}, // Scabior
+        {179, 0x232}, // Xenophilius Lovegood
+        {180, 0x233}, // Yaxley
+        {181, 0x234}, // Zacharias Smith
+        {182, 0x239}, // Waitress (Treats)
+        {183, 0x23B}, // Lord Voldemort
+        {184, 0x23D}, // Ron (Blue Pyjamas)
+        {185, 0x23E}, // Neville (Cardigan)
+        {186, 0x23F}, // Neville (Pyjamas)
+        {187, 0x240}, // Percy Weasley
+        {188, 0x245}, // Sirius (Azkaban)
         {189, 0x246}, // Mrs. Black
-
+        {190, 0x247}, // Xenophilius (Luna)
+        {191, 0x248}, // Ron (Reg Cattermole)
+        {192, 0x24E}, // Tonks (Pink Coat)
+        {193, 0x24F}, // Ron (Winter Clothes)
+        {194, 0x251}, // Snape (Underwear)
+        {195, 0x254}, // Thorfinn Rowle
+        {196, 0x255}, // Petunia Dursley
+        {197, 0x25B}, // Neville (Tank Top)
+        {198, 0x25E}, // Neville (Winter)
+        {199, 0x260}, // Parvati Patil
+        {200, 0x261}, // Ron (Red Sweater)
+        {201, 0x262}, // Olivander
+        {202, 0x263}, // Seamus (Winter)
+        {203, 0x266}, // Ron (Underwear)
+        {204, 0x267}, // Ron (Wedding)
+        {205, 0x268}, // Waitress (Luchino)
+        {206, 0x269}, // Petunia (Green Coat)
+        {207, 0x26A}, // Seamus Finnigan
+        {208, 0x26D}, // Snatcher
+        {209, 0x272}, // Ron (Green Shirt)
+        {210, 0x275}, // Neville (Waiter)
+        {211, 0x276}, // Xenophilius (Wedding)
         {212, 0x27F}, // Skeleton
     };
 
