@@ -46,8 +46,8 @@ public class Game
                 Console.WriteLine("Waiting for game to be loaded");
             rewriteNumber++;
             System.Threading.Thread.Sleep(500);
-
         }
+        Console.WriteLine("Save File Loaded");
         ResetToLocations(Mod.GameInstance!.MapID);
     }
 
@@ -177,6 +177,9 @@ public class Game
                 case < 700:
                     level = Level.ConvertIDToLeveData(ItemID - TrueWizardOffset);
                     Level.UnlockTrueWizard(level);
+                    break;
+                case < 725:
+                    Bricks.ReceivedGoldBrick();
                     break;
                 default:
                     Console.WriteLine($"Unknown item received: {ItemID}");
@@ -450,6 +453,7 @@ public class Game
         Console.WriteLine("Menu Opened");
         Mod.GameInstance!.PrevInMenu = true;
         ResetToItems(Mod.GameInstance!.MapID);
+        Bricks.GetGoldBrickCount();
     }
 
     [Function(CallingConventions.Fastcall)]
@@ -468,6 +472,7 @@ public class Game
 
     private static void ResetToItems(int mapID)
     {
+        Bricks.ResetGoldBrickCount();
         Level.ResetLevels();
         Character.ResetTokens();
         Character.ResetUnlocks();
@@ -477,6 +482,7 @@ public class Game
 
     private static void ResetToLocations(int mapID)
     {
+        Bricks.ResetGoldBrickCount();
         Level.ResetLevels();
         Character.ResetTokens();
         Character.ResetUnlocks();
