@@ -92,8 +92,8 @@ public class Character
         {81, 0x136}, // Elphias Doge
         {82, 0x137}, // Fenrir Greyback
         {83, 0x138}, // Grindelwald (Young)
-        {84, 0x189}, // Grindelwald (Old)
-        {85, 0x18B}, // Gregorovitch
+        {84, 0x139}, // Grindelwald (Old)
+        {85, 0x13B}, // Gregorovitch
         {86, 0x13D}, // Hestia Jones
         {87, 0x13E}, // Professor Slughorn
         {88, 0x13F}, // James Potter (Young)
