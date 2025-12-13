@@ -40,19 +40,19 @@ public class Game
         Console.WriteLine("Menu loaded, setting up hooks. Please wait to Connect to the server before loading a save file.");
     }
 
-    public static void CheckSaveFileLoaded()
-    {
-        int rewriteNumber = 0;
-        Mod.InitOnMenu();
-        while(!PlayerControllable())
-        {
-            if (rewriteNumber % 10 == 0)
-                Console.WriteLine("Waiting for game to be loaded");
-            rewriteNumber++;
-            System.Threading.Thread.Sleep(500);
-        }
-        Console.WriteLine("Save File Loaded");
-    }
+    // public static void CheckSaveFileLoaded()
+    // {
+    //     int rewriteNumber = 0;
+    //     Mod.InitOnMenu();
+    //     while(!PlayerControllable())
+    //     {
+    //         if (rewriteNumber % 10 == 0)
+    //             Console.WriteLine("Waiting for game to be loaded");
+    //         rewriteNumber++;
+    //         System.Threading.Thread.Sleep(500);
+    //     }
+    //     Console.WriteLine("Save File Loaded");
+    // }
 
     public static unsafe bool MenuLoaded()
     {
@@ -76,26 +76,26 @@ public class Game
     }
 
     // Currently unused, but leaving in for future items that are instant benefit/detriment and not collectables
-    public static unsafe bool PlayerControllable()
-    {
-        try
-        {
-            byte** basePtr = (byte**)(Mod.BaseAddress + 0xC5763C);
-            if (basePtr == null || *basePtr == null)
-                return false;
+    // public static unsafe bool PlayerControllable()
+    // {
+    //     try
+    //     {
+    //         byte** basePtr = (byte**)(Mod.BaseAddress + 0xC5763C);
+    //         if (basePtr == null || *basePtr == null)
+    //             return false;
 
-            byte* finalPtr = (byte*)(*basePtr + 0x119C);
-            if (finalPtr == null)
-                return false;
+    //         byte* finalPtr = (byte*)(*basePtr + 0x119C);
+    //         if (finalPtr == null)
+    //             return false;
 
-            return *finalPtr == 1;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error in InGame check: {ex.Message}");
-            return false;
-        }
-    }
+    //         return *finalPtr == 1;
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         Console.WriteLine($"Error in InGame check: {ex.Message}");
+    //         return false;
+    //     }
+    // }
 
     public static void writeN0CUT5Flag()
     {

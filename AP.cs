@@ -76,8 +76,6 @@ public class LHP2_Archipelago
                 tags: new string[] { },
                 password: Password
             ).Result;
-
-            Game.CheckSaveFileLoaded();
         }
         catch (Exception e)
         {
