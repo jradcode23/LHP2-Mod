@@ -23,8 +23,7 @@ public class Game
     public const int RavenCrestOffset = 598;
     public const int HuffleCrestOffset = 622;
     public const int TrueWizardOffset = 675;
-    public const int startingItem = 450;
-    public const int TotalItems = 700;
+    public const int RedBrickOffset = 725;
     public static void CheckGameLoaded()
     {
         Console.WriteLine("Checking to see if game is loaded");
@@ -38,12 +37,13 @@ public class Game
 
         }
         Console.WriteLine("Menu loaded, setting up hooks. Please wait to Connect to the server before loading a save file.");
+        Mod.InitOnMenu();
     }
 
     // public static void CheckSaveFileLoaded()
     // {
     //     int rewriteNumber = 0;
-    //     Mod.InitOnMenu();
+
     //     while(!PlayerControllable())
     //     {
     //         if (rewriteNumber % 10 == 0)
@@ -183,6 +183,9 @@ public class Game
                     break;
                 case < 725:
                     Bricks.ReceivedGoldBrick();
+                    break;
+                case < 750:
+                    Bricks.ReceivedRedBrickUnlock(ItemID - RedBrickOffset);
                     break;
                 default:
                     Console.WriteLine($"Unknown item received: {ItemID}");
@@ -476,6 +479,7 @@ public class Game
     private static void ResetToItems(int mapID)
     {
         Bricks.ResetGoldBrickCount();
+        Bricks.ResetRedBrickUnlock();
         Level.ResetLevels();
         Character.ResetTokens();
         Character.ResetUnlocks();
@@ -486,6 +490,7 @@ public class Game
     private static void ResetToLocations(int mapID)
     {
         Bricks.ResetGoldBrickCount();
+        Bricks.ResetRedBrickUnlock();
         Level.ResetLevels();
         Character.ResetTokens();
         Character.ResetUnlocks();

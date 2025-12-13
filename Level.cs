@@ -3,7 +3,7 @@ namespace LHP2_Archi_Mod;
 
 public class Level
 {
-    private static unsafe readonly byte* levelBaseAddress = (byte*)(*(int*)(Mod.BaseAddress + 0xC55F2C));
+    private static unsafe readonly byte* levelBaseAddress = (byte*)*(int*)(Mod.BaseAddress + 0xC55F2C);
 
     [Flags]
     public enum BitMask
