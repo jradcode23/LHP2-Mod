@@ -25,7 +25,7 @@ public class Game
     public const int TrueWizardOffset = 675;
     public const int startingItem = 450;
     public const int TotalItems = 700;
-    public static void GameLoaded()
+    public static void CheckGameLoaded()
     {
         Console.WriteLine("Checking to see if game is loaded");
         int rewriteNumber = 0;
@@ -37,8 +37,12 @@ public class Game
             System.Threading.Thread.Sleep(500);
 
         }
-        Console.WriteLine("Menu loaded");
-        rewriteNumber =0;
+        Console.WriteLine("Menu loaded, setting up hooks. Please wait to Connect to the server before loading a save file.");
+    }
+
+    public static void CheckSaveFileLoaded()
+    {
+        int rewriteNumber = 0;
         Mod.InitOnMenu();
         while(!PlayerControllable())
         {
@@ -48,7 +52,6 @@ public class Game
             System.Threading.Thread.Sleep(500);
         }
         Console.WriteLine("Save File Loaded");
-        ResetToLocations(Mod.GameInstance!.MapID);
     }
 
     public static unsafe bool MenuLoaded()

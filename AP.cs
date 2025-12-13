@@ -63,7 +63,7 @@ public class LHP2_Archipelago
 
         try
         {
-            Game.GameLoaded();
+            Game.CheckGameLoaded();
             Seed = _session.ConnectAsync()?.Result?.SeedName;
             Console.WriteLine(Seed + Slot);
 
@@ -76,6 +76,8 @@ public class LHP2_Archipelago
                 tags: new string[] { },
                 password: Password
             ).Result;
+
+            Game.CheckSaveFileLoaded();
         }
         catch (Exception e)
         {
