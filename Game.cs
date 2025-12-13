@@ -210,6 +210,7 @@ public class Game
     private static IReverseWrapper<LevelSIPComplete> _reverseWrapOnLevelSIP = default!;
     private static IReverseWrapper<TrueWizardComplete> _reverseWrapOnTrueWizard = default!;
     private static IReverseWrapper<CrestsComplete> _reverseWrapOnCrests = default!;
+    private static IReverseWrapper<RedBrickPurchase> _reverseWrapOnRedBrickPurch = default!;
     private static IReverseWrapper<UpdateLevel> _reverseWrapOnLevelUpdate = default!;
     private static IReverseWrapper<UpdateMap> _reverseWrapOnMapUpdate = default!;
     private static IReverseWrapper<OpenCloseShop> _reverseWrapOnShopUpdate = default!;
@@ -263,6 +264,17 @@ public class Game
             "popfd",
         };
         _asmHooks.Add(hooks.CreateAsmHook(completeHogwartsCrestHook, (int)(Mod.BaseAddress + 0x16C0A), AsmHookBehaviour.ExecuteAfter).Activate());
+
+        string[] purchaseRedBrick =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnRedBrickPurchase, out _reverseWrapOnRedBrickPurch)}",
+            "popad",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(purchaseRedBrick, (int)(Mod.BaseAddress + 0x3A55CC), AsmHookBehaviour.ExecuteFirst).Activate());
 
         string[] updateLevelHook =
         {
@@ -320,7 +332,7 @@ public class Game
         _asmHooks.Add(hooks.CreateAsmHook(CloseMenuHook, (int)(Mod.BaseAddress + 0x218347), AsmHookBehaviour.ExecuteAfter).Activate());
     }
 
-     [Function(CallingConventions.Fastcall)]
+    [Function(CallingConventions.Fastcall)]
     public delegate void LevelComplete();
 
     private static void OnLevelComplete()
@@ -383,6 +395,14 @@ public class Game
                     break;
             }
         }
+    }
+
+    [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.ecx }, 
+    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void RedBrickPurchase(int id);
+    private static void OnRedBrickPurchase(int id)
+    {
+        CheckAndReportLocation(id + RedBrickOffset);
     }
 
     [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.eax }, 
