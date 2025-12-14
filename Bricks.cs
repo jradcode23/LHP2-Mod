@@ -4,6 +4,8 @@ public class Bricks
 {
     private static unsafe readonly byte* goldBrickBaseAddress = (byte*)*(int*)(Mod.BaseAddress + 0xC54554);
     private static unsafe readonly byte* RedBrickBaseAddress = (byte*)*(int*)(Mod.BaseAddress + 0xC575F4);
+    
+    //TODO: Consider making Gold Bricks not static
     public static byte goldBrickCount { get; private set; } = 0;
 
     public static void ReceivedGoldBrick ()

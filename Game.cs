@@ -23,7 +23,8 @@ public class Game
     public const int RavenCrestOffset = 598;
     public const int HuffleCrestOffset = 622;
     public const int TrueWizardOffset = 675;
-    public const int RedBrickOffset = 725;
+    public const int GoldBrickPurchOffset = 700;
+    public const int RedBrickPurchOffset = 725;
     public static void CheckGameLoaded()
     {
         Console.WriteLine("Checking to see if game is loaded");
@@ -185,7 +186,7 @@ public class Game
                     Bricks.ReceivedGoldBrick();
                     break;
                 case < 750:
-                    Bricks.ReceivedRedBrickUnlock(ItemID - RedBrickOffset);
+                    Bricks.ReceivedRedBrickUnlock(ItemID - RedBrickPurchOffset);
                     break;
                 default:
                     Console.WriteLine($"Unknown item received: {ItemID}");
@@ -211,6 +212,7 @@ public class Game
     private static IReverseWrapper<TrueWizardComplete> _reverseWrapOnTrueWizard = default!;
     private static IReverseWrapper<CrestsComplete> _reverseWrapOnCrests = default!;
     private static IReverseWrapper<RedBrickPurchase> _reverseWrapOnRedBrickPurch = default!;
+    private static IReverseWrapper<GoldBrickPurchase> _reverseWrapOnGoldBrickPurch = default!;
     private static IReverseWrapper<UpdateLevel> _reverseWrapOnLevelUpdate = default!;
     private static IReverseWrapper<UpdateMap> _reverseWrapOnMapUpdate = default!;
     private static IReverseWrapper<OpenCloseShop> _reverseWrapOnShopUpdate = default!;
@@ -275,6 +277,17 @@ public class Game
             "popfd",
         };
         _asmHooks.Add(hooks.CreateAsmHook(purchaseRedBrick, (int)(Mod.BaseAddress + 0x3A55CC), AsmHookBehaviour.ExecuteFirst).Activate());
+        
+        string[] purchaseGoldBrick =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnGoldBrickPurchase, out _reverseWrapOnGoldBrickPurch)}",
+            "popad",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(purchaseGoldBrick, (int)(Mod.BaseAddress + 0x9039), AsmHookBehaviour.ExecuteFirst).Activate());
 
         string[] updateLevelHook =
         {
@@ -399,10 +412,24 @@ public class Game
 
     [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.ecx }, 
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
-    public delegate void RedBrickPurchase(int id);
-    private static void OnRedBrickPurchase(int id)
+    public delegate void RedBrickPurchase(int ecx);
+    private static void OnRedBrickPurchase(int ecx)
     {
-        CheckAndReportLocation(id + RedBrickOffset);
+        CheckAndReportLocation(ecx + RedBrickPurchOffset);
+    }
+
+    [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.ecx }, 
+    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void GoldBrickPurchase(int ecx);
+    private static void OnGoldBrickPurchase(int ecx)
+    {
+        int itemId = 0;
+        while (ecx > 1)
+        {
+            ecx >>= 1;
+            itemId++;
+        }
+        CheckAndReportLocation(itemId + GoldBrickPurchOffset);
     }
 
     [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.eax }, 
