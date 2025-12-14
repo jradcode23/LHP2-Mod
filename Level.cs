@@ -181,7 +181,8 @@ public class Level
         UnlockLevel(LevelData.TheThiefsDownfall);
     }
 
-    //TODO: Update for shop putchase logic - i.e. receive purchase before completing location
+    //TODO: Update for shop purchase logic - i.e. receive purchase before completing location
+    //TODO: current implementation always makes all levels available even when they shouldn't be
     public static void ImplementMapLogic(int map)
     {
         switch (map)

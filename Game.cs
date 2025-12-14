@@ -3,7 +3,7 @@ using Reloaded.Memory.Interfaces;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Hooks.Definitions.Enums;
 using Reloaded.Hooks.Definitions.X86;
-using System.Resources;
+using System.Numerics;
 
 namespace LHP2_Archi_Mod;
 
@@ -127,10 +127,10 @@ public class Game
             //// NOP GB Corrector #3 (crashes game? - only used when GB >200 so not end of world)
             //Memory.Instance.SafeWrite(Mod.BaseAddress + 0x42EB90, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
 
-            // Unlock Current Level Story
-            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B817E, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
-            // Unlock Current Level Freeplay
-            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B8165, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+            // // Unlock Current Level Story // Something here crashes Dark Times
+            // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B817E, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+            // // Unlock Current Level Freeplay
+            // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B8165, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
             //NOP Unlock Next Story Level
             // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B809C, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
         }
@@ -418,18 +418,14 @@ public class Game
         CheckAndReportLocation(ecx + RedBrickPurchOffset);
     }
 
-    [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.ecx }, 
+    [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.ebx }, 
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
-    public delegate void GoldBrickPurchase(int ecx);
-    private static void OnGoldBrickPurchase(int ecx)
+    public delegate void GoldBrickPurchase(int ebx);
+    private static void OnGoldBrickPurchase(int ebx)
     {
-        int itemId = 0;
-        while (ecx > 1)
-        {
-            ecx >>= 1;
-            itemId++;
-        }
+        int itemId = BitOperations.TrailingZeroCount(ebx);
         CheckAndReportLocation(itemId + GoldBrickPurchOffset);
+
     }
 
     [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.eax }, 
@@ -451,6 +447,7 @@ public class Game
         Mod.GameInstance!.MapID = value;
         Console.WriteLine($"Map ID updated to {value}.");
         ResetToLocations(value);
+        Level.ImplementMapLogic(value);
     }
 
     [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.eax, FunctionAttribute.Register.esp}, 
@@ -462,7 +459,6 @@ public class Game
         int lastNibble = esp & 0xF;
         Console.WriteLine($"Last Nibble: {lastNibble}");
 
-        //TODO: Test in different years
         if(eaxBit0Set && lastNibble == 0x08)
         {
             Mod.GameInstance!.PrevInShop = true;
@@ -473,7 +469,7 @@ public class Game
         {
             Mod.GameInstance!.PrevInShop = true;
             Console.WriteLine("Shop Opened");
-            ResetToItems(Mod.GameInstance!.MapID);
+            ResetToLocations(Mod.GameInstance!.MapID);
         }
         else if(!eaxBit0Set && Mod.GameInstance!.PrevInShop)
         {
@@ -531,7 +527,6 @@ public class Game
         Character.ResetTokens();
         Character.ResetUnlocks();
         Mod.LHP2_Archipelago!.UpdateItemsReceived();
-        Level.ImplementMapLogic(mapID);
     }
 
     private static void ResetToLocations(int mapID)
@@ -542,7 +537,6 @@ public class Game
         Character.ResetTokens();
         Character.ResetUnlocks();
         Mod.LHP2_Archipelago!.UpdateLocationsChecked();
-        Level.ImplementMapLogic(mapID);
     }
 
     private static void CheckAndReportLocation(int apID)
