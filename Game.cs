@@ -213,6 +213,7 @@ public class Game
     private static IReverseWrapper<CrestsComplete> _reverseWrapOnCrests = default!;
     private static IReverseWrapper<RedBrickPurchase> _reverseWrapOnRedBrickPurch = default!;
     private static IReverseWrapper<GoldBrickPurchase> _reverseWrapOnGoldBrickPurch = default!;
+    private static IReverseWrapper<HubCharacterCollected> _reverseWrapOnHubCharacterCollected = default!;
     private static IReverseWrapper<UpdateLevel> _reverseWrapOnLevelUpdate = default!;
     private static IReverseWrapper<UpdateMap> _reverseWrapOnMapUpdate = default!;
     private static IReverseWrapper<OpenCloseShop> _reverseWrapOnShopUpdate = default!;
@@ -288,6 +289,17 @@ public class Game
             "popfd",
         };
         _asmHooks.Add(hooks.CreateAsmHook(purchaseGoldBrick, (int)(Mod.BaseAddress + 0x9039), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] hubCharacterCollectedHook =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnHubCharacterCollected, out _reverseWrapOnHubCharacterCollected)}",
+            "popad",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(hubCharacterCollectedHook, (int)(Mod.BaseAddress + 0x42F6E), AsmHookBehaviour.ExecuteFirst).Activate());
 
         string[] updateLevelHook =
         {
@@ -426,6 +438,15 @@ public class Game
         int itemId = BitOperations.TrailingZeroCount(ebx);
         CheckAndReportLocation(itemId + GoldBrickPurchOffset);
 
+    }
+
+    [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.eax, FunctionAttribute.Register.edx }, 
+    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void HubCharacterCollected(IntPtr eax, int edx);
+    private static void OnHubCharacterCollected(IntPtr eax, int edx)
+    {
+        int itemID = Character.GetHubTokenItemID(eax, edx);
+        CheckAndReportLocation(itemID + tokenOffset);
     }
 
     [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.eax }, 

@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace LHP2_Archi_Mod;
 
 public class Character
@@ -306,5 +308,20 @@ public class Character
                 } 
             *ptr = 0;
         }
+    }
+
+    public static unsafe int GetHubTokenItemID(IntPtr address, int offset)
+    {
+        int bitIndex = (int)Math.Log(offset, 2);
+        long byteIndex = address - (IntPtr)(characterBaseAddress + TokenOffset); 
+        if (byteIndex < 0) 
+        {
+            return -1;
+        }
+
+        int value = (int)(byteIndex * 8 + bitIndex );
+        Console.WriteLine($"value is: {value}");
+        var kvp = characterMap.FirstOrDefault(k => k.Value == value);
+        return kvp.Equals(default(KeyValuePair<int,int>)) ? -1 : kvp.Key;
     }
 }
