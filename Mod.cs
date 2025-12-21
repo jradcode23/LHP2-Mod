@@ -72,7 +72,7 @@ public class Mod : ModBase // <= Do not Remove.
     {
         GameInstance?.ModifyInstructions();
         if (Mod._hooks != null)
-            GameInstance?.SetupHooks(Mod._hooks);
+            Game.SetupHooks(Mod._hooks);
     }
 
     #endregion

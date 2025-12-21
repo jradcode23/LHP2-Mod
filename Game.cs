@@ -121,18 +121,18 @@ public class Game
             writeN0CUT5Flag();
 
             // NOP GB Corrector #1
-            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x332694, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x332694, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
             // NOP GB Corrector #2
-            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x42EB8B, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x42EB8B, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
             //// NOP GB Corrector #3 (crashes game? - only used when GB >200 so not end of world)
             //Memory.Instance.SafeWrite(Mod.BaseAddress + 0x42EB90, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
 
-            // // Unlock Current Level Story // Something here crashes Dark Times
+            // // Unlock Current Level Story // Crashes Dark Times
             // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B817E, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
             // // Unlock Current Level Freeplay
-            // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B8165, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B8165, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
             //NOP Unlock Next Story Level
-            // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B809C, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B809C, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
         }
     }
 
@@ -222,7 +222,7 @@ public class Game
     private static IReverseWrapper<CloseMenu> _reverseWrapOnCloseMenu = default!;
 
 
-    public void SetupHooks(IReloadedHooks hooks)
+    public static void SetupHooks(IReloadedHooks hooks)
     {
         string[] completeLevelHook =
         {
@@ -404,7 +404,7 @@ public class Game
             CheckAndReportLocation(id + TrueWizardOffset);
     }
 
-    [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.eax }, 
+    [Function([FunctionAttribute.Register.eax], 
         FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void CrestsComplete(int value);
     private static void OnHouseCrest(int value)
@@ -434,7 +434,7 @@ public class Game
         }
     }
 
-    [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.ecx }, 
+    [Function([FunctionAttribute.Register.ecx], 
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void RedBrickPurchase(int ecx);
     private static void OnRedBrickPurchase(int ecx)
@@ -442,7 +442,7 @@ public class Game
         CheckAndReportLocation(ecx + RedBrickPurchOffset);
     }
 
-    [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.ebx }, 
+    [Function([FunctionAttribute.Register.ebx], 
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void GoldBrickPurchase(int ebx);
     private static void OnGoldBrickPurchase(int ebx)
@@ -452,7 +452,7 @@ public class Game
 
     }
 
-    [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.eax, FunctionAttribute.Register.edx }, 
+    [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.edx], 
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void HubCharacterCollected(IntPtr eax, int edx);
     private static void OnHubCharacterCollected(IntPtr eax, int edx)
@@ -461,7 +461,7 @@ public class Game
         CheckAndReportLocation(itemID + tokenOffset);
     }
 
-    [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.eax, FunctionAttribute.Register.ecx }, 
+    [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.ecx], 
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void CharacterPurchased(IntPtr ecx, int eax);
     private static void OnCharacterPurchased(IntPtr ecx, int eax)
@@ -474,7 +474,7 @@ public class Game
         }
     }
 
-    [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.eax }, 
+    [Function([FunctionAttribute.Register.eax], 
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void UpdateLevel(int value);
     private static void OnLevelChange(int value)
@@ -484,7 +484,7 @@ public class Game
         Console.WriteLine($"Level ID updated to {value}.");
     }
 
-    [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.ecx }, 
+    [Function([FunctionAttribute.Register.ecx], 
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void UpdateMap(int value);
     private static void OnMapChange(int value)
@@ -496,7 +496,7 @@ public class Game
         Level.ImplementMapLogic(value);
     }
 
-    [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.eax, FunctionAttribute.Register.esp}, 
+    [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.esp], 
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void OpenCloseShop(int eax, int esp);
     private static void onShopChange(int eax, int esp)
@@ -531,7 +531,7 @@ public class Game
     }
 
     // Picking up a collectable in hub triggers menu? edi was always 2 when pausing and EBP was always 6 when pausing.
-    [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.edi }, 
+    [Function([FunctionAttribute.Register.edi], 
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void OpenMenu(int edi);
     private static void onOpenMenu(int edi)
