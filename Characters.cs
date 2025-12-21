@@ -324,4 +324,18 @@ public class Character
         var kvp = characterMap.FirstOrDefault(k => k.Value == value);
         return kvp.Equals(default(KeyValuePair<int,int>)) ? -1 : kvp.Key;
     }
+
+    public static unsafe int GetPurchaseCharacterID(IntPtr address, int offset)
+    {
+        long byteIndex = address + offset + 0x74 - (IntPtr)(characterBaseAddress + unlockOffset); 
+        if (byteIndex < 0) 
+        {
+            return -1;
+        }
+
+        int value = (int)byteIndex;
+        Console.WriteLine($"value is: {value}");
+        var kvp = characterMap.FirstOrDefault(k => k.Value == value);
+        return kvp.Equals(default(KeyValuePair<int,int>)) ? -1 : kvp.Key;
+    }
 }

@@ -214,6 +214,7 @@ public class Game
     private static IReverseWrapper<RedBrickPurchase> _reverseWrapOnRedBrickPurch = default!;
     private static IReverseWrapper<GoldBrickPurchase> _reverseWrapOnGoldBrickPurch = default!;
     private static IReverseWrapper<HubCharacterCollected> _reverseWrapOnHubCharacterCollected = default!;
+    private static IReverseWrapper<CharacterPurchased> _reverseWrapOnCharacterPurchased = default!;
     private static IReverseWrapper<UpdateLevel> _reverseWrapOnLevelUpdate = default!;
     private static IReverseWrapper<UpdateMap> _reverseWrapOnMapUpdate = default!;
     private static IReverseWrapper<OpenCloseShop> _reverseWrapOnShopUpdate = default!;
@@ -300,6 +301,17 @@ public class Game
             "popfd",
         };
         _asmHooks.Add(hooks.CreateAsmHook(hubCharacterCollectedHook, (int)(Mod.BaseAddress + 0x42F6E), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] characterPurchasedHook =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnCharacterPurchased, out _reverseWrapOnCharacterPurchased)}",
+            "popad",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(characterPurchasedHook, (int)(Mod.BaseAddress + 0x418968), AsmHookBehaviour.ExecuteFirst).Activate());
 
         string[] updateLevelHook =
         {
@@ -447,6 +459,19 @@ public class Game
     {
         int itemID = Character.GetHubTokenItemID(eax, edx);
         CheckAndReportLocation(itemID + tokenOffset);
+    }
+
+    [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.eax, FunctionAttribute.Register.ecx }, 
+    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void CharacterPurchased(IntPtr ecx, int eax);
+    private static void OnCharacterPurchased(IntPtr ecx, int eax)
+    {
+        if(Mod.GameInstance!.MapID == 366 || Mod.GameInstance!.MapID == 372 
+            || Mod.GameInstance!.MapID == 378 || Mod.GameInstance!.MapID == 382 && Mod.GameInstance!.PrevInShop) //Make sure Player is in shop
+        {
+            int itemID = Character.GetPurchaseCharacterID(ecx, eax);
+            CheckAndReportLocation(itemID);
+        }
     }
 
     [Function(new FunctionAttribute.Register[] { FunctionAttribute.Register.eax }, 
