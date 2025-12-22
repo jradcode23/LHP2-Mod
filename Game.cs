@@ -214,6 +214,7 @@ public class Game
     private static IReverseWrapper<RedBrickPurchase> _reverseWrapOnRedBrickPurch = default!;
     private static IReverseWrapper<GoldBrickPurchase> _reverseWrapOnGoldBrickPurch = default!;
     private static IReverseWrapper<HubCharacterCollected> _reverseWrapOnHubCharacterCollected = default!;
+    private static IReverseWrapper<LevelCharacterCollected> _reverseWrapOnLevelCharacterCollected = default!;
     private static IReverseWrapper<CharacterPurchased> _reverseWrapOnCharacterPurchased = default!;
     private static IReverseWrapper<UpdateLevel> _reverseWrapOnLevelUpdate = default!;
     private static IReverseWrapper<UpdateMap> _reverseWrapOnMapUpdate = default!;
@@ -301,6 +302,17 @@ public class Game
             "popfd",
         };
         _asmHooks.Add(hooks.CreateAsmHook(hubCharacterCollectedHook, (int)(Mod.BaseAddress + 0x42F6E), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string [] levelCharacterCollectedHook =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnLevelCharacterCollected, out _reverseWrapOnLevelCharacterCollected)}",
+            "popad",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(levelCharacterCollectedHook, (int)(Mod.BaseAddress + 0x42FD7), AsmHookBehaviour.ExecuteFirst).Activate());
 
         string[] characterPurchasedHook =
         {
@@ -458,6 +470,15 @@ public class Game
     private static void OnHubCharacterCollected(IntPtr eax, int edx)
     {
         int itemID = Character.GetHubTokenItemID(eax, edx);
+        CheckAndReportLocation(itemID + tokenOffset);
+    }
+
+    [Function([FunctionAttribute.Register.ebx], 
+    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void LevelCharacterCollected(int ebx);
+    private static void OnLevelCharacterCollected(int ebx)
+    {
+        int itemID = Character.GetLevelTokenItemID(ebx);
         CheckAndReportLocation(itemID + tokenOffset);
     }
 

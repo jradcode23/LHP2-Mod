@@ -1,4 +1,5 @@
 using System.Linq;
+using Reloaded.Memory.Utilities;
 
 namespace LHP2_Archi_Mod;
 
@@ -320,8 +321,17 @@ public class Character
         }
 
         int value = (int)(byteIndex * 8 + bitIndex );
-        Console.WriteLine($"value is: {value}");
+        Console.WriteLine($"Hub Token Value is: {value}");
         var kvp = characterMap.FirstOrDefault(k => k.Value == value);
+        return kvp.Equals(default(KeyValuePair<int,int>)) ? -1 : kvp.Key;
+    }
+
+    public static int GetLevelTokenItemID(int ID)
+    {
+        int bx = ID & 0xFFFF;
+        bx -= 0x70; // There is a base 0x70 offset
+        Console.WriteLine($"Level Token bx is: {bx}");
+        var kvp = characterMap.FirstOrDefault(k => k.Value == bx);
         return kvp.Equals(default(KeyValuePair<int,int>)) ? -1 : kvp.Key;
     }
 
@@ -334,7 +344,7 @@ public class Character
         }
 
         int value = (int)byteIndex;
-        Console.WriteLine($"value is: {value}");
+        Console.WriteLine($"Purchase Character value is: {value}");
         var kvp = characterMap.FirstOrDefault(k => k.Value == value);
         return kvp.Equals(default(KeyValuePair<int,int>)) ? -1 : kvp.Key;
     }
