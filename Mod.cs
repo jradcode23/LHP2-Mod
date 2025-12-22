@@ -72,7 +72,8 @@ public class Mod : ModBase // <= Do not Remove.
     {
         GameInstance?.ModifyInstructions();
         if (Mod._hooks != null)
-            Game.SetupHooks(Mod._hooks);
+            Console.WriteLine("Menu loaded, setting up hooks. Please wait to Connect to the server before loading a save file.");
+            GameInstance!.SetupHooks(Mod._hooks!);
     }
 
     #endregion

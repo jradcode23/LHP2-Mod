@@ -24,6 +24,7 @@ public class LHP2_Archipelago
 
     public static bool IsConnected;
     public static bool IsConnecting;
+    public static int gameOffset = 400000;
 
     public LHP2_Archipelago(string server, int port, string slot, string password)
     {
@@ -73,7 +74,7 @@ public class LHP2_Archipelago
                 name: Slot,
                 itemsHandlingFlags: ItemsHandlingFlags.AllItems,
                 version: new Version(1, 0, 0),
-                tags: new string[] { },
+                tags: [],
                 password: Password
             ).Result;
         }
@@ -118,12 +119,12 @@ public class LHP2_Archipelago
 
     public void CheckLocations(Int64[] ids)
     {
-        ids.ToList().ForEach(id => _locationsToCheck.Enqueue(id + 400000));
+        ids.ToList().ForEach(id => _locationsToCheck.Enqueue(id + gameOffset));
     }
 
     public void CheckLocation(Int64 id)
     {
-        _locationsToCheck.Enqueue(id + 400000);
+        _locationsToCheck.Enqueue(id + gameOffset);
     }
 
     private ConcurrentQueue<Int64> _locationsToCheck = new();
@@ -143,31 +144,39 @@ public class LHP2_Archipelago
 
     public bool IsLocationChecked(Int64 id)
     {
-        return _session.Locations.AllLocationsChecked.Contains(id + 400000);
+        return _session.Locations.AllLocationsChecked.Contains(id + gameOffset);
     }
 
-    public void UpdateItemsReceived()
+    public void UpdateBasedOnItems(Int64 minItemId, Int64 maxItemId)
     {
         foreach (var item in _session.Items.AllItemsReceived)
         {
-            var gameId = item.ItemId - 400000;
+            // Only process items whose AP item ID falls within the desired band
+            if (item.ItemId - gameOffset <= minItemId || item.ItemId - gameOffset >= maxItemId)
+                continue;
+
+            var gameId = item.ItemId - gameOffset;
             Mod.GameInstance!.ManageItem((int)gameId);
         }
     }
 
-    public void UpdateLocationsChecked()
+    public void UpdateBasedOnLocations(Int64 minLocationId, Int64 maxLocationId)
     {
         foreach (var location in _session.Locations.AllLocationsChecked)
         {
-            var gameId = location - 400000;
+            // Only handle locations within the desired ID range
+            if (location - gameOffset <= minLocationId || location - gameOffset >= maxLocationId)
+                continue;
+
+            var gameId = location - gameOffset;
             Mod.GameInstance!.ManageItem((int)gameId);
         }
     }
 
     public int CountLocationsCheckedInRange(Int64 start, Int64 end)
     {
-        var startId = start + 400000;
-        var endId = end + 400000;
+        var startId = start + gameOffset;
+        var endId = end + gameOffset;
         return _session.Locations.AllLocationsChecked.Count(loc => loc >= startId && loc < endId);
     }
 

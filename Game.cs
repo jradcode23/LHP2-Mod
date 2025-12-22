@@ -25,6 +25,7 @@ public class Game
     public const int TrueWizardOffset = 675;
     public const int GoldBrickPurchOffset = 700;
     public const int RedBrickPurchOffset = 725;
+    public const int MaxItemID = 748;
     public static void CheckGameLoaded()
     {
         Console.WriteLine("Checking to see if game is loaded");
@@ -37,7 +38,6 @@ public class Game
             System.Threading.Thread.Sleep(500);
 
         }
-        Console.WriteLine("Menu loaded, setting up hooks. Please wait to Connect to the server before loading a save file.");
         Mod.InitOnMenu();
     }
 
@@ -59,6 +59,8 @@ public class Game
     {
         try
         {
+            if (Mod.GameInstance!.LevelID > 0)
+                return true;
             byte** basePtr = (byte**)(Mod.BaseAddress + 0xC4ED1C);
             if (basePtr == null || *basePtr == null)
                 return false;
@@ -223,7 +225,7 @@ public class Game
     private static IReverseWrapper<CloseMenu> _reverseWrapOnCloseMenu = default!;
 
 
-    public static void SetupHooks(IReloadedHooks hooks)
+    public void SetupHooks(IReloadedHooks hooks)
     {
         string[] completeLevelHook =
         {
@@ -513,7 +515,8 @@ public class Game
         Mod.GameInstance!.PrevMapID = Mod.GameInstance!.MapID;
         Mod.GameInstance!.MapID = value;
         Console.WriteLine($"Map ID updated to {value}.");
-        ResetToLocations(value);
+        ResetItems();
+        Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, MaxItemID);
         Level.ImplementMapLogic(value);
     }
 
@@ -524,19 +527,23 @@ public class Game
     {
         bool eaxBit0Set = (eax & 1) != 0;
         int lastNibble = esp & 0xF;
-        Console.WriteLine($"Last Nibble: {lastNibble}");
+        // Console.WriteLine($"Last Nibble: {lastNibble}");
 
         if(eaxBit0Set && lastNibble == 0x08)
         {
             Mod.GameInstance!.PrevInShop = true;
             Console.WriteLine("Level Selector Opened");
-            ResetToItems(Mod.GameInstance!.MapID);
+            ResetItems();
+            Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, MaxItemID);
         }
         if(eaxBit0Set && lastNibble == 0x0C)
         {
             Mod.GameInstance!.PrevInShop = true;
             Console.WriteLine("Shop Opened");
-            ResetToLocations(Mod.GameInstance!.MapID);
+            ResetItems();
+            Mod.LHP2_Archipelago!.UpdateBasedOnItems(tokenOffset, levelOffset - 25);
+            // TODO: Add in Red Brick Collected once added to the APworld
+            Mod.LHP2_Archipelago!.UpdateBasedOnLocations(0, tokenOffset - 1);
         }
         else if(!eaxBit0Set && Mod.GameInstance!.PrevInShop)
         {
@@ -546,7 +553,8 @@ public class Game
             // Game enters a level before thinking you are out of shop, so if we stay in hub, resetting levels here
             if (Mod.GameInstance!.LevelID >= 1 && Mod.GameInstance!.LevelID <= 4)
             {
-                ResetToLocations(Mod.GameInstance!.MapID);
+                ResetItems();
+                Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, MaxItemID);
             }
         }
     }
@@ -561,49 +569,50 @@ public class Game
         {
             return;
         }
-        // Take into account that menu opens when selecting freeplay/story. Additionally, ignore if not in hub
-        if(Mod.GameInstance!.PrevInShop == true || Mod.GameInstance!.LevelID < 1 || Mod.GameInstance!.LevelID > 4)
+        // Take into account that menu opens when selecting freeplay/story.
+        if(Mod.GameInstance!.PrevInShop == true)
         {
             return;
+        } 
+        else if (Mod.GameInstance!.LevelID < 1 || Mod.GameInstance!.LevelID > 4) // If in level, want to sync to locations so they can exit if level completed
+        {
+            Console.WriteLine("Menu Opened");
+            Mod.GameInstance!.PrevInMenu = true;
+            ResetItems();
+            Mod.LHP2_Archipelago!.UpdateBasedOnLocations(0, MaxItemID);
         }
-        Console.WriteLine("Menu Opened");
-        Mod.GameInstance!.PrevInMenu = true;
-        ResetToItems(Mod.GameInstance!.MapID);
-        Bricks.GetGoldBrickCount();
+        else // In Hub, want to show all items
+        {
+            Console.WriteLine("Menu Opened");
+            Mod.GameInstance!.PrevInMenu = true;
+            ResetItems();
+            Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, MaxItemID);
+            Bricks.GetGoldBrickCount();
+        }
     }
 
     [Function(CallingConventions.Fastcall)]
     public delegate void CloseMenu();
     private static void onCloseMenu()
     {
-        // Take into account that this code runs multiple times. Additionally, ignore if not in hub
-        if(!Mod.GameInstance!.PrevInMenu || Mod.GameInstance!.LevelID < 1 || Mod.GameInstance!.LevelID > 4)
+        // Take into account that this code runs multiple times.
+        if(!Mod.GameInstance!.PrevInMenu)
         {
             return;
         }
         Mod.GameInstance!.PrevInMenu = false;
         Console.WriteLine("Menu Closed");
-        ResetToLocations(Mod.GameInstance!.MapID);
+        ResetItems();
+        Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, MaxItemID);
     }
 
-    private static void ResetToItems(int mapID)
+    private static void ResetItems()
     {
         Bricks.ResetGoldBrickCount();
         Bricks.ResetRedBrickUnlock();
         Level.ResetLevels();
         Character.ResetTokens();
         Character.ResetUnlocks();
-        Mod.LHP2_Archipelago!.UpdateItemsReceived();
-    }
-
-    private static void ResetToLocations(int mapID)
-    {
-        Bricks.ResetGoldBrickCount();
-        Bricks.ResetRedBrickUnlock();
-        Level.ResetLevels();
-        Character.ResetTokens();
-        Character.ResetUnlocks();
-        Mod.LHP2_Archipelago!.UpdateLocationsChecked();
     }
 
     private static void CheckAndReportLocation(int apID)
