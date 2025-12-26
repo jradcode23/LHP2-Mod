@@ -105,7 +105,7 @@ public class Level
         {
             Console.WriteLine($"Can't Unlock GC, null pointer at 0x{(nuint)ptr:X}");
         } 
-        *ptr |= (byte)(BitMask.GryfCrest);
+        *ptr |= (byte)BitMask.GryfCrest;
     }
 
     public static unsafe void UnlockSlytherinCrest(LevelData level)
@@ -115,7 +115,7 @@ public class Level
         {
             Console.WriteLine($"Can't Unlock SC, null pointer at 0x{(nuint)ptr:X}");
         } 
-        *ptr |= (byte)(BitMask.SlythCrest);
+        *ptr |= (byte)BitMask.SlythCrest;
     }
 
     public static unsafe void UnlockRavenclawCrest(LevelData level)
@@ -125,7 +125,7 @@ public class Level
         {
             Console.WriteLine($"Can't Unlock RC, null pointer at 0x{(nuint)ptr:X}");
         } 
-        *ptr |= (byte)(BitMask.RavenCrest);
+        *ptr |= (byte)BitMask.RavenCrest;
     }
 
     public static unsafe void UnlockHufflepuffCrest(LevelData level)
@@ -135,7 +135,7 @@ public class Level
         {
             Console.WriteLine($"Can't Unlock HC, null pointer at 0x{(nuint)ptr:X}");
         } 
-        *ptr |= (byte)(BitMask.HuffleCrest);
+        *ptr |= (byte)BitMask.HuffleCrest;
     }
 
     public static unsafe void UnlockStudentInPeril(LevelData level)
@@ -145,7 +145,7 @@ public class Level
         {
             Console.WriteLine($"Can't Unlock SIP, null pointer at 0x{(nuint)ptr:X}");
         } 
-        *ptr |= (byte)(BitMask.StudentInPeril);
+        *ptr |= (byte)BitMask.StudentInPeril;
     }
 
     public static unsafe void UnlockTrueWizard(LevelData level)

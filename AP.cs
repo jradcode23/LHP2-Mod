@@ -151,8 +151,8 @@ public class LHP2_Archipelago
     {
         foreach (var item in _session.Items.AllItemsReceived)
         {
-            // Only process items whose AP item ID falls within the desired band
-            if (item.ItemId - gameOffset <= minItemId || item.ItemId - gameOffset >= maxItemId)
+            // Only process items whose AP item ID falls within the desired range
+            if (item.ItemId - gameOffset < minItemId || item.ItemId - gameOffset > maxItemId)
                 continue;
 
             var gameId = item.ItemId - gameOffset;
@@ -165,7 +165,7 @@ public class LHP2_Archipelago
         foreach (var location in _session.Locations.AllLocationsChecked)
         {
             // Only handle locations within the desired ID range
-            if (location - gameOffset <= minLocationId || location - gameOffset >= maxLocationId)
+            if (location - gameOffset < minLocationId || location - gameOffset > maxLocationId)
                 continue;
 
             var gameId = location - gameOffset;

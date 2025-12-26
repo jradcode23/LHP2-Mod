@@ -1,15 +1,12 @@
-using System.Linq;
-using Reloaded.Memory.Utilities;
-
 namespace LHP2_Archi_Mod;
 
 public class Character
 {
-    private static unsafe readonly byte* characterBaseAddress = (byte*)(*(int*)(Mod.BaseAddress + 0xC546E4));
+    private static unsafe readonly byte* characterBaseAddress = (byte*)*(int*)(Mod.BaseAddress + 0xC546E4);
     private static readonly byte TokenOffset = 0xE;
     private static readonly byte unlockOffset = 0xE4;
 
-    private static readonly Dictionary<int, int> characterMap = new Dictionary<int, int>
+    private static readonly Dictionary<int, int> characterMap = new()
     {
         {0, 0x3}, // Hagrid
         {1, 0xB}, // Fang
@@ -44,8 +41,8 @@ public class Character
         {30, 0xD4}, // Death Eater
         {31, 0xD5}, // Dudley (Grey Top)
         {32, 0xD6}, // Professory Dumbledore
-        {33, 0xD7}, // Harry Potter
-        {34, 0xD8}, // Hermione Granger
+        // {33, 0xD7}, // Harry Potter
+        // {34, 0xD8}, // Hermione Granger
         {35, 0xD9}, // Argus Filch
         {36, 0xDD}, // Madam Hooch
         {37, 0xDE}, // Vincent Crabbe
@@ -62,21 +59,21 @@ public class Character
         {48, 0xF7}, // Draco Malfoy
         {49, 0xFA}, // Lucius Malfoy
         {50, 0xFB}, // Draco (Suit)
-        {51, 0xFC}, // Custom A
-        {52, 0xFD}, // Custom B
-        {53, 0xFE}, // Custom C
-        {54, 0xFF}, // Custom D
-        {55, 0x100}, // Custom E
-        {56, 0x101}, // Custom G
-        {57, 0x102}, // Custom H
-        {58, 0x103}, // Custom I
-        {59, 0x104}, // Custom J
+        // {51, 0xFC}, // Custom A
+        // {52, 0xFD}, // Custom B
+        // {53, 0xFE}, // Custom C
+        // {54, 0xFF}, // Custom D
+        // {55, 0x100}, // Custom E
+        // {56, 0x101}, // Custom G
+        // {57, 0x102}, // Custom H
+        // {58, 0x103}, // Custom I
+        // {59, 0x104}, // Custom J
         {60, 0x10A}, // Harry (Pyjamas)
         {61, 0x10F}, // Moaning Myrtle
         {62, 0x11C}, // James Potter (Ghost)
         {63, 0x120}, // Mad-Eye Moody
         {64, 0x121}, // Hannah Abbot
-        {65, 0x122}, // Custom F
+        // {65, 0x122}, // Custom F
         {66, 0x127}, // Kingsley Shacklebolt
         {67, 0x128}, // Aberforth Dumbledore
         {68, 0x129}, // Albert Runcorn
@@ -171,7 +168,7 @@ public class Character
         {157, 0x1F1}, // Ernie Prang
         {158, 0x1FC}, // Professor Snape
         {159, 0x1FE}, // Neville Longbottom
-        {160, 0x1FF}, // Ron Weasley
+        // {160, 0x1FF}, // Ron Weasley
         {161, 0x201}, // Ron (Quidditch)
         {162, 0x207}, // Vernon Dursley
         {163, 0x20B}, // Tom Riddle
@@ -344,7 +341,6 @@ public class Character
         }
 
         int value = (int)byteIndex;
-        Console.WriteLine($"Purchase Character value is: {value}");
         var kvp = characterMap.FirstOrDefault(k => k.Value == value);
         return kvp.Equals(default(KeyValuePair<int,int>)) ? -1 : kvp.Key;
     }

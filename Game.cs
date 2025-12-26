@@ -18,14 +18,17 @@ public class Game
     public const int tokenOffset = 213;
     public const int levelOffset = 450;
     public const int SIPOffset = 475;
+    public const int HubSIPOffset = 499;
     public const int GryfCrestOffset = 550;
     public const int SlythCrestOffset = 574;
     public const int RavenCrestOffset = 598;
     public const int HuffleCrestOffset = 622;
     public const int TrueWizardOffset = 675;
     public const int GoldBrickPurchOffset = 700;
-    public const int RedBrickPurchOffset = 725;
-    public const int MaxItemID = 748;
+    public const int HubGBOffset = 716;
+    public const int RedBrickCollectOffset = 900;
+    public const int RedBrickPurchOffset = 950;
+    public const int MaxItemID = 973;
     public static void CheckGameLoaded()
     {
         Console.WriteLine("Checking to see if game is loaded");
@@ -156,13 +159,16 @@ public class Game
                     int token = ItemID - tokenOffset;
                     Character.UnlockToken(token);
                     break;
-                case < 475: // Levels
+                case < 475:
                     level = Level.ConvertIDToLeveData(ItemID - levelOffset);
                     Level.UnlockLevel(level);
                     break;
-                case < 550:
+                case < 499:
                     level = Level.ConvertIDToLeveData(ItemID - SIPOffset);
                     Level.UnlockStudentInPeril(level);
+                    break;
+                case < 550:
+                    Hub.UnlockHubSIP(ItemID - HubSIPOffset);
                     break;
                 case < 574:
                     level = Level.ConvertIDToLeveData(ItemID - GryfCrestOffset);
@@ -184,11 +190,14 @@ public class Game
                     level = Level.ConvertIDToLeveData(ItemID - TrueWizardOffset);
                     Level.UnlockTrueWizard(level);
                     break;
-                case < 725:
-                    Bricks.ReceivedGoldBrick();
+                case < 900:
+                    Hub.ReceivedGoldBrick();
                     break;
-                case < 750:
-                    Bricks.ReceivedRedBrickUnlock(ItemID - RedBrickPurchOffset);
+                case < 925:
+                    Hub.UnlockHubRB(ItemID - RedBrickCollectOffset);
+                    break;
+                case < 975:
+                    Hub.ReceivedRedBrickUnlock(ItemID - RedBrickPurchOffset);
                     break;
                 default:
                     Console.WriteLine($"Unknown item received: {ItemID}");
@@ -218,6 +227,9 @@ public class Game
     private static IReverseWrapper<HubCharacterCollected> _reverseWrapOnHubCharacterCollected = default!;
     private static IReverseWrapper<LevelCharacterCollected> _reverseWrapOnLevelCharacterCollected = default!;
     private static IReverseWrapper<CharacterPurchased> _reverseWrapOnCharacterPurchased = default!;
+    private static IReverseWrapper<HubSIP> _reverseWrapOnHubSIP = default!;
+    private static IReverseWrapper<HubGB> _reverseWrapOnHubGB = default!;
+    private static IReverseWrapper<HubRB> _reverseWrapOnHubRB = default!;
     private static IReverseWrapper<UpdateLevel> _reverseWrapOnLevelUpdate = default!;
     private static IReverseWrapper<UpdateMap> _reverseWrapOnMapUpdate = default!;
     private static IReverseWrapper<OpenCloseShop> _reverseWrapOnShopUpdate = default!;
@@ -271,6 +283,7 @@ public class Game
             "popfd",
         };
         _asmHooks.Add(hooks.CreateAsmHook(completeHogwartsCrestHook, (int)(Mod.BaseAddress + 0x16C0A), AsmHookBehaviour.ExecuteAfter).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(completeHogwartsCrestHook, (int)(Mod.BaseAddress + 0x16C30), AsmHookBehaviour.ExecuteAfter).Activate());
 
         string[] purchaseRedBrick =
         {
@@ -326,6 +339,39 @@ public class Game
             "popfd",
         };
         _asmHooks.Add(hooks.CreateAsmHook(characterPurchasedHook, (int)(Mod.BaseAddress + 0x418968), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] hubSIPHook =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnHubSIP, out _reverseWrapOnHubSIP)}",
+            "popad",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(hubSIPHook, (int)(Mod.BaseAddress + 0x313BF1), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] hubGBHook =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnHubGB, out _reverseWrapOnHubGB)}",
+            "popad",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(hubGBHook, (int)(Mod.BaseAddress + 0x3137EF), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] hubRBHook =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnHubRB, out _reverseWrapOnHubRB)}",
+            "popad",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(hubRBHook, (int)(Mod.BaseAddress + 0x71E92), AsmHookBehaviour.ExecuteFirst).Activate());
 
         string[] updateLevelHook =
         {
@@ -419,7 +465,7 @@ public class Game
     }
 
     [Function([FunctionAttribute.Register.eax], 
-        FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void CrestsComplete(int value);
     private static void OnHouseCrest(int value)
     {
@@ -490,11 +536,73 @@ public class Game
     private static void OnCharacterPurchased(IntPtr ecx, int eax)
     {
         if(Mod.GameInstance!.MapID == 366 || Mod.GameInstance!.MapID == 372 
-            || Mod.GameInstance!.MapID == 378 || Mod.GameInstance!.MapID == 382 && Mod.GameInstance!.PrevInShop) //Make sure Player is in shop
+            || Mod.GameInstance!.MapID == 378 || Mod.GameInstance!.MapID == 382 && Mod.GameInstance!.PrevInShop == true) //Make sure Player is in shop
         {
             int itemID = Character.GetPurchaseCharacterID(ecx, eax);
+            if(itemID == -1)
+            {
+                Console.WriteLine("Error getting Purchased Character ID");
+                Console.WriteLine("EAX is: " + eax);
+                Console.WriteLine("ECX is: " + ecx);
+                Console.WriteLine("Map ID is: " + Mod.GameInstance!.MapID);
+                return;
+            }
             CheckAndReportLocation(itemID);
         }
+    }
+
+    [Function([FunctionAttribute.Register.edx], 
+    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void HubSIP(int edx);
+    private static void OnHubSIP(int edx)
+    {
+
+        int itemID = Hub.GetHubID(edx);
+        if(itemID == -1)
+        {
+            Console.WriteLine("Error getting SIP ID from Hub");
+            Console.WriteLine("EDX is: " + edx);
+            Console.WriteLine("Map ID is: " + Mod.GameInstance!.MapID);
+            return;
+        }
+        CheckAndReportLocation(itemID + HubSIPOffset);
+
+    }
+
+    [Function([FunctionAttribute.Register.eax], 
+    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void HubGB(int eax);
+    private static void OnHubGB(int eax)
+    {
+
+        int itemID = Hub.GetHubID(eax);
+        if(itemID == -1)
+        {
+            Console.WriteLine("Error getting GB ID from Hub");
+            Console.WriteLine("EAX is: " + eax);
+            Console.WriteLine("Map ID is: " + Mod.GameInstance!.MapID);
+            return;
+        }
+        CheckAndReportLocation(itemID + HubGBOffset);
+
+    }
+
+    [Function([FunctionAttribute.Register.eax], 
+    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void HubRB(int eax);
+    private static void OnHubRB(int eax)
+    {
+
+        int itemID = Hub.GetHubID(eax);
+        if(itemID == -1)
+        {
+            Console.WriteLine("Error getting RB ID from Hub");
+            Console.WriteLine("EAX is: " + eax);
+            Console.WriteLine("Map ID is: " + Mod.GameInstance!.MapID);
+            return;
+        }
+        CheckAndReportLocation(itemID + RedBrickCollectOffset);
+
     }
 
     [Function([FunctionAttribute.Register.eax], 
@@ -542,8 +650,10 @@ public class Game
             Console.WriteLine("Shop Opened");
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(tokenOffset, levelOffset - 25);
-            // TODO: Add in Red Brick Collected once added to the APworld
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(0, tokenOffset - 1);
+
+            Mod.LHP2_Archipelago!.UpdateBasedOnItems(RedBrickCollectOffset, RedBrickPurchOffset - 1);
+            Mod.LHP2_Archipelago!.UpdateBasedOnLocations(GoldBrickPurchOffset, MaxItemID);
         }
         else if(!eaxBit0Set && Mod.GameInstance!.PrevInShop)
         {
@@ -587,7 +697,7 @@ public class Game
             Mod.GameInstance!.PrevInMenu = true;
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, MaxItemID);
-            Bricks.GetGoldBrickCount();
+            Hub.GetGoldBrickCount();
         }
     }
 
@@ -608,11 +718,12 @@ public class Game
 
     private static void ResetItems()
     {
-        Bricks.ResetGoldBrickCount();
-        Bricks.ResetRedBrickUnlock();
+        Hub.ResetGoldBrickCount();
+        Hub.ResetRedBrickUnlock();
         Level.ResetLevels();
         Character.ResetTokens();
         Character.ResetUnlocks();
+        Hub.ResetHub();
     }
 
     private static void CheckAndReportLocation(int apID)
