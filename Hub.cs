@@ -42,7 +42,8 @@ public class Hub
         {0x9E, 7}, // Y8 Hogsmeade Station
         {0x512, 7}, // Y7 Hogsmeade Station
         {0x866, 7}, // Y6 Hogsmeade Station
-        {0xAA, 8}, // Hogwarts Path
+        {0x840, 7}, // Y5 Hogsmeade Station
+        {0xAA, 8}, // Y8 Hogwarts Path
         {0x51E, 8}, // Y7 Hogwarts Path
         {0x872, 8}, // Y6 Hogwarts Path
         {0xD3A, 8}, // Y5 Hogwarts Path

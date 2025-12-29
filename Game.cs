@@ -14,6 +14,7 @@ public class Game
     public int PrevMapID { get; private set; } = -1;
     public int MapID { get; private set; } = -1;
     public bool PrevInShop { get; private set; } = false;
+    public bool PrevInLevelSelect { get; private set; } = false;
     public bool PrevInMenu { get; private set; } = false;
     public const int tokenOffset = 213;
     public const int levelOffset = 450;
@@ -639,7 +640,7 @@ public class Game
 
         if(eaxBit0Set && lastNibble == 0x08)
         {
-            Mod.GameInstance!.PrevInShop = true;
+            Mod.GameInstance!.PrevInLevelSelect = true;
             Console.WriteLine("Level Selector Opened");
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, MaxItemID);
@@ -655,10 +656,22 @@ public class Game
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(RedBrickCollectOffset, RedBrickPurchOffset - 1);
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(GoldBrickPurchOffset, MaxItemID);
         }
+        else if(!eaxBit0Set && Mod.GameInstance!.PrevInLevelSelect)
+        {
+            Mod.GameInstance!.PrevInLevelSelect = false;
+            Console.WriteLine("Level Selector Closed");
+
+            // Game enters a level before thinking you are out of shop, so if we stay in hub, resetting levels here
+            if (Mod.GameInstance!.LevelID >= 1 && Mod.GameInstance!.LevelID <= 4)
+            {
+                ResetItems();
+                Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, MaxItemID);
+            }
+        }
         else if(!eaxBit0Set && Mod.GameInstance!.PrevInShop)
         {
             Mod.GameInstance!.PrevInShop = false;
-            Console.WriteLine("Shop or Level Selector Closed");
+            Console.WriteLine("Shop Selector Closed");
 
             // Game enters a level before thinking you are out of shop, so if we stay in hub, resetting levels here
             if (Mod.GameInstance!.LevelID >= 1 && Mod.GameInstance!.LevelID <= 4)
