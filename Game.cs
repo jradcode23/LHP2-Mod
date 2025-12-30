@@ -29,7 +29,8 @@ public class Game
     public const int HubGBOffset = 716;
     public const int RedBrickCollectOffset = 900;
     public const int RedBrickPurchOffset = 950;
-    public const int MaxItemID = 973;
+    public const int SpellPurchOffset = 975;
+    public const int MaxItemID = 1005;
     public static void CheckGameLoaded()
     {
         Console.WriteLine("Checking to see if game is loaded");
@@ -200,6 +201,9 @@ public class Game
                 case < 975:
                     Hub.ReceivedRedBrickUnlock(ItemID - RedBrickPurchOffset);
                     break;
+                case < 1005:
+                    Hub.UnlockSpell(ItemID - SpellPurchOffset);
+                    break;
                 default:
                     Console.WriteLine($"Unknown item received: {ItemID}");
                     break;
@@ -225,6 +229,7 @@ public class Game
     private static IReverseWrapper<CrestsComplete> _reverseWrapOnCrests = default!;
     private static IReverseWrapper<RedBrickPurchase> _reverseWrapOnRedBrickPurch = default!;
     private static IReverseWrapper<GoldBrickPurchase> _reverseWrapOnGoldBrickPurch = default!;
+    private static IReverseWrapper<SpellPurchase> _reverseWrapOnSpellPurch = default!;
     private static IReverseWrapper<HubCharacterCollected> _reverseWrapOnHubCharacterCollected = default!;
     private static IReverseWrapper<LevelCharacterCollected> _reverseWrapOnLevelCharacterCollected = default!;
     private static IReverseWrapper<CharacterPurchased> _reverseWrapOnCharacterPurchased = default!;
@@ -307,6 +312,17 @@ public class Game
             "popfd",
         };
         _asmHooks.Add(hooks.CreateAsmHook(purchaseGoldBrick, (int)(Mod.BaseAddress + 0x9039), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] purchaseJokeSpell =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnSpellPurchase, out _reverseWrapOnSpellPurch)}",
+            "popad",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(purchaseJokeSpell, (int)(Mod.BaseAddress + 0x33358B), AsmHookBehaviour.ExecuteFirst).Activate());
 
         string[] hubCharacterCollectedHook =
         {
@@ -513,6 +529,25 @@ public class Game
 
     }
 
+    // TODO: will need to be adjusted for unlockable spells later
+    [Function([FunctionAttribute.Register.eax], 
+    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void SpellPurchase(int eax);
+    private static void OnSpellPurchase(int eax)
+    {
+        if ((Mod.GameInstance!.MapID == 369 || Mod.GameInstance!.MapID == 375
+            || Mod.GameInstance!.MapID == 383 || Mod.GameInstance!.MapID == 387) && Mod.GameInstance!.PrevInShop == true) //Make sure Player is in shop
+        {
+            int itemId = BitOperations.TrailingZeroCount(eax);
+            itemId += SpellPurchOffset;
+            if(itemId == 975 || itemId > 994)
+            {
+                return; // Ignore non purchased spells that are unlocked
+            }
+            CheckAndReportLocation(itemId);
+        }
+    }
+
     [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.edx], 
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void HubCharacterCollected(IntPtr eax, int edx);
@@ -536,8 +571,8 @@ public class Game
     public delegate void CharacterPurchased(IntPtr ecx, int eax);
     private static void OnCharacterPurchased(IntPtr ecx, int eax)
     {
-        if(Mod.GameInstance!.MapID == 366 || Mod.GameInstance!.MapID == 372 
-            || Mod.GameInstance!.MapID == 378 || Mod.GameInstance!.MapID == 382 && Mod.GameInstance!.PrevInShop == true) //Make sure Player is in shop
+        if((Mod.GameInstance!.MapID == 366 || Mod.GameInstance!.MapID == 372 
+            || Mod.GameInstance!.MapID == 378 || Mod.GameInstance!.MapID == 382) && Mod.GameInstance!.PrevInShop == true) //Make sure Player is in shop
         {
             int itemID = Character.GetPurchaseCharacterID(ecx, eax);
             if(itemID == -1)
@@ -625,7 +660,8 @@ public class Game
         Mod.GameInstance!.MapID = value;
         Console.WriteLine($"Map ID updated to {value}.");
         ResetItems();
-        Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, MaxItemID);
+        Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
+        Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
         Level.ImplementMapLogic(value);
     }
 
@@ -665,7 +701,8 @@ public class Game
             if (Mod.GameInstance!.LevelID >= 1 && Mod.GameInstance!.LevelID <= 4)
             {
                 ResetItems();
-                Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, MaxItemID);
+                Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
+                Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
             }
         }
         else if(!eaxBit0Set && Mod.GameInstance!.PrevInShop)
@@ -677,7 +714,8 @@ public class Game
             if (Mod.GameInstance!.LevelID >= 1 && Mod.GameInstance!.LevelID <= 4)
             {
                 ResetItems();
-                Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, MaxItemID);
+                Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
+                Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
             }
         }
     }
@@ -726,13 +764,15 @@ public class Game
         Mod.GameInstance!.PrevInMenu = false;
         Console.WriteLine("Menu Closed");
         ResetItems();
-        Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, MaxItemID);
+        Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
+        Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
     }
 
     private static void ResetItems()
     {
         Hub.ResetGoldBrickCount();
         Hub.ResetRedBrickUnlock();
+        Hub.ResetSpells();
         Level.ResetLevels();
         Character.ResetTokens();
         Character.ResetUnlocks();

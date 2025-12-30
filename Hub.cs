@@ -5,6 +5,7 @@ public class Hub
     private static unsafe readonly byte* hubBaseAddress = (byte*)*(int*)(Mod.BaseAddress + 0xC5B3B4);
     private static unsafe readonly byte* goldBrickBaseAddress = (byte*)*(int*)(Mod.BaseAddress + 0xC54554);
     private static unsafe readonly byte* RedBrickPurchBaseAddress = (byte*)*(int*)(Mod.BaseAddress + 0xC575F4);
+    private static unsafe readonly byte* SpellBaseAddress = (byte*)(Mod.BaseAddress + 0xB06AB0);
 
     [Flags]
     public enum BitMask
@@ -277,6 +278,40 @@ public class Hub
     public static void ResetGoldBrickCount()
     {
         goldBrickCount = 0;
+    }
+
+    public static unsafe void UnlockSpell(int id)
+    {
+
+        int byteOffset = id / 8;
+        int bitOffset = id % 8;
+
+        byte* ptr = SpellBaseAddress + byteOffset;
+
+        if (ptr == null)
+        {
+            Console.WriteLine("SpellBaseAddress: null pointer");
+            return;
+        }
+        *ptr |= (byte)(1 << bitOffset);
+    }
+
+    public static unsafe void ResetSpells()
+    {
+        for(int i = 0; i < 4; i++)
+        {
+            byte* ptr = SpellBaseAddress + i;
+            *ptr = 0;
+        }
+
+        // Set the Default Spells
+        UnlockSpell(0); //Wingardium Leviosa
+        UnlockSpell(20); //Pets
+        UnlockSpell(21); //Invisibility Cloak
+        UnlockSpell(22); //Avada
+        UnlockSpell(24); //Lumos Part 1
+        UnlockSpell(25); //Lumos Part 2
+        UnlockSpell(31); //Unknown Spell
     }
 
 }
