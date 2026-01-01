@@ -243,6 +243,7 @@ public class Hub
             Console.WriteLine($"Can't Unlock Red Brick, null pointer at 0x{(nuint)ptr:X}");
             return;
         } 
+        // Console.WriteLine($"Unlocking Red Brick ID {id} at byte offset {byteOffset}, bit offset {bitOffset}");
         *ptr |= (byte)(1 << bitOffset);
     }
 

@@ -195,7 +195,7 @@ public class Game
                 case < 900:
                     Hub.ReceivedGoldBrick();
                     break;
-                case < 925:
+                case < 935:
                     Hub.UnlockHubRB(ItemID - RedBrickCollectOffset);
                     break;
                 case < 975:
