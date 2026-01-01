@@ -288,8 +288,7 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(completeHogwartsCrestHook, (int)(Mod.BaseAddress + 0x16C0A), AsmHookBehaviour.ExecuteAfter).Activate());
-        _asmHooks.Add(hooks.CreateAsmHook(completeHogwartsCrestHook, (int)(Mod.BaseAddress + 0x16C30), AsmHookBehaviour.ExecuteAfter).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(completeHogwartsCrestHook, (int)(Mod.BaseAddress + 0x16C0A), AsmHookBehaviour.ExecuteFirst).Activate());
 
         string[] purchaseRedBrick =
         {
