@@ -309,8 +309,14 @@ public class Hub
         UnlockSpell(20); //Pets
         UnlockSpell(21); //Invisibility Cloak
         UnlockSpell(22); //Avada
+        UnlockSpell(23); //Diffindo
         UnlockSpell(24); //Lumos Part 1
         UnlockSpell(25); //Lumos Part 2
+        UnlockSpell(26); //Deluminator & Polyjuice
+        UnlockSpell(27); //Aguamenti
+        UnlockSpell(28); //Focus
+        UnlockSpell(29); //Expecto Patronum
+        UnlockSpell(30); //Reducto
         UnlockSpell(31); //Unknown Spell
     }
 
