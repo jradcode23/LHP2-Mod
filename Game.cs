@@ -241,6 +241,7 @@ public class Game
     private static IReverseWrapper<OpenCloseShop> _reverseWrapOnShopUpdate = default!;
     private static IReverseWrapper<OpenMenu> _reverseWrapOnOpenMenu = default!;
     private static IReverseWrapper<CloseMenu> _reverseWrapOnCloseMenu = default!;
+    private static IReverseWrapper<CharacterCmp> _reverseWrapOnCharacterCmp = default!;
 
 
     public void SetupHooks(IReloadedHooks hooks)
@@ -432,6 +433,46 @@ public class Game
             "popfd",
         };
         _asmHooks.Add(hooks.CreateAsmHook(OpenMenuHook, (int)(Mod.BaseAddress + 0x212145), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] CharacterCmp =
+        {
+            "use32",
+
+            // Save CPU state
+            "pushfd",
+            "pushad",
+
+            // Call C# delegate → AL = 1 (skip CMP) or 0 (run CMP)
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(onCharacterCmp, out _reverseWrapOnCharacterCmp)}",
+
+            // Decide based on AL BEFORE restoring flags
+            "test al, al",
+            "jnz skip_cmp",              // AL == 1 → skip CMP
+
+            // ---- RUN CMP PATH (original logic) ----
+            "popad",
+            "popfd",
+
+            "cmp byte [eax + esi + 0x74], 0",
+            "je bail",                   // if CMP fails → bail
+
+            // Original success path: mov eax,1 ; jmp 418931
+            "mov eax, 1",
+            hooks.Utilities.GetAbsoluteJumpMnemonics((nint)Mod.BaseAddress + 0x418931, false),
+
+
+            // ---- SKIP CMP PATH (pretend CMP passed) ----
+            "skip_cmp:",
+            "popad",
+            "popfd",
+
+            hooks.Utilities.GetAbsoluteJumpMnemonics((nint)Mod.BaseAddress + 0x418931, false),
+
+            // ---- BAIL LABEL (failure path → 41891A) ----
+            "bail:",
+            hooks.Utilities.GetAbsoluteJumpMnemonics((nint)Mod.BaseAddress + 0x41891A, false),
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(CharacterCmp, (int)(Mod.BaseAddress + 0x41890C), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
 
         string[] CloseMenuHook =
         {
@@ -750,6 +791,22 @@ public class Game
             Hub.GetGoldBrickCount();
         }
     }
+
+    [Function([], FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    public delegate bool CharacterCmp();
+
+    private static bool onCharacterCmp()
+    {
+        // Only run CMP on menu map or levels 1–4
+        if (Mod.GameInstance!.MapID == 402)
+            return false;
+
+        if (Mod.GameInstance!.LevelID >= 1 && Mod.GameInstance!.LevelID <= 4)
+            return false;
+
+        return true;   // skip CMP everywhere else
+    }
+
 
     [Function(CallingConventions.Fastcall)]
     public delegate void CloseMenu();

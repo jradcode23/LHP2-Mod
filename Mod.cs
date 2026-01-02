@@ -68,6 +68,7 @@ public class Mod : ModBase // <= Do not Remove.
         _logger.WriteLine($"[{_modConfig.ModId}] Config Updated: Applying");
     }
 
+    //TODO: Can run multiple times and accidentally set up multiple hooks. Fix this.
     public static void InitOnMenu()
     {
         GameInstance?.ModifyInstructions();
