@@ -242,7 +242,8 @@ public class Game
     private static IReverseWrapper<OpenMenu> _reverseWrapOnOpenMenu = default!;
     private static IReverseWrapper<CloseMenu> _reverseWrapOnCloseMenu = default!;
     private static IReverseWrapper<CharacterCmp> _reverseWrapOnCharacterCmp = default!;
-
+    private static IReverseWrapper<OpenPolyjuicePot> _reverseWrapOnOpenPolyjuicePot = default!;
+    private static IReverseWrapper<ClosePolyjuicePot> _reverseWrapOnClosePolyjuicePot = default!;
 
     public void SetupHooks(IReloadedHooks hooks)
     {
@@ -437,22 +438,15 @@ public class Game
         string[] CharacterCmp =
         {
             "use32",
-
-            // Save CPU state
             "pushfd",
             "pushad",
-
-            // Call C# delegate → AL = 1 (skip CMP) or 0 (run CMP)
             $"{hooks.Utilities.GetAbsoluteCallMnemonics(onCharacterCmp, out _reverseWrapOnCharacterCmp)}",
-
-            // Decide based on AL BEFORE restoring flags
             "test al, al",
-            "jnz skip_cmp",              // AL == 1 → skip CMP
+            "jnz skip_cmp", 
 
             // ---- RUN CMP PATH (original logic) ----
             "popad",
             "popfd",
-
             "cmp byte [eax + esi + 0x74], 0",
             "je bail",                   // if CMP fails → bail
 
@@ -465,7 +459,6 @@ public class Game
             "skip_cmp:",
             "popad",
             "popfd",
-
             hooks.Utilities.GetAbsoluteJumpMnemonics((nint)Mod.BaseAddress + 0x418931, false),
 
             // ---- BAIL LABEL (failure path → 41891A) ----
@@ -484,6 +477,28 @@ public class Game
             "popfd",
         };
         _asmHooks.Add(hooks.CreateAsmHook(CloseMenuHook, (int)(Mod.BaseAddress + 0x218347), AsmHookBehaviour.ExecuteAfter).Activate());
+
+        string[] OpenPolyjuicePotHook =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(onOpenPolyjuicePot, out _reverseWrapOnOpenPolyjuicePot)}",
+            "popad",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(OpenPolyjuicePotHook, (int)(Mod.BaseAddress + 0x3C69A0), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] ClosePolyjuicePotHook =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(onClosePolyjuicePot, out _reverseWrapOnClosePolyjuicePot)}",
+            "popad",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(ClosePolyjuicePotHook, (int)(Mod.BaseAddress + 0x3C69B0), AsmHookBehaviour.ExecuteFirst).Activate());
     }
 
     [Function(CallingConventions.Fastcall)]
@@ -819,6 +834,41 @@ public class Game
         }
         Mod.GameInstance!.PrevInMenu = false;
         Console.WriteLine("Menu Closed");
+        ResetItems();
+        Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
+        Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
+    }
+
+    [Function(CallingConventions.Fastcall)]
+    public delegate void OpenPolyjuicePot();
+    private static unsafe void onOpenPolyjuicePot()
+    {
+        byte* cauldronBaseAddress = (byte*)*(int*)(Mod.BaseAddress + 0xC54290);
+        nuint cauldronItem = Memory.Instance.Read<nuint>((nuint)(cauldronBaseAddress + 0x68));
+        // Console.WriteLine($"Cauldron Item ID: {cauldronItem}");
+        if(cauldronItem != 4 || Mod.GameInstance!.PrevInLevelSelect == true) // Only trigger on opening the Polyjuice Pot
+        {
+            return;
+        }
+        Console.WriteLine("Polyjuice Pot Opened");
+        ResetItems();
+        Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, tokenOffset - 1);
+        Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
+        Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
+    }
+
+    [Function(CallingConventions.Fastcall)]
+    public delegate void ClosePolyjuicePot();
+    private static unsafe void onClosePolyjuicePot()
+    {
+        byte* cauldronBaseAddress = (byte*)*(int*)(Mod.BaseAddress + 0xC54290);
+        nuint cauldronItem = Memory.Instance.Read<nuint>((nuint)(cauldronBaseAddress + 0x68));
+        if(cauldronItem != 4 || Mod.GameInstance!.PrevInLevelSelect == true) // Only trigger on opening the Polyjuice Pot
+        {
+            return;
+        }
+        Console.WriteLine("Polyjuice Pot Closed");
+        Memory.Instance.Write<byte>((nuint)(cauldronBaseAddress + 0x68), 0); // Reset cauldron item to 0
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
