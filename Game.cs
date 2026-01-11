@@ -132,14 +132,14 @@ public class Game
             // NOP GB Corrector #2
             Memory.Instance.SafeWrite(Mod.BaseAddress + 0x42EB8B, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
             //// NOP GB Corrector #3 (crashes game? - only used when GB >200 so not end of world)
-            //Memory.Instance.SafeWrite(Mod.BaseAddress + 0x42EB90, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+            // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x42EB90, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
 
             // // Unlock Current Level Story // Crashes Dark Times
             // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B817E, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
             // // Unlock Current Level Freeplay
-            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B8165, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
+            // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B8165, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
             //NOP Unlock Next Story Level
-            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B809C, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
+            // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B809C, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
         }
     }
 
@@ -302,7 +302,7 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(purchaseRedBrick, (int)(Mod.BaseAddress + 0x3A55CC), AsmHookBehaviour.ExecuteFirst).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(purchaseRedBrick, (int)(Mod.BaseAddress + 0x8928), AsmHookBehaviour.ExecuteAfter).Activate());
         
         string[] purchaseGoldBrick =
         {
@@ -510,7 +510,7 @@ public class Game
             "popad",
             "popfd",
         };
-        // _asmHooks.Add(hooks.CreateAsmHook(ChangeYearsHook, (int)(Mod.BaseAddress + 0x65C34C), AsmHookBehaviour.ExecuteFirst).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(ChangeYearsHook, (int)(Mod.BaseAddress + 0x3A584B), AsmHookBehaviour.ExecuteAfter).Activate());
     }
 
     [Function(CallingConventions.Fastcall)]
@@ -886,19 +886,55 @@ public class Game
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
     }
 
-    [Function([FunctionAttribute.Register.eax], 
-    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
-    public delegate void ChangeYears(int eax);
-    private static void onChangeYears(int eax)
+    [Function([], FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void ChangeYears();
+    private static unsafe void onChangeYears()
     {
         if(Mod.GameInstance!.MapID == 365 || Mod.GameInstance!.MapID == 371 
             || Mod.GameInstance!.MapID == 377 || Mod.GameInstance!.MapID == 381)
         {
-            byte[] bytes = Convert.FromHexString(eax.ToString("X"));
-            string year = Encoding.UTF8.GetString(bytes);
-            Console.WriteLine($"Changing to Year {year}");
+            byte* menuCheatAddress = (byte*)(Mod.BaseAddress + 0xC575E0);
+            char[] chars = new char[6];
+            for (int i = 0; i < 6; i++)
+            {
+                int position = Memory.Instance.Read<byte>((nuint)(menuCheatAddress + i));
+                if (position >= 0 && position <= 25)
+                {
+                    chars[i] = (char)('A' + position);
+                }
+                else if (position >= 26 && position <= 35)
+                {
+                    // Maps to 0-9
+                    chars[i] = (char)('0' + (position - 26));
+                }
+                else
+                {
+                    chars[i] = '_'; // Unknown character
+                }
+            }
+            string yearString = new string(chars);
+            Console.WriteLine($"Year Requested is: {yearString}");
+            switch (yearString)
+            {
+                case "YEAR05" when Mod.GameInstance!.LevelID != 1:
+                    Hub.SwitchYears(5);;
+                    break;
+                case "YEAR06" when Mod.GameInstance!.LevelID != 2:
+                    Hub.SwitchYears(6);
+                    break;
+                case "YEAR07" when Mod.GameInstance!.LevelID != 3:
+                    Hub.SwitchYears(7);
+                    break;
+                case "YEAR08" when Mod.GameInstance!.LevelID != 4:
+                    Hub.SwitchYears(8);
+                    break;
+                default:
+                    break;
+            }
+        } else {   
+            Console.WriteLine("Please move to the Character Customization Room to change years.");
+            return;
         }
-
     }
 
     private static void ResetItems()

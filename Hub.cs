@@ -371,16 +371,5 @@ public class Hub
                 Console.WriteLine("Can't switch years, not in hub.");
                 break;
         }
-
-        byte* CustomDPtr = Level.levelBaseAddress + 0x123C;
-
-        byte[] bytes = Encoding.ASCII.GetBytes("Custom D\0"); // null-terminated
-        for (int i = 0; i < bytes.Length; i++)
-        {
-            CustomDPtr[i] = bytes[i];
-        }
-
-        string? customDName = Marshal.PtrToStringAnsi((IntPtr)CustomDPtr);
-        Console.WriteLine($"CustomDPtr is 0x{(nuint)CustomDPtr:X} and the value is {customDName}");
     }
 }
