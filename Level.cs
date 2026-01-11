@@ -3,7 +3,7 @@ namespace LHP2_Archi_Mod;
 
 public class Level
 {
-    private static unsafe readonly byte* levelBaseAddress = (byte*)*(int*)(Mod.BaseAddress + 0xC55F2C);
+    public static unsafe readonly byte* levelBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55F2C);
 
     [Flags]
     public enum BitMask
@@ -181,8 +181,6 @@ public class Level
         UnlockLevel(LevelData.TheThiefsDownfall);
     }
 
-    //TODO: Update for shop purchase logic - i.e. receive purchase before completing location
-    //TODO: current implementation always makes all levels available even when they shouldn't be
     public static void ImplementMapLogic(int map)
     {
         switch (map)
@@ -194,7 +192,13 @@ public class Level
             case 386:
                 MakeAllBoardsVisible();
                 break;
+            // Menu & MM
+            case 366:
+            case 372:
+            case 378:
+            case 382:
             case 402:
+                Hub.VerifyCharCustMaps();
                 break;
             default:
                 break;

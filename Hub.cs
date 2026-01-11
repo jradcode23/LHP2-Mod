@@ -1,11 +1,16 @@
+using System.Runtime.InteropServices;
+using System.Text;
+
 namespace LHP2_Archi_Mod;
 
 public class Hub
 {
-    private static unsafe readonly byte* hubBaseAddress = (byte*)*(int*)(Mod.BaseAddress + 0xC5B3B4);
-    private static unsafe readonly byte* goldBrickBaseAddress = (byte*)*(int*)(Mod.BaseAddress + 0xC54554);
-    private static unsafe readonly byte* RedBrickPurchBaseAddress = (byte*)*(int*)(Mod.BaseAddress + 0xC575F4);
+    private static unsafe readonly byte* hubBaseAddress = *(byte**)(Mod.BaseAddress + 0xC5B3B4);
+    private static unsafe readonly byte* goldBrickBaseAddress = *(byte**)(Mod.BaseAddress + 0xC54554);
+    private static unsafe readonly byte* RedBrickPurchBaseAddress = *(byte**)(Mod.BaseAddress + 0xC575F4);
     private static unsafe readonly byte* SpellBaseAddress = (byte*)(Mod.BaseAddress + 0xB06AB0);
+    private static unsafe readonly byte* FirstLevelMapPointer = *(byte**)(Mod.BaseAddress + 0x00B06A5C);
+    private static unsafe readonly byte* SecondLevelMapPointer = *(byte**)(FirstLevelMapPointer + 0x44);
 
     [Flags]
     public enum BitMask
@@ -321,4 +326,61 @@ public class Hub
         UnlockSpell(31); //Unknown Spell
     }
 
+    public static unsafe void VerifyCharCustMaps()
+    {
+        // 5, 6, 7, 8 in hex are 0x35, 0x36, 0x37, 0x38
+        byte* y5MapPtr = SecondLevelMapPointer + 0xF02;
+        byte* y6MapPtr = SecondLevelMapPointer + 0xA5A;
+        byte* y7MapPtr = SecondLevelMapPointer + 0x39A;
+        byte* y8MapPtr = SecondLevelMapPointer - 0x326;
+
+        *y5MapPtr = 0x35;
+        *y6MapPtr = 0x36;
+        *y7MapPtr = 0x37;
+        *y8MapPtr = 0x38;
+
+        Console.WriteLine($"y5MapPtr is 0x{(nuint)y5MapPtr:X} and the value is 0x{*y5MapPtr:X}");
+        Console.WriteLine($"y6MapPtr is 0x{(nuint)y6MapPtr:X} and the value is 0x{*y6MapPtr:X}");
+        Console.WriteLine($"y7MapPtr is 0x{(nuint)y7MapPtr:X} and the value is 0x{*y7MapPtr:X}");
+        Console.WriteLine($"y8MapPtr is 0x{(nuint)y8MapPtr:X} and the value is 0x{*y8MapPtr:X}");
+    }
+
+    public static unsafe void SwitchYears(int year)
+    {
+        // 5, 6, 7, 8 in hex are 0x35, 0x36, 0x37, 0x38
+        byte* y5MapPtr = SecondLevelMapPointer + 0xF02;
+        byte* y6MapPtr = SecondLevelMapPointer + 0xA5A;
+        byte* y7MapPtr = SecondLevelMapPointer + 0x39A;
+        byte* y8MapPtr = SecondLevelMapPointer - 0x326;
+
+        switch (Mod.GameInstance!.LevelID)
+        {
+            case 1:
+                *y5MapPtr = (byte)(0x30 + year);
+                break;
+            case 2:
+                *y6MapPtr = (byte)(0x30 + year);
+                break;
+            case 3:
+                *y7MapPtr = (byte)(0x30 + year);
+                break;
+            case 4:
+                *y8MapPtr = (byte)(0x30 + year);
+                break;
+            default:
+                Console.WriteLine("Can't switch years, not in hub.");
+                break;
+        }
+
+        byte* CustomDPtr = Level.levelBaseAddress + 0x123C;
+
+        byte[] bytes = Encoding.ASCII.GetBytes("Custom D\0"); // null-terminated
+        for (int i = 0; i < bytes.Length; i++)
+        {
+            CustomDPtr[i] = bytes[i];
+        }
+
+        string? customDName = Marshal.PtrToStringAnsi((IntPtr)CustomDPtr);
+        Console.WriteLine($"CustomDPtr is 0x{(nuint)CustomDPtr:X} and the value is {customDName}");
+    }
 }

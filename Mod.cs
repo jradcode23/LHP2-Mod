@@ -68,13 +68,20 @@ public class Mod : ModBase // <= Do not Remove.
         _logger.WriteLine($"[{_modConfig.ModId}] Config Updated: Applying");
     }
 
-    //TODO: Can run multiple times and accidentally set up multiple hooks. Fix this.
+    //Warning: Hooks may get set up multiple times if the list ever gets cleared and we reconnect.
     public static void InitOnMenu()
     {
+        int hookCount = Game._asmHooks.Count();
+        if (hookCount > 0)
+        {
+            Console.WriteLine($"Hooks already set up. Count: {hookCount}, skipping setup.");
+            return;
+        }
         GameInstance?.ModifyInstructions();
         if (Mod._hooks != null)
-            Console.WriteLine("Menu loaded, setting up hooks. Please wait to Connect to the server before loading a save file.");
+            Console.WriteLine("Menu loaded, setting up hooks. Please wait for hook setup before loading a save file.");
             GameInstance!.SetupHooks(Mod._hooks!);
+            Console.WriteLine("Hooks set up complete. You may now load a save file.");
     }
 
     #endregion

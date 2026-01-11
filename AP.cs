@@ -87,12 +87,13 @@ public class LHP2_Archipelago
         {
             _loginSuccessful = (LoginSuccessful)result;
             //SlotData = new SlotData(_loginSuccessful.SlotData);
+            Mod.InitOnMenu();
             new Thread(RunCheckLocationsFromList).Start();
             //resync here
             return true;
         }
         var failure = (LoginFailure)result;
-        var errorMessage = $"Failed to Connect to {Server}:{Port} as {Slot}:";
+        var errorMessage = $"Failed to Connect to {Server}:{Port} as {Slot}";
         errorMessage = failure.Errors.Aggregate(errorMessage, (current, error) => current + $"\n    {error}");
         errorMessage = failure.ErrorCodes.Aggregate(errorMessage, (current, error) => current + $"\n    {error}");
         Console.WriteLine(errorMessage);

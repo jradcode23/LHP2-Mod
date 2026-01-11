@@ -4,6 +4,7 @@ using Reloaded.Hooks.Definitions;
 using Reloaded.Hooks.Definitions.Enums;
 using Reloaded.Hooks.Definitions.X86;
 using System.Numerics;
+using System.Text;
 
 namespace LHP2_Archi_Mod;
 
@@ -43,7 +44,6 @@ public class Game
             System.Threading.Thread.Sleep(500);
 
         }
-        Mod.InitOnMenu();
     }
 
     // public static void CheckSaveFileLoaded()
@@ -222,7 +222,7 @@ public class Game
         };
     }
 
-    private static List<IAsmHook> _asmHooks = new List<IAsmHook>();
+    public static List<IAsmHook> _asmHooks = [];
     private static IReverseWrapper<LevelComplete> _reverseWrapOnLevelComplete = default!;
     private static IReverseWrapper<LevelSIPComplete> _reverseWrapOnLevelSIP = default!;
     private static IReverseWrapper<TrueWizardComplete> _reverseWrapOnTrueWizard = default!;
@@ -244,6 +244,7 @@ public class Game
     private static IReverseWrapper<CharacterCmp> _reverseWrapOnCharacterCmp = default!;
     private static IReverseWrapper<OpenPolyjuicePot> _reverseWrapOnOpenPolyjuicePot = default!;
     private static IReverseWrapper<ClosePolyjuicePot> _reverseWrapOnClosePolyjuicePot = default!;
+    private static IReverseWrapper<ChangeYears> _reverseWrapChangeYears = default!;
 
     public void SetupHooks(IReloadedHooks hooks)
     {
@@ -448,7 +449,7 @@ public class Game
             "popad",
             "popfd",
             "cmp byte [eax + esi + 0x74], 0",
-            "je bail",                   // if CMP fails → bail
+            "je bail",
 
             // Original success path: mov eax,1 ; jmp 418931
             "mov eax, 1",
@@ -499,6 +500,17 @@ public class Game
             "popfd",
         };
         _asmHooks.Add(hooks.CreateAsmHook(ClosePolyjuicePotHook, (int)(Mod.BaseAddress + 0x3C69B0), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] ChangeYearsHook =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(onChangeYears, out _reverseWrapChangeYears)}",
+            "popad",
+            "popfd",
+        };
+        // _asmHooks.Add(hooks.CreateAsmHook(ChangeYearsHook, (int)(Mod.BaseAddress + 0x65C34C), AsmHookBehaviour.ExecuteFirst).Activate());
     }
 
     [Function(CallingConventions.Fastcall)]
@@ -872,6 +884,21 @@ public class Game
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
+    }
+
+    [Function([FunctionAttribute.Register.eax], 
+    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void ChangeYears(int eax);
+    private static void onChangeYears(int eax)
+    {
+        if(Mod.GameInstance!.MapID == 365 || Mod.GameInstance!.MapID == 371 
+            || Mod.GameInstance!.MapID == 377 || Mod.GameInstance!.MapID == 381)
+        {
+            byte[] bytes = Convert.FromHexString(eax.ToString("X"));
+            string year = Encoding.UTF8.GetString(bytes);
+            Console.WriteLine($"Changing to Year {year}");
+        }
+
     }
 
     private static void ResetItems()

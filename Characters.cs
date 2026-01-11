@@ -2,7 +2,7 @@ namespace LHP2_Archi_Mod;
 
 public class Character
 {
-    private static unsafe readonly byte* characterBaseAddress = (byte*)*(int*)(Mod.BaseAddress + 0xC546E4);
+    private static unsafe readonly byte* characterBaseAddress = *(byte**)(Mod.BaseAddress + 0xC546E4);
     private static readonly byte TokenOffset = 0xE;
     private static readonly byte unlockOffset = 0xE4;
 
