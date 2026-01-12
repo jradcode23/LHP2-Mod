@@ -107,8 +107,21 @@ public class LHP2_Archipelago
         {
             var itemIndex = helper.Index;
             var item = helper.DequeueItem();
-            // Mod.GameInstance?.ManageItem(itemIndex, item); //TODO: Add back in once non collectible items are a thing
-            // TODO: add check to see if in shop when receiving item
+             //TODO: Add a check for spells once sending/receiving spells is implemented
+            if(Mod.GameInstance != null && Mod.GameInstance.PrevInShop)
+            {
+                int gameID = (int)item.ItemId - gameOffset;
+                // Token or red brick purchasable
+                if((gameID >= 900 && gameID <= 935) || (gameID >= 213 && gameID <= 425))
+                {
+                    Mod.GameInstance.ManageItem(gameID);
+                }
+            }
+            if(Mod.GameInstance != null && Mod.GameInstance.PrevInLevelSelect)
+            {
+                int gameID = (int)item.ItemId - gameOffset;
+                Mod.GameInstance.ManageItem(gameID);
+            }
         }
     }
 

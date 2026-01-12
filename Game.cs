@@ -645,8 +645,8 @@ public class Game
             if(itemID == -1)
             {
                 Console.WriteLine("Error getting Purchased Character ID");
-                Console.WriteLine("EAX is: " + eax);
-                Console.WriteLine("ECX is: " + ecx);
+                Console.WriteLine($"EAX is: {eax:X}");
+                Console.WriteLine($"ECX is: {ecx:X}");
                 Console.WriteLine("Map ID is: " + Mod.GameInstance!.MapID);
                 return;
             }
@@ -664,7 +664,9 @@ public class Game
         if(itemID == -1)
         {
             Console.WriteLine("Error getting SIP ID from Hub");
-            Console.WriteLine("EDX is: " + edx);
+            Console.WriteLine($"EDX is: 0x {edx:X}");
+            int lookupvalue = edx * 4 + 2;
+            Console.WriteLine($"Lookup Value should be: 0x{lookupvalue:X}");
             Console.WriteLine("Map ID is: " + Mod.GameInstance!.MapID);
             return;
         }
@@ -682,7 +684,9 @@ public class Game
         if(itemID == -1)
         {
             Console.WriteLine("Error getting GB ID from Hub");
-            Console.WriteLine("EAX is: " + eax);
+            Console.WriteLine($"EAX is: 0x{eax:X}");
+            int lookupvalue = eax * 4 + 2;
+            Console.WriteLine($"Lookup Value should be: 0x{lookupvalue:X}");
             Console.WriteLine("Map ID is: " + Mod.GameInstance!.MapID);
             return;
         }
@@ -700,7 +704,9 @@ public class Game
         if(itemID == -1)
         {
             Console.WriteLine("Error getting RB ID from Hub");
-            Console.WriteLine("EAX is: " + eax);
+            Console.WriteLine($"EAX is: 0x{eax:X}");
+            int lookupvalue = eax * 4 + 2;
+            Console.WriteLine($"Lookup Value should be: 0x{lookupvalue:X}");
             Console.WriteLine("Map ID is: " + Mod.GameInstance!.MapID);
             return;
         }
