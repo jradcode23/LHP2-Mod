@@ -11,6 +11,7 @@ public class Hub
     private static unsafe readonly byte* SpellBaseAddress = (byte*)(Mod.BaseAddress + 0xB06AB0);
     private static unsafe readonly byte* FirstLevelMapPointer = *(byte**)(Mod.BaseAddress + 0x00B06A5C);
     private static unsafe readonly byte* SecondLevelMapPointer = *(byte**)(FirstLevelMapPointer + 0x44);
+    private static unsafe readonly byte* GhostPathBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55F2C);
 
     [Flags]
     public enum BitMask
@@ -372,4 +373,24 @@ public class Hub
                 break;
         }
     }
+
+    public static unsafe void CompleteStartingGhostLevels()
+    {
+        byte* y6GhostPtr = GhostPathBaseAddress + 0x34;
+        byte* y7GhostPtr = GhostPathBaseAddress + 0x48;
+        byte* y8GhostPtr = GhostPathBaseAddress + 0x5C;
+
+        const byte CompletedBit = 1 << 1;
+        const byte YearCompleteMask = 0x7E;
+
+        if ((*y6GhostPtr & CompletedBit) == 0)
+            *y6GhostPtr |= CompletedBit;
+
+        if ((*y7GhostPtr & CompletedBit) == 0)
+            *y7GhostPtr |= CompletedBit;
+
+        if (*y8GhostPtr != YearCompleteMask)
+            *y8GhostPtr = YearCompleteMask;
+    }
+
 }

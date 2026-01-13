@@ -185,6 +185,13 @@ public class Level
     {
         switch (map)
         {
+            // Character Customization
+            case 365:
+            case 371:
+            case 377:
+            case 381:
+                Hub.CompleteStartingGhostLevels();
+                break;
             // Leaky Cauldron
             case 368:
             case 374:
