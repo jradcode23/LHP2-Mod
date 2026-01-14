@@ -419,6 +419,10 @@ public class Hub
             return;
         }
         Console.WriteLine("Turning Off Leaky Cutscenes");
+        *leaky2LondonAddress &= 1 << 2; // Clear Out of Retirement Cutscene
+        *leaky2LondonAddress &= 1 << 3; // Clear Seven Harrys Cutscene
+        byte* leaky2LondonAddress2 = leaky2LondonAddress + 2;
+        *leaky2LondonAddress2 &= 1 << 4; // Clear Theif's Downfall Cutscene
     }
 
         private static unsafe void adjustHogsPathCutscenes()
@@ -429,6 +433,8 @@ public class Hub
             return;
         }
         Console.WriteLine("Turning Off HogsPath Cutscenes");
+        *hogPath2CourtyardAddress &= 1 << 5; // Clear Y5 Hogs Intro Cutscene
+        *hogPath2CourtyardAddress |= 1 << 7; // Clear Y6 Hogs Intro Cutscene (Note that this one is inverted logic in-game)
     }
 
     private static unsafe byte* GetLoadingZoneAddresses(string mapName, int offset)
