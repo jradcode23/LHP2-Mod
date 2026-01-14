@@ -7,11 +7,14 @@ public class Hub
 {
     private static unsafe readonly byte* hubBaseAddress = *(byte**)(Mod.BaseAddress + 0xC5B3B4);
     private static unsafe readonly byte* goldBrickBaseAddress = *(byte**)(Mod.BaseAddress + 0xC54554);
-    private static unsafe readonly byte* RedBrickPurchBaseAddress = *(byte**)(Mod.BaseAddress + 0xC575F4);
-    private static unsafe readonly byte* SpellBaseAddress = (byte*)(Mod.BaseAddress + 0xB06AB0);
-    private static unsafe readonly byte* FirstLevelMapPointer = *(byte**)(Mod.BaseAddress + 0x00B06A5C);
-    private static unsafe readonly byte* SecondLevelMapPointer = *(byte**)(FirstLevelMapPointer + 0x44);
-    private static unsafe readonly byte* GhostPathBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55F2C);
+    private static unsafe readonly byte* redBrickPurchBaseAddress = *(byte**)(Mod.BaseAddress + 0xC575F4);
+    private static unsafe readonly byte* spellBaseAddress = (byte*)(Mod.BaseAddress + 0xB06AB0);
+    private static unsafe readonly byte* firstLevelMapPointer = *(byte**)(Mod.BaseAddress + 0x00B06A5C);
+    private static unsafe readonly byte* secondLevelMapPointer = *(byte**)(firstLevelMapPointer + 0x44);
+    private static unsafe readonly byte* ghostPathBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55F2C);
+    private static unsafe readonly byte* mapFlagsBaseAddress = *(byte**)(Mod.BaseAddress + 0xC5D5F4);
+    private static unsafe byte* leaky2LondonAddress = null;
+    private static unsafe byte* hogPath2CourtyardAddress = null;
 
     [Flags]
     public enum BitMask
@@ -243,8 +246,8 @@ public class Hub
         int byteOffset = id / 8;
         int bitOffset = id % 8;
 
-        byte* ptr = RedBrickPurchBaseAddress + byteOffset;
-        if (ptr == null || RedBrickPurchBaseAddress == null) 
+        byte* ptr = redBrickPurchBaseAddress + byteOffset;
+        if (ptr == null || redBrickPurchBaseAddress == null) 
         {
             Console.WriteLine($"Can't Unlock Red Brick, null pointer at 0x{(nuint)ptr:X}");
             return;
@@ -257,7 +260,7 @@ public class Hub
     {
         for(int i = 0; i < 3; i++)
         {
-            byte* ptr = RedBrickPurchBaseAddress + i;
+            byte* ptr = redBrickPurchBaseAddress + i;
             *ptr = 0;
         }
     }
@@ -293,7 +296,7 @@ public class Hub
         int byteOffset = id / 8;
         int bitOffset = id % 8;
 
-        byte* ptr = SpellBaseAddress + byteOffset;
+        byte* ptr = spellBaseAddress + byteOffset;
 
         if (ptr == null)
         {
@@ -307,7 +310,7 @@ public class Hub
     {
         for(int i = 0; i < 4; i++)
         {
-            byte* ptr = SpellBaseAddress + i;
+            byte* ptr = spellBaseAddress + i;
             *ptr = 0;
         }
 
@@ -330,10 +333,10 @@ public class Hub
     public static unsafe void VerifyCharCustMaps()
     {
         // 5, 6, 7, 8 in hex are 0x35, 0x36, 0x37, 0x38
-        byte* y5MapPtr = SecondLevelMapPointer + 0xF02;
-        byte* y6MapPtr = SecondLevelMapPointer + 0xA5A;
-        byte* y7MapPtr = SecondLevelMapPointer + 0x39A;
-        byte* y8MapPtr = SecondLevelMapPointer - 0x326;
+        byte* y5MapPtr = secondLevelMapPointer + 0xF02;
+        byte* y6MapPtr = secondLevelMapPointer + 0xA5A;
+        byte* y7MapPtr = secondLevelMapPointer + 0x39A;
+        byte* y8MapPtr = secondLevelMapPointer - 0x326;
 
         *y5MapPtr = 0x35;
         *y6MapPtr = 0x36;
@@ -349,10 +352,10 @@ public class Hub
     public static unsafe void SwitchYears(int year)
     {
         // 5, 6, 7, 8 in hex are 0x35, 0x36, 0x37, 0x38
-        byte* y5MapPtr = SecondLevelMapPointer + 0xF02;
-        byte* y6MapPtr = SecondLevelMapPointer + 0xA5A;
-        byte* y7MapPtr = SecondLevelMapPointer + 0x39A;
-        byte* y8MapPtr = SecondLevelMapPointer - 0x326;
+        byte* y5MapPtr = secondLevelMapPointer + 0xF02;
+        byte* y6MapPtr = secondLevelMapPointer + 0xA5A;
+        byte* y7MapPtr = secondLevelMapPointer + 0x39A;
+        byte* y8MapPtr = secondLevelMapPointer - 0x326;
 
         switch (Mod.GameInstance!.LevelID)
         {
@@ -376,9 +379,9 @@ public class Hub
 
     public static unsafe void CompleteStartingGhostLevels()
     {
-        byte* y6GhostPtr = GhostPathBaseAddress + 0x34;
-        byte* y7GhostPtr = GhostPathBaseAddress + 0x48;
-        byte* y8GhostPtr = GhostPathBaseAddress + 0x5C;
+        byte* y6GhostPtr = ghostPathBaseAddress + 0x34;
+        byte* y7GhostPtr = ghostPathBaseAddress + 0x48;
+        byte* y8GhostPtr = ghostPathBaseAddress + 0x5C;
 
         const byte CompletedBit = 1 << 1;
         const byte YearCompleteMask = 0x7E;
@@ -393,4 +396,70 @@ public class Hub
             *y8GhostPtr = YearCompleteMask;
     }
 
+    public static unsafe void TurnOffCutscenes()
+    {
+        if(leaky2LondonAddress == null || leaky2LondonAddress == mapFlagsBaseAddress + 0x40)
+        {
+            leaky2LondonAddress = GetLoadingZoneAddresses("HubLeakyCauldron", 0xB7B); // Leaky2London Loading Zone
+        }
+
+        if(hogPath2CourtyardAddress == null || hogPath2CourtyardAddress == mapFlagsBaseAddress + 0x40)
+        {
+            hogPath2CourtyardAddress = GetLoadingZoneAddresses("HogsApproach", 0x1A90); // HogPath2Courtyard Loading Zone
+        }
+        adjustLeakyCutscenes();
+        adjustHogsPathCutscenes();
+    }
+
+    private static unsafe void adjustLeakyCutscenes()
+    {
+        if (leaky2LondonAddress == mapFlagsBaseAddress + 0x40)
+        {
+            Console.WriteLine("Leaky Cauldron Save info hasn't been written yet.");
+            return;
+        }
+        Console.WriteLine("Turning Off Leaky Cutscenes");
+    }
+
+        private static unsafe void adjustHogsPathCutscenes()
+    {
+        if (hogPath2CourtyardAddress == mapFlagsBaseAddress + 0x40)
+        {
+            Console.WriteLine("HogsPath Save info hasn't been written yet.");
+            return;
+        }
+        Console.WriteLine("Turning Off HogsPath Cutscenes");
+    }
+
+    private static unsafe byte* GetLoadingZoneAddresses(string mapName, int offset)
+    {
+        const int sectionSize = 200000; // Number of bytes in the memory section
+        byte* startingAddress = mapFlagsBaseAddress + 0x40;
+        byte* returningAddress = startingAddress;
+        byte[] sectionHeader = Encoding.ASCII.GetBytes(mapName);
+
+        for (int i = 0; i < sectionSize - sectionHeader.Length; i++)
+        {
+            // Check if the current address matches the section header
+            bool isMatch = true;
+            for (int j = 0; j < sectionHeader.Length; j++)
+            {
+                if (*(startingAddress + i + j) != sectionHeader[j])
+                {
+                    isMatch = false;
+                    break;
+                }
+            }
+
+            if (isMatch)
+            {
+                returningAddress = startingAddress + i + offset;
+                break;
+            }
+        }
+
+        Console.WriteLine($"Map Flags Address for {mapName} is 0x{(nuint)returningAddress:X}");
+        return returningAddress;
+
+    }
 }

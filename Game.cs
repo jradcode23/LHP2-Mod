@@ -923,16 +923,20 @@ public class Game
             switch (yearString)
             {
                 case "YEAR05" when Mod.GameInstance!.LevelID != 1:
-                    Hub.SwitchYears(5);;
+                    Hub.SwitchYears(5);
+                    Hub.TurnOffCutscenes();
                     break;
                 case "YEAR06" when Mod.GameInstance!.LevelID != 2:
                     Hub.SwitchYears(6);
+                    Hub.TurnOffCutscenes();
                     break;
                 case "YEAR07" when Mod.GameInstance!.LevelID != 3:
                     Hub.SwitchYears(7);
+                    Hub.TurnOffCutscenes();
                     break;
                 case "YEAR08" when Mod.GameInstance!.LevelID != 4:
                     Hub.SwitchYears(8);
+                    Hub.TurnOffCutscenes();
                     break;
                 default:
                     break;
