@@ -398,15 +398,9 @@ public class Hub
 
     public static unsafe void TurnOffCutscenes()
     {
-        if(leaky2LondonAddress == null || leaky2LondonAddress == mapFlagsBaseAddress + 0x40)
-        {
-            leaky2LondonAddress = GetLoadingZoneAddresses("HubLeakyCauldron", 0xB7B); // Leaky2London Loading Zone
-        }
+        leaky2LondonAddress = GetLoadingZoneAddresses("HubLeakyCauldron", 0xB7B); // Leaky2London Loading Zone
+        hogPath2CourtyardAddress = GetLoadingZoneAddresses("HogsApproach", 0x1A90); // HogPath2Courtyard Loading Zone
 
-        if(hogPath2CourtyardAddress == null || hogPath2CourtyardAddress == mapFlagsBaseAddress + 0x40)
-        {
-            hogPath2CourtyardAddress = GetLoadingZoneAddresses("HogsApproach", 0x1A90); // HogPath2Courtyard Loading Zone
-        }
         adjustLeakyCutscenes();
         adjustHogsPathCutscenes();
     }
@@ -419,13 +413,17 @@ public class Hub
             return;
         }
         Console.WriteLine("Turning Off Leaky Cutscenes");
-        *leaky2LondonAddress &= 1 << 2; // Clear Out of Retirement Cutscene
-        *leaky2LondonAddress &= 1 << 3; // Clear Seven Harrys Cutscene
+        *leaky2LondonAddress |= 1 << 0; // Ensure Normal Loading Zones are on
+        *leaky2LondonAddress |= 1 << 1; // Ensure Normal Loading Zones are on
+
+        *leaky2LondonAddress &= unchecked((byte)~(1 << 2)); // Clear Out of Retirement Cutscene
+        *leaky2LondonAddress &= unchecked((byte)~(1 << 3)); // Clear Seven Harrys Cutscene
+
         byte* leaky2LondonAddress2 = leaky2LondonAddress + 2;
-        *leaky2LondonAddress2 &= 1 << 4; // Clear Theif's Downfall Cutscene
+        *leaky2LondonAddress2 &= unchecked((byte)~(1 << 4)); // Clear Thief's Downfall Cutscene
     }
 
-        private static unsafe void adjustHogsPathCutscenes()
+    private static unsafe void adjustHogsPathCutscenes()
     {
         if (hogPath2CourtyardAddress == mapFlagsBaseAddress + 0x40)
         {
@@ -433,7 +431,7 @@ public class Hub
             return;
         }
         Console.WriteLine("Turning Off HogsPath Cutscenes");
-        *hogPath2CourtyardAddress &= 1 << 5; // Clear Y5 Hogs Intro Cutscene
+        *hogPath2CourtyardAddress &= unchecked((byte)~(1 << 5)); // Clear Y5 Hogs Intro Cutscene
         *hogPath2CourtyardAddress |= 1 << 7; // Clear Y6 Hogs Intro Cutscene (Note that this one is inverted logic in-game)
     }
 

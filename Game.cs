@@ -797,7 +797,7 @@ public class Game
     [Function([FunctionAttribute.Register.edi], 
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void OpenMenu(int edi);
-    private static void onOpenMenu(int edi)
+    private static unsafe void onOpenMenu(int edi)
     {
         if(edi != 2)
         {
@@ -808,7 +808,15 @@ public class Game
         {
             return;
         } 
-        else if (Mod.GameInstance!.LevelID < 1 || Mod.GameInstance!.LevelID > 4) // If in level, want to sync to locations so they can exit if level completed
+
+        byte* menuCheatAddress = (byte*)(Mod.BaseAddress + 0xC575E0);
+        byte[] bytes = [24, 4, 0, 17, 26, 26];
+        for (int i = 0; i < 6; i++)
+        {
+            Memory.Instance.Write<byte>((nuint)(menuCheatAddress + i), bytes[i]);
+        }
+        
+        if (Mod.GameInstance!.LevelID < 1 || Mod.GameInstance!.LevelID > 4) // If in level, want to sync to locations so they can exit if level completed
         {
             Console.WriteLine("Menu Opened");
             Mod.GameInstance!.PrevInMenu = true;
