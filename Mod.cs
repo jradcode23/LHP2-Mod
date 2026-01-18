@@ -17,9 +17,8 @@ public class Mod : ModBase // <= Do not Remove.
     private Config? Configuration { get; set; }
     private readonly IModConfig _modConfig;
 
-    public static LHP2_Archipelago? LHP2_Archipelago;
+    public static ArchipelagoHandler? LHP2_Archipelago;
     public static Game? GameInstance;
-    public static Level? Levels;
     public static nuint BaseAddress;
 
     public Mod(ModContext context)
@@ -37,19 +36,18 @@ public class Mod : ModBase // <= Do not Remove.
 #endif
 
         GameInstance = new Game();
-        Levels = new Level();
         BaseAddress = (nuint)Process.GetCurrentProcess().MainModule!.BaseAddress;
 
         if (Configuration == null)
             return;
-        LHP2_Archipelago = new LHP2_Archipelago(Configuration.ArchipelagoOptions.Server, Configuration.ArchipelagoOptions.Port, Configuration.ArchipelagoOptions.Slot, Configuration.ArchipelagoOptions.Password);
+        LHP2_Archipelago = new ArchipelagoHandler(Configuration.ArchipelagoOptions.Server, Configuration.ArchipelagoOptions.Port, Configuration.ArchipelagoOptions.Slot, Configuration.ArchipelagoOptions.Password);
         _logger.WriteLine($"[{_modConfig.ModId}] Mod Initialized with Server: {Configuration.ArchipelagoOptions.Server}, Port: {Configuration.ArchipelagoOptions.Port}, Slot: {Configuration.ArchipelagoOptions.Slot}");
 
         var thread1 = new Thread(start: () =>
         {
             while (true)
             {
-                if (!LHP2_Archipelago.IsConnecting && !LHP2_Archipelago.IsConnected)
+                if (!ArchipelagoHandler.IsConnecting && !ArchipelagoHandler.IsConnected)
                 {
                     LHP2_Archipelago.InitConnect();
                 }

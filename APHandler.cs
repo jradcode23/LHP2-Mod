@@ -9,7 +9,7 @@ namespace LHP2_Archi_Mod;
 
 // Thank you Sonic Heros AP Devs for being the implementation example
 
-public class LHP2_Archipelago
+public class ArchipelagoHandler
 {
     private const string GAME_NAME = "Lego Harry Potter 5-7";
     private ArchipelagoSession _session;
@@ -26,7 +26,7 @@ public class LHP2_Archipelago
     public static bool IsConnecting;
     public static int gameOffset = 400000;
 
-    public LHP2_Archipelago(string server, int port, string slot, string password)
+    public ArchipelagoHandler(string server, int port, string slot, string password)
     {
         Server = server;
         Port = port;

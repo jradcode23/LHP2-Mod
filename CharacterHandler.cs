@@ -1,6 +1,6 @@
 namespace LHP2_Archi_Mod;
 
-public class Character
+public class CharacterHandler
 {
     private static unsafe readonly byte* characterBaseAddress = *(byte**)(Mod.BaseAddress + 0xC546E4);
     private static readonly byte TokenOffset = 0xE;

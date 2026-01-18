@@ -1,7 +1,7 @@
 
 namespace LHP2_Archi_Mod;
 
-public class Level
+public class LevelHandler
 {
     public static unsafe readonly byte* levelBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55F2C);
 
@@ -190,7 +190,7 @@ public class Level
             case 371:
             case 377:
             case 381:
-                Hub.CompleteStartingGhostLevels();
+                HubHandler.CompleteStartingGhostLevels();
                 break;
             // Leaky Cauldron
             case 368:
@@ -205,7 +205,7 @@ public class Level
             case 378:
             case 382:
             case 402:
-                Hub.VerifyCharCustMaps();
+                HubHandler.VerifyCharCustMaps();
                 break;
             default:
                 break;

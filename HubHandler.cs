@@ -3,7 +3,7 @@ using System.Text;
 
 namespace LHP2_Archi_Mod;
 
-public class Hub
+public class HubHandler
 {
     private static unsafe readonly byte* hubBaseAddress = *(byte**)(Mod.BaseAddress + 0xC5B3B4);
     private static unsafe readonly byte* goldBrickBaseAddress = *(byte**)(Mod.BaseAddress + 0xC54554);

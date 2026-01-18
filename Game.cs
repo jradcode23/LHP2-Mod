@@ -150,59 +150,59 @@ public class Game
         //if (!PlayerControllable())
         //    return;
 
-        Level.LevelData level;
+        LevelHandler.LevelData level;
 
         switch(ItemID)
         {
                 case < 213:
-                    Character.UnlockCharacter(ItemID);
+                    CharacterHandler.UnlockCharacter(ItemID);
                     break;
                 case < 426:
                     int token = ItemID - tokenOffset;
-                    Character.UnlockToken(token);
+                    CharacterHandler.UnlockToken(token);
                     break;
                 case < 475:
-                    level = Level.ConvertIDToLeveData(ItemID - levelOffset);
-                    Level.UnlockLevel(level);
+                    level = LevelHandler.ConvertIDToLeveData(ItemID - levelOffset);
+                    LevelHandler.UnlockLevel(level);
                     break;
                 case < 499:
-                    level = Level.ConvertIDToLeveData(ItemID - SIPOffset);
-                    Level.UnlockStudentInPeril(level);
+                    level = LevelHandler.ConvertIDToLeveData(ItemID - SIPOffset);
+                    LevelHandler.UnlockStudentInPeril(level);
                     break;
                 case < 550:
-                    Hub.UnlockHubSIP(ItemID - HubSIPOffset);
+                    HubHandler.UnlockHubSIP(ItemID - HubSIPOffset);
                     break;
                 case < 574:
-                    level = Level.ConvertIDToLeveData(ItemID - GryfCrestOffset);
-                    Level.UnlockGryffindorCrest(level);
+                    level = LevelHandler.ConvertIDToLeveData(ItemID - GryfCrestOffset);
+                    LevelHandler.UnlockGryffindorCrest(level);
                     break;
                 case < 598:
-                    level = Level.ConvertIDToLeveData(ItemID - SlythCrestOffset);
-                    Level.UnlockSlytherinCrest(level);
+                    level = LevelHandler.ConvertIDToLeveData(ItemID - SlythCrestOffset);
+                    LevelHandler.UnlockSlytherinCrest(level);
                     break;
                 case < 622:
-                    level = Level.ConvertIDToLeveData(ItemID - RavenCrestOffset);
-                    Level.UnlockRavenclawCrest(level);
+                    level = LevelHandler.ConvertIDToLeveData(ItemID - RavenCrestOffset);
+                    LevelHandler.UnlockRavenclawCrest(level);
                     break;
                 case < 646:
-                    level = Level.ConvertIDToLeveData(ItemID - HuffleCrestOffset);
-                    Level.UnlockHufflepuffCrest(level);
+                    level = LevelHandler.ConvertIDToLeveData(ItemID - HuffleCrestOffset);
+                    LevelHandler.UnlockHufflepuffCrest(level);
                     break;
                 case < 700:
-                    level = Level.ConvertIDToLeveData(ItemID - TrueWizardOffset);
-                    Level.UnlockTrueWizard(level);
+                    level = LevelHandler.ConvertIDToLeveData(ItemID - TrueWizardOffset);
+                    LevelHandler.UnlockTrueWizard(level);
                     break;
                 case < 900:
-                    Hub.ReceivedGoldBrick();
+                    HubHandler.ReceivedGoldBrick();
                     break;
                 case < 935:
-                    Hub.UnlockHubRB(ItemID - RedBrickCollectOffset);
+                    HubHandler.UnlockHubRB(ItemID - RedBrickCollectOffset);
                     break;
                 case < 975:
-                    Hub.ReceivedRedBrickUnlock(ItemID - RedBrickPurchOffset);
+                    HubHandler.ReceivedRedBrickUnlock(ItemID - RedBrickPurchOffset);
                     break;
                 case < 1005:
-                    Hub.UnlockSpell(ItemID - SpellPurchOffset);
+                    HubHandler.UnlockSpell(ItemID - SpellPurchOffset);
                     break;
                 default:
                     Console.WriteLine($"Unknown item received: {ItemID}");
@@ -620,7 +620,7 @@ public class Game
     public delegate void HubCharacterCollected(IntPtr eax, int edx);
     private static void OnHubCharacterCollected(IntPtr eax, int edx)
     {
-        int itemID = Character.GetHubTokenItemID(eax, edx);
+        int itemID = CharacterHandler.GetHubTokenItemID(eax, edx);
         CheckAndReportLocation(itemID + tokenOffset);
     }
 
@@ -629,7 +629,7 @@ public class Game
     public delegate void LevelCharacterCollected(int ebx);
     private static void OnLevelCharacterCollected(int ebx)
     {
-        int itemID = Character.GetLevelTokenItemID(ebx);
+        int itemID = CharacterHandler.GetLevelTokenItemID(ebx);
         CheckAndReportLocation(itemID + tokenOffset);
     }
 
@@ -641,7 +641,7 @@ public class Game
         if((Mod.GameInstance!.MapID == 366 || Mod.GameInstance!.MapID == 372 
             || Mod.GameInstance!.MapID == 378 || Mod.GameInstance!.MapID == 382) && Mod.GameInstance!.PrevInShop == true) //Make sure Player is in shop
         {
-            int itemID = Character.GetPurchaseCharacterID(ecx, eax);
+            int itemID = CharacterHandler.GetPurchaseCharacterID(ecx, eax);
             if(itemID == -1)
             {
                 Console.WriteLine("Error getting Purchased Character ID");
@@ -660,7 +660,7 @@ public class Game
     private static void OnHubSIP(int edx)
     {
 
-        int itemID = Hub.GetHubID(edx);
+        int itemID = HubHandler.GetHubID(edx);
         if(itemID == -1)
         {
             Console.WriteLine("Error getting SIP ID from Hub");
@@ -680,7 +680,7 @@ public class Game
     private static void OnHubGB(int eax)
     {
 
-        int itemID = Hub.GetHubID(eax);
+        int itemID = HubHandler.GetHubID(eax);
         if(itemID == -1)
         {
             Console.WriteLine("Error getting GB ID from Hub");
@@ -700,7 +700,7 @@ public class Game
     private static void OnHubRB(int eax)
     {
 
-        int itemID = Hub.GetHubID(eax);
+        int itemID = HubHandler.GetHubID(eax);
         if(itemID == -1)
         {
             Console.WriteLine("Error getting RB ID from Hub");
@@ -735,7 +735,7 @@ public class Game
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
-        Level.ImplementMapLogic(value);
+        LevelHandler.ImplementMapLogic(value);
     }
 
     [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.esp], 
@@ -829,7 +829,7 @@ public class Game
             Mod.GameInstance!.PrevInMenu = true;
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, MaxItemID);
-            Hub.GetGoldBrickCount();
+            HubHandler.GetGoldBrickCount();
         }
     }
 
@@ -931,20 +931,20 @@ public class Game
             switch (yearString)
             {
                 case "YEAR05" when Mod.GameInstance!.LevelID != 1:
-                    Hub.SwitchYears(5);
-                    Hub.TurnOffCutscenes();
+                    HubHandler.SwitchYears(5);
+                    HubHandler.TurnOffCutscenes();
                     break;
                 case "YEAR06" when Mod.GameInstance!.LevelID != 2:
-                    Hub.SwitchYears(6);
-                    Hub.TurnOffCutscenes();
+                    HubHandler.SwitchYears(6);
+                    HubHandler.TurnOffCutscenes();
                     break;
                 case "YEAR07" when Mod.GameInstance!.LevelID != 3:
-                    Hub.SwitchYears(7);
-                    Hub.TurnOffCutscenes();
+                    HubHandler.SwitchYears(7);
+                    HubHandler.TurnOffCutscenes();
                     break;
                 case "YEAR08" when Mod.GameInstance!.LevelID != 4:
-                    Hub.SwitchYears(8);
-                    Hub.TurnOffCutscenes();
+                    HubHandler.SwitchYears(8);
+                    HubHandler.TurnOffCutscenes();
                     break;
                 default:
                     break;
@@ -957,13 +957,13 @@ public class Game
 
     private static void ResetItems()
     {
-        Hub.ResetGoldBrickCount();
-        Hub.ResetRedBrickUnlock();
-        Hub.ResetSpells();
-        Level.ResetLevels();
-        Character.ResetTokens();
-        Character.ResetUnlocks();
-        Hub.ResetHub();
+        HubHandler.ResetGoldBrickCount();
+        HubHandler.ResetRedBrickUnlock();
+        HubHandler.ResetSpells();
+        LevelHandler.ResetLevels();
+        CharacterHandler.ResetTokens();
+        CharacterHandler.ResetUnlocks();
+        HubHandler.ResetHub();
     }
 
     private static void CheckAndReportLocation(int apID)
