@@ -430,9 +430,12 @@ public class Hub
             Console.WriteLine("HogsPath Save info hasn't been written yet.");
             return;
         }
-        Console.WriteLine("Turning Off HogsPath Cutscenes");
+        Console.WriteLine("Updating HogsPath Flags");
         *hogPath2CourtyardAddress &= unchecked((byte)~(1 << 5)); // Clear Y5 Hogs Intro Cutscene
         *hogPath2CourtyardAddress |= 1 << 7; // Clear Y6 Hogs Intro Cutscene (Note that this one is inverted logic in-game)
+        hogPath2CourtyardAddress -= 0x359; // Adjust to open hogsmeade
+        Console.WriteLine($"Adjusted HogsPath Address to 0x{(nuint)hogPath2CourtyardAddress:X}");
+        *hogPath2CourtyardAddress |= 1 << 2; // Open the gate to Hogsmeade
     }
 
     private static unsafe byte* GetLoadingZoneAddresses(string mapName, int offset)
