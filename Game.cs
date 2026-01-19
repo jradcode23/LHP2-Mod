@@ -134,6 +134,9 @@ public class Game
             //// NOP GB Corrector #3 (crashes game? - only used when GB >200 so not end of world)
             // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x42EB90, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
 
+            // Removes the check for Freeplay mode and allows for always checking individual level completion to enable save and exit
+            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x40A264, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
+
             // // Unlock Current Level Story // Crashes Dark Times
             // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B817E, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
             // // Unlock Current Level Freeplay
@@ -621,6 +624,14 @@ public class Game
     private static void OnHubCharacterCollected(IntPtr eax, int edx)
     {
         int itemID = CharacterHandler.GetHubTokenItemID(eax, edx);
+        if (itemID == -1)
+        {
+            Console.WriteLine("Error getting Level Token Item ID");
+            Console.WriteLine($"EAX is: 0x{eax:X}");
+            Console.WriteLine($"EDX is: 0x{edx:X}");
+            Console.WriteLine("Map ID is: " + Mod.GameInstance!.MapID);
+            return;
+        }
         CheckAndReportLocation(itemID + tokenOffset);
     }
 
@@ -630,6 +641,13 @@ public class Game
     private static void OnLevelCharacterCollected(int ebx)
     {
         int itemID = CharacterHandler.GetLevelTokenItemID(ebx);
+        if (itemID == -1)
+        {
+            Console.WriteLine("Error getting Level Token Item ID");
+            Console.WriteLine($"EBX is: 0x{ebx:X}");
+            Console.WriteLine("Map ID is: " + Mod.GameInstance!.MapID);
+            return;
+        }
         CheckAndReportLocation(itemID + tokenOffset);
     }
 
