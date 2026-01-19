@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace LHP2_Archi_Mod;
@@ -20,7 +19,7 @@ public class HubHandler
     public enum BitMask
     {
         None = 0,
-        SpecialFlag = 1 << 1,
+        SpecialFlag = 1 << 0,
         Entered = 1 << 2,
         RedBrick = 1 << 4,
         GoldBrick = 1 << 5,
@@ -328,6 +327,9 @@ public class HubHandler
         UnlockSpell(29); //Expecto Patronum
         UnlockSpell(30); //Reducto
         UnlockSpell(31); //Unknown Spell
+
+        byte* darkMagic = hubBaseAddress + 0x19B * 4 + 2;
+        *darkMagic |= (byte)BitMask.SpecialFlag;
     }
 
     public static unsafe void VerifyCharCustMaps()
