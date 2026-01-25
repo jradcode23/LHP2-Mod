@@ -69,13 +69,13 @@ public class Mod : ModBase // <= Do not Remove.
     //Warning: Hooks may get set up multiple times if the list ever gets cleared and we reconnect.
     public static void InitOnMenu()
     {
-        int hookCount = Game._asmHooks.Count();
+        int hookCount = Game._asmHooks.Count;
         if (hookCount > 0)
         {
             Console.WriteLine($"Hooks already set up. Count: {hookCount}, skipping setup.");
             return;
         }
-        GameInstance?.ModifyInstructions();
+        Game.ModifyInstructions();
         if (Mod._hooks != null)
             Console.WriteLine("Menu loaded, setting up hooks. Please wait for hook setup before loading a save file.");
             GameInstance!.SetupHooks(Mod._hooks!);

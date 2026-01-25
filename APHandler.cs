@@ -86,7 +86,8 @@ public class ArchipelagoHandler
         if (result.Successful)
         {
             _loginSuccessful = (LoginSuccessful)result;
-            //SlotData = new SlotData(_loginSuccessful.SlotData);
+            SlotData SlotDataInstance = new(_loginSuccessful.SlotData);
+            SlotDataInstance.PrintData();
             Mod.InitOnMenu();
             new Thread(RunCheckLocationsFromList).Start();
             //resync here
@@ -114,13 +115,13 @@ public class ArchipelagoHandler
                 // Token or red brick purchasable
                 if((gameID >= 900 && gameID <= 935) || (gameID >= 213 && gameID <= 425))
                 {
-                    Mod.GameInstance.ManageItem(gameID);
+                    Game.ManageItem(gameID);
                 }
             }
             if(Mod.GameInstance != null && Mod.GameInstance.PrevInLevelSelect)
             {
                 int gameID = (int)item.ItemId - gameOffset;
-                Mod.GameInstance.ManageItem(gameID);
+                Game.ManageItem(gameID);
             }
         }
     }
@@ -170,7 +171,7 @@ public class ArchipelagoHandler
                 continue;
 
             var gameId = item.ItemId - gameOffset;
-            Mod.GameInstance!.ManageItem((int)gameId);
+            Game.ManageItem((int)gameId);
         }
     }
 
@@ -183,7 +184,7 @@ public class ArchipelagoHandler
                 continue;
 
             var gameId = location - gameOffset;
-            Mod.GameInstance!.ManageItem((int)gameId);
+            Game.ManageItem((int)gameId);
         }
     }
 

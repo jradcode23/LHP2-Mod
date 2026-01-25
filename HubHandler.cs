@@ -403,11 +403,11 @@ public class HubHandler
         leaky2LondonAddress = GetLoadingZoneAddresses("HubLeakyCauldron", 0xB7B); // Leaky2London Loading Zone
         hogPath2CourtyardAddress = GetLoadingZoneAddresses("HogsApproach", 0x1A90); // HogPath2Courtyard Loading Zone
 
-        adjustLeakyCutscenes();
-        adjustHogsPathCutscenes();
+        AdjustLeakyCutscenes();
+        AdjustHogsPathCutscenes();
     }
 
-    private static unsafe void adjustLeakyCutscenes()
+    private static unsafe void AdjustLeakyCutscenes()
     {
         if (leaky2LondonAddress == mapFlagsBaseAddress + 0x40)
         {
@@ -425,7 +425,7 @@ public class HubHandler
         *leaky2LondonAddress2 &= unchecked((byte)~(1 << 4)); // Clear Thief's Downfall Cutscene
     }
 
-    private static unsafe void adjustHogsPathCutscenes()
+    private static unsafe void AdjustHogsPathCutscenes()
     {
         if (hogPath2CourtyardAddress == mapFlagsBaseAddress + 0x40)
         {

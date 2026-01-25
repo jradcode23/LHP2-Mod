@@ -4,7 +4,6 @@ using Reloaded.Hooks.Definitions;
 using Reloaded.Hooks.Definitions.Enums;
 using Reloaded.Hooks.Definitions.X86;
 using System.Numerics;
-using System.Text;
 
 namespace LHP2_Archi_Mod;
 
@@ -105,7 +104,7 @@ public class Game
     //     }
     // }
 
-    public static void writeN0CUT5Flag()
+    public static void WriteN0CUT5Flag()
     {
         unsafe
         {
@@ -116,7 +115,7 @@ public class Game
             Memory.Instance.Write(ptr, (byte) 0x01 );
         }
     }
-    public void ModifyInstructions()
+    public static void ModifyInstructions()
     {
         unsafe
         {
@@ -125,7 +124,7 @@ public class Game
             Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
             Mod.GameInstance!.PrevMapID = Mod.GameInstance!.MapID;
             Console.WriteLine($"Initial Level ID: {Mod.GameInstance!.LevelID}, Map ID: {Mod.GameInstance!.MapID}");
-            writeN0CUT5Flag();
+            WriteN0CUT5Flag();
 
             // NOP GB Corrector #1
             Memory.Instance.SafeWrite(Mod.BaseAddress + 0x332694, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
@@ -146,7 +145,7 @@ public class Game
         }
     }
 
-    public void ManageItem(int ItemID)
+    public static void ManageItem(int ItemID)
     {
     
         //// implement logic for in shop or not controllable
