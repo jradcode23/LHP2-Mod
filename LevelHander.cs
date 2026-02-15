@@ -185,12 +185,12 @@ public class LevelHandler
     {
         switch (map)
         {
-            // Character Customization
-            case 365:
-            case 371:
-            case 377:
-            case 381:
-                HubHandler.CompleteStartingGhostLevels();
+            // Diagon Alley
+            case 370:
+            case 376:
+            case 384:
+            case 388:
+                HubHandler.ClearReturnToHogwartsLocation();
                 break;
             // Leaky Cauldron
             case 368:

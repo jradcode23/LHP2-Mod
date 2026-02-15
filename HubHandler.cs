@@ -12,6 +12,8 @@ public class HubHandler
     private static unsafe readonly byte* secondLevelMapPointer = *(byte**)(firstLevelMapPointer + 0x44);
     private static unsafe readonly byte* ghostPathBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55F2C);
     private static unsafe readonly byte* mapFlagsBaseAddress = *(byte**)(Mod.BaseAddress + 0xC5D5F4);
+    private static unsafe readonly byte* HogwartWarpEntranceBaseAddress = *(byte**)(Mod.BaseAddress + 0x00C4EE5C);
+    private static unsafe readonly byte* SecondPointerWarp = *(byte**)(HogwartWarpEntranceBaseAddress + 0x04);
     private static unsafe byte* leaky2LondonAddress = null;
     private static unsafe byte* hogPath2CourtyardAddress = null;
 
@@ -289,6 +291,16 @@ public class HubHandler
         goldBrickCount = 0;
     }
 
+    public static unsafe void ClearReturnToHogwartsLocation()
+    {
+        byte* entrancePTR = SecondPointerWarp + 0x31C;
+        for (int i = 0; i < 0x40; i++)
+        {
+            byte* ptr = entrancePTR + i;
+            *ptr = 0;
+        }        
+    }
+
     public static unsafe void UnlockSpell(int id)
     {
 
@@ -398,6 +410,12 @@ public class HubHandler
             *y8GhostPtr = YearCompleteMask;
     }
 
+    public static unsafe void HandleGhostPaths(int eax, int edx)
+    {
+        Console.WriteLine("Handling Ghost Paths");
+        Console.WriteLine($"eax: 0x{eax:X}, edx: 0x{edx:X}");
+    }
+
     public static unsafe void TurnOffCutscenes()
     {
         leaky2LondonAddress = GetLoadingZoneAddresses("HubLeakyCauldron", 0xB7B); // Leaky2London Loading Zone
@@ -405,6 +423,7 @@ public class HubHandler
 
         AdjustLeakyCutscenes();
         AdjustHogsPathCutscenes();
+        CompleteStartingGhostLevels();
     }
 
     private static unsafe void AdjustLeakyCutscenes()

@@ -129,19 +129,25 @@ public class Game
             // NOP GB Corrector #1
             Memory.Instance.SafeWrite(Mod.BaseAddress + 0x332694, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
             // NOP GB Corrector #2
-            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x42EB8B, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
-            //// NOP GB Corrector #3 (crashes game? - only used when GB >200 so not end of world)
-            // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x42EB90, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x42EB8B, [0x90, 0x90, 0x90]);
+            //// NOP GB Corrector #3
+            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x42EB90, [0x90, 0x90, 0x90]);
 
             // Removes the check for Freeplay mode and allows for always checking individual level completion to enable save and exit
             Memory.Instance.SafeWrite(Mod.BaseAddress + 0x40A264, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
-
-            // // Unlock Current Level Story // Crashes Dark Times
-            // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B817E, new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+            // All of these need to be off for Reducto/Agua/Specs?
+            // Allows Return to Diagon Alley in Abilities Lessons (Thestral Forest) 
+            // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x161D1, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
+            // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x40F42, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
+            // // Allows Return to Diagon Alley in Spell Lessons (Diffindo and Agua) (TODO: move this to turn on after DADA banned)
+            // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x33355A, [0x90, 0x90]);
+            
+            // // Unlock Current Level Story
+            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B817E, [0x90, 0x90, 0x90, 0x90, 0x90]);
             // // Unlock Current Level Freeplay
-            // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B8165, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
+            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B8165, [0x90, 0x90, 0x90, 0x90, 0x90]);
             //NOP Unlock Next Story Level
-            // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B809C, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
+            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B809C, [0x90, 0x90, 0x90, 0x90, 0x90]);
         }
     }
 
@@ -238,6 +244,7 @@ public class Game
     private static IReverseWrapper<HubSIP> _reverseWrapOnHubSIP = default!;
     private static IReverseWrapper<HubGB> _reverseWrapOnHubGB = default!;
     private static IReverseWrapper<HubRB> _reverseWrapOnHubRB = default!;
+    private static IReverseWrapper<HubGhostPath> _reverseWrapOnHubGhostPath = default!;
     private static IReverseWrapper<UpdateLevel> _reverseWrapOnLevelUpdate = default!;
     private static IReverseWrapper<UpdateMap> _reverseWrapOnMapUpdate = default!;
     private static IReverseWrapper<OpenCloseShop> _reverseWrapOnShopUpdate = default!;
@@ -393,6 +400,17 @@ public class Game
             "popfd",
         };
         _asmHooks.Add(hooks.CreateAsmHook(hubRBHook, (int)(Mod.BaseAddress + 0x71E92), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] hubGhostPathHook =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnHubGhostPath, out _reverseWrapOnHubGhostPath)}",
+            "popad",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(hubGhostPathHook, (int)(Mod.BaseAddress + 0x37CE63), AsmHookBehaviour.ExecuteAfter).Activate());
 
         string[] updateLevelHook =
         {
@@ -729,6 +747,15 @@ public class Game
         }
         CheckAndReportLocation(itemID + RedBrickCollectOffset);
 
+    }
+
+    
+    [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.edx], 
+    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void HubGhostPath(int eax, int edx);
+    private static void OnHubGhostPath(int eax, int edx)
+    {
+        HubHandler.HandleGhostPaths(eax, edx);
     }
 
     [Function([FunctionAttribute.Register.eax], 
