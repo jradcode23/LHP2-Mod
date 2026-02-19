@@ -436,14 +436,15 @@ public class HubHandler
             Console.WriteLine("Leaky Cauldron Save info hasn't been written yet.");
             return;
         }
-        Console.WriteLine("Turning Off Leaky Cutscenes");
+        Console.WriteLine($"Turning Off Leaky Cutscenes: Address is 0x{(nuint)leaky2LondonAddress:X}");
         *leaky2LondonAddress |= 1 << 0; // Ensure Normal Loading Zones are on
         *leaky2LondonAddress |= 1 << 1; // Ensure Normal Loading Zones are on
 
         *leaky2LondonAddress &= unchecked((byte)~(1 << 2)); // Clear Out of Retirement Cutscene
         *leaky2LondonAddress &= unchecked((byte)~(1 << 3)); // Clear Seven Harrys Cutscene
 
-        byte* leaky2LondonAddress2 = leaky2LondonAddress + 2;
+        byte* leaky2LondonAddress2 = leaky2LondonAddress + 0x2;
+        Console.WriteLine($"Address of second Leaky Cauldron flag is 0x{(nuint)leaky2LondonAddress2:X}");
         *leaky2LondonAddress2 &= unchecked((byte)~(1 << 4)); // Clear Thief's Downfall Cutscene
     }
 
@@ -454,7 +455,7 @@ public class HubHandler
             Console.WriteLine("HogsPath Save info hasn't been written yet.");
             return;
         }
-        Console.WriteLine("Updating HogsPath Flags");
+        Console.WriteLine($"Updating HogsPath Flags; Address is 0x{(nuint)hogPath2CourtyardAddress:X}");
         *hogPath2CourtyardAddress &= unchecked((byte)~(1 << 5)); // Clear Y5 Hogs Intro Cutscene
         *hogPath2CourtyardAddress |= 1 << 7; // Clear Y6 Hogs Intro Cutscene (Note that this one is inverted logic in-game)
         hogPath2CourtyardAddress -= 0x359; // Adjust to open hogsmeade
@@ -470,17 +471,19 @@ public class HubHandler
             return;
         }
         Console.WriteLine("Updating Wilderness Flags");
-        byte* invisibleWallFlag = wildernessAddress + 0x2905; // Flag for the invisible wall by the rock pile
-        *invisibleWallFlag &= unchecked((byte)~(1 << 2)); // Turn off the invisible wall
-        invisibleWallFlag += 0x03; // Move to the flag for the snowman
+        byte* invisibleWallFlag = wildernessAddress + 0x2905;
+        Console.WriteLine($"Address of Wilderness Invisible Wall Flag is 0x{(nuint)invisibleWallFlag:X}");
+        *invisibleWallFlag &= unchecked((byte)~(1 << 2)); // Turn off the invisible wall by the rock pile
+        invisibleWallFlag += 0x03; 
         *invisibleWallFlag &= unchecked((byte)~(1 << 6)); // Turn off the invisible wall by the snowman
-        invisibleWallFlag += 0x16; // Move to the flag for the wrecking ball
+        invisibleWallFlag += 0x16;
         *invisibleWallFlag &= unchecked((byte)~(1 << 2)); // Turn off the invisible wall by the wrecking ball  
-        invisibleWallFlag += 0x03; // Move to the flag for the invisible wall by the Lake
+        invisibleWallFlag += 0x03;
         *invisibleWallFlag &= unchecked((byte)~(1 << 6)); // Turn off the invisible wall by the Lake  
-        byte* xenoTokenFlag = wildernessAddress + 0x2D8F; // Flag for the Xenophilius token spawn
+        byte* xenoTokenFlag = wildernessAddress + 0x2D8F;
+        Console.WriteLine($"Address of Wilderness Xenophilius Token Flag is 0x{(nuint)xenoTokenFlag:X}");
         *xenoTokenFlag |= 1 << 3; // Ensure the Xenophilius token spawns
-        xenoTokenFlag -= 0x12; // 0x24 after if it is the other flag
+        xenoTokenFlag -= 0x12;
         *xenoTokenFlag |= 1 << 3; // Ensure the Xenophilius token can has a hitbox
     }
 
