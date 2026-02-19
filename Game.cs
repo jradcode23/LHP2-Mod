@@ -976,19 +976,19 @@ public class Game
             {
                 case "YEAR05" when Mod.GameInstance!.LevelID != 1:
                     HubHandler.SwitchYears(5);
-                    HubHandler.TurnOffCutscenes();
+                    HubHandler.AdjustHubMaps();
                     break;
                 case "YEAR06" when Mod.GameInstance!.LevelID != 2:
                     HubHandler.SwitchYears(6);
-                    HubHandler.TurnOffCutscenes();
+                    HubHandler.AdjustHubMaps();
                     break;
                 case "YEAR07" when Mod.GameInstance!.LevelID != 3:
                     HubHandler.SwitchYears(7);
-                    HubHandler.TurnOffCutscenes();
+                    HubHandler.AdjustHubMaps();
                     break;
                 case "YEAR08" when Mod.GameInstance!.LevelID != 4:
                     HubHandler.SwitchYears(8);
-                    HubHandler.TurnOffCutscenes();
+                    HubHandler.AdjustHubMaps();
                     break;
                 default:
                     break;

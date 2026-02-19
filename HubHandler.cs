@@ -12,10 +12,11 @@ public class HubHandler
     private static unsafe readonly byte* secondLevelMapPointer = *(byte**)(firstLevelMapPointer + 0x44);
     private static unsafe readonly byte* ghostPathBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55F2C);
     private static unsafe readonly byte* mapFlagsBaseAddress = *(byte**)(Mod.BaseAddress + 0xC5D5F4);
-    private static unsafe readonly byte* HogwartWarpEntranceBaseAddress = *(byte**)(Mod.BaseAddress + 0x00C4EE5C);
-    private static unsafe readonly byte* SecondPointerWarp = *(byte**)(HogwartWarpEntranceBaseAddress + 0x04);
+    private static unsafe readonly byte* hogwartWarpEntranceBaseAddress = *(byte**)(Mod.BaseAddress + 0x00C4EE5C);
+    private static unsafe readonly byte* SecondPointerWarp = *(byte**)(hogwartWarpEntranceBaseAddress + 0x04);
     private static unsafe byte* leaky2LondonAddress = null;
     private static unsafe byte* hogPath2CourtyardAddress = null;
+    private static unsafe byte* wildernessAddress = null;
 
     [Flags]
     public enum BitMask
@@ -416,17 +417,19 @@ public class HubHandler
         Console.WriteLine($"eax: 0x{eax:X}, edx: 0x{edx:X}");
     }
 
-    public static unsafe void TurnOffCutscenes()
+    public static unsafe void AdjustHubMaps()
     {
-        leaky2LondonAddress = GetLoadingZoneAddresses("HubLeakyCauldron", 0xB7B); // Leaky2London Loading Zone
-        hogPath2CourtyardAddress = GetLoadingZoneAddresses("HogsApproach", 0x1A90); // HogPath2Courtyard Loading Zone
+        leaky2LondonAddress = GetHubMapAddress("HubLeakyCauldron", 0xB7B); // Leaky2London Loading Zone
+        hogPath2CourtyardAddress = GetHubMapAddress("HogsApproach", 0x1A90); // HogPath2Courtyard Loading Zone
+        wildernessAddress = GetHubMapAddress("ForestHub", 0); // Wilderness Loading Zone
 
-        AdjustLeakyCutscenes();
-        AdjustHogsPathCutscenes();
+        AdjustLeakyCauldron();
+        AdjustHogsPath();
+        AdjustWilderness();
         CompleteStartingGhostLevels();
     }
 
-    private static unsafe void AdjustLeakyCutscenes()
+    private static unsafe void AdjustLeakyCauldron()
     {
         if (leaky2LondonAddress == mapFlagsBaseAddress + 0x40)
         {
@@ -444,7 +447,7 @@ public class HubHandler
         *leaky2LondonAddress2 &= unchecked((byte)~(1 << 4)); // Clear Thief's Downfall Cutscene
     }
 
-    private static unsafe void AdjustHogsPathCutscenes()
+    private static unsafe void AdjustHogsPath()
     {
         if (hogPath2CourtyardAddress == mapFlagsBaseAddress + 0x40)
         {
@@ -459,9 +462,21 @@ public class HubHandler
         *hogPath2CourtyardAddress |= 1 << 2; // Open the gate to Hogsmeade
     }
 
-    private static unsafe byte* GetLoadingZoneAddresses(string mapName, int offset)
+    private static unsafe void AdjustWilderness()
     {
-        const int sectionSize = 200000; // Number of bytes in the memory section
+        if (wildernessAddress == mapFlagsBaseAddress + 0x40)
+        {
+            Console.WriteLine("Wilderness Save info hasn't been written yet.");
+            return;
+        }
+        Console.WriteLine("Updating Wilderness Flags");
+        byte* invisibleWallFlag = wildernessAddress + 0x2905; // Flag for the invisible wall by the rock pile
+        *invisibleWallFlag &= unchecked((byte)~(1 << 2)); // Turn off the invisible wall
+    }
+
+    private static unsafe byte* GetHubMapAddress(string mapName, int offset)
+    {
+        const int sectionSize = 300000; // Number of bytes in the memory section
         byte* startingAddress = mapFlagsBaseAddress + 0x40;
         byte* returningAddress = startingAddress;
         byte[] sectionHeader = Encoding.ASCII.GetBytes(mapName);
