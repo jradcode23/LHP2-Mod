@@ -472,6 +472,16 @@ public class HubHandler
         Console.WriteLine("Updating Wilderness Flags");
         byte* invisibleWallFlag = wildernessAddress + 0x2905; // Flag for the invisible wall by the rock pile
         *invisibleWallFlag &= unchecked((byte)~(1 << 2)); // Turn off the invisible wall
+        invisibleWallFlag += 0x03; // Move to the flag for the snowman
+        *invisibleWallFlag &= unchecked((byte)~(1 << 6)); // Turn off the invisible wall by the snowman
+        invisibleWallFlag += 0x16; // Move to the flag for the wrecking ball
+        *invisibleWallFlag &= unchecked((byte)~(1 << 2)); // Turn off the invisible wall by the wrecking ball  
+        invisibleWallFlag += 0x03; // Move to the flag for the invisible wall by the Lake
+        *invisibleWallFlag &= unchecked((byte)~(1 << 6)); // Turn off the invisible wall by the Lake  
+        byte* xenoTokenFlag = wildernessAddress + 0x2D8F; // Flag for the Xenophilius token spawn
+        *xenoTokenFlag |= 1 << 3; // Ensure the Xenophilius token spawns
+        xenoTokenFlag -= 0x12; // 0x24 after if it is the other flag
+        *xenoTokenFlag |= 1 << 3; // Ensure the Xenophilius token can has a hitbox
     }
 
     private static unsafe byte* GetHubMapAddress(string mapName, int offset)
