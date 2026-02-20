@@ -54,8 +54,8 @@ public class LevelHandler
         TheFlawInThePlan = 0x226,
     }
 
-    public static readonly LevelData[] LevelUnlockOrder = new LevelData[]
-    {
+    public static readonly LevelData[] LevelUnlockOrder =
+    [
         LevelData.DarkTimes,
         LevelData.DumbeldoresArmy,
         LevelData.Focus,
@@ -80,7 +80,7 @@ public class LevelHandler
         LevelData.FiendfyreFrenzy,
         LevelData.SnapesTears,
         LevelData.TheFlawInThePlan,
-    };
+    ];
 
     public static LevelData ConvertIDToLeveData(int id)
     {
@@ -185,6 +185,19 @@ public class LevelHandler
     {
         switch (map)
         {
+            // TODO: Update this so 1) spells aren't available in the map until the lesson is completed and 2) move the NOP return to Hub code here
+            // Specs Lesson
+            case 179 when !Mod.LHP2_Archipelago!.IsLocationChecked(1016):
+                Game.LessonRestoreReturnToHub();
+                break;
+            // Reducto Lesson
+            case 195 when !Mod.LHP2_Archipelago!.IsLocationChecked(1020) && Mod.LHP2_Archipelago.IsLocationChecked(1019):
+                Game.LessonRestoreReturnToHub();
+                break;
+            // Charms Lesson
+            case 196 when !Mod.LHP2_Archipelago!.IsLocationChecked(1021) && Mod.LHP2_Archipelago.IsLocationChecked(1020):
+                Game.LessonRestoreReturnToHub();
+                break;
             // Diagon Alley
             case 370:
             case 376:

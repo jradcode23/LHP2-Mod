@@ -30,7 +30,7 @@ public class Game
     public const int RedBrickCollectOffset = 900;
     public const int RedBrickPurchOffset = 950;
     public const int SpellPurchOffset = 975;
-    public const int MaxItemID = 1005;
+    public const int MaxItemID = 1030;
     public static void CheckGameLoaded()
     {
         Console.WriteLine("Checking to see if game is loaded");
@@ -135,12 +135,6 @@ public class Game
 
             // Removes the check for Freeplay mode and allows for always checking individual level completion to enable save and exit
             Memory.Instance.SafeWrite(Mod.BaseAddress + 0x40A264, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
-            // All of these need to be off for Reducto/Agua/Specs?
-            // Allows Return to Diagon Alley in Abilities Lessons (Thestral Forest) 
-            // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x161D1, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
-            // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x40F42, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
-            // // Allows Return to Diagon Alley in Spell Lessons (Diffindo and Agua) (TODO: move this to turn on after DADA banned)
-            // Memory.Instance.SafeWrite(Mod.BaseAddress + 0x33355A, [0x90, 0x90]);
             
             // // Unlock Current Level Story
             Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B817E, [0x90, 0x90, 0x90, 0x90, 0x90]);
@@ -148,7 +142,29 @@ public class Game
             Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B8165, [0x90, 0x90, 0x90, 0x90, 0x90]);
             //NOP Unlock Next Story Level
             Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B809C, [0x90, 0x90, 0x90, 0x90, 0x90]);
+
+            if (Mod.LHP2_Archipelago!.IsLocationChecked(1006))
+            {
+                LessonReturnToHubNOP();
+            }
         }
+    }
+
+    public static void LessonReturnToHubNOP()
+    {
+        // All of these need to be off for Reducto/Agua/Specs?
+        // Allows Return to Diagon Alley in Abilities Lessons (Thestral Forest) 
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x161D1, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x40F42, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
+        // Allows Return to Diagon Alley in Spell Lessons (Diffindo and Agua)
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x33355A, [0x90, 0x90]);
+    }
+
+    public static void LessonRestoreReturnToHub()
+    {
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x161D1, [0x0F, 0x84, 0x2D, 0xFF, 0xFF, 0xFF]); // harry2.exe+161D1 - 0F84 2DFFFFFF
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x40F42, [0x0F, 0x84, 0xE3, 0x01, 0x00, 0x00]); // harry2.exe+40F42 - 0F84 E3010000        
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x33355A, [0x74, 0x03]); //harry2.exe+33355A - 74 03                
     }
 
     public static void ManageItem(int ItemID)
@@ -168,6 +184,8 @@ public class Game
                 case < 426:
                     int token = ItemID - tokenOffset;
                     CharacterHandler.UnlockToken(token);
+                    break;
+                case < 450: // Horcrux
                     break;
                 case < 475:
                     level = LevelHandler.ConvertIDToLeveData(ItemID - levelOffset);
@@ -209,7 +227,7 @@ public class Game
                 case < 975:
                     HubHandler.ReceivedRedBrickUnlock(ItemID - RedBrickPurchOffset);
                     break;
-                case < 1005:
+                case < 1016:
                     HubHandler.UnlockSpell(ItemID - SpellPurchOffset);
                     break;
                 default:
@@ -1010,7 +1028,7 @@ public class Game
         HubHandler.ResetHub();
     }
 
-    private static void CheckAndReportLocation(int apID)
+    public static void CheckAndReportLocation(int apID)
     {
         if (Mod.LHP2_Archipelago!.IsLocationChecked(apID))
         {

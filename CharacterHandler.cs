@@ -327,7 +327,7 @@ public class CharacterHandler
 
     public static int GetLevelTokenItemID(int ID)
     {
-        int bx = ID & 0xFFFF;
+        ushort bx = (ushort)(ID & 0xFFFF);
         bx -= 0x70; // There is a base 0x70 offset
         Console.WriteLine($"Level Token bx is: {bx}");
         var kvp = characterMap.FirstOrDefault(k => k.Value == bx);
