@@ -4,10 +4,9 @@ namespace LHP2_Archi_Mod;
 
 public class HubHandler
 {
-    private static unsafe readonly byte* hubBaseAddress = *(byte**)(Mod.BaseAddress + 0xC5B3B4);
+    public static unsafe readonly byte* hubBaseAddress = *(byte**)(Mod.BaseAddress + 0xC5B3B4);
     private static unsafe readonly byte* goldBrickBaseAddress = *(byte**)(Mod.BaseAddress + 0xC54554);
     private static unsafe readonly byte* redBrickPurchBaseAddress = *(byte**)(Mod.BaseAddress + 0xC575F4);
-    private static unsafe readonly byte* spellBaseAddress = (byte*)(Mod.BaseAddress + 0xB06AB0);
     private static unsafe readonly byte* firstLevelMapPointer = *(byte**)(Mod.BaseAddress + 0x00B06A5C);
     private static unsafe readonly byte* secondLevelMapPointer = *(byte**)(firstLevelMapPointer + 0x44);
     private static unsafe readonly byte* ghostPathBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55F2C);
@@ -302,49 +301,6 @@ public class HubHandler
             byte* ptr = entrancePTR + i;
             *ptr = 0;
         }        
-    }
-
-    public static unsafe void UnlockSpell(int id)
-    {
-
-        int byteOffset = id / 8;
-        int bitOffset = id % 8;
-
-        byte* ptr = spellBaseAddress + byteOffset;
-
-        if (ptr == null)
-        {
-            Console.WriteLine("SpellBaseAddress: null pointer");
-            return;
-        }
-        *ptr |= (byte)(1 << bitOffset);
-    }
-
-    public static unsafe void ResetSpells()
-    {
-        for(int i = 0; i < 4; i++)
-        {
-            byte* ptr = spellBaseAddress + i;
-            *ptr = 0;
-        }
-
-        // Set the Default Spells
-        UnlockSpell(0); //Wingardium Leviosa
-        UnlockSpell(20); //Pets
-        UnlockSpell(21); //Invisibility Cloak
-        UnlockSpell(22); //Avada
-        UnlockSpell(23); //Diffindo
-        UnlockSpell(24); //Lumos Part 1
-        UnlockSpell(25); //Lumos Part 2
-        UnlockSpell(26); //Deluminator & Polyjuice
-        UnlockSpell(27); //Aguamenti
-        UnlockSpell(28); //Focus
-        UnlockSpell(29); //Expecto Patronum
-        UnlockSpell(30); //Reducto
-        UnlockSpell(31); //Unknown Spell
-
-        byte* darkMagic = hubBaseAddress + 0x19B * 4 + 2;
-        *darkMagic |= (byte)BitMask.SpecialFlag;
     }
 
     public static unsafe void VerifyCharCustMaps()

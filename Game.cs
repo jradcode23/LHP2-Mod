@@ -227,8 +227,8 @@ public class Game
                 case < 975:
                     HubHandler.ReceivedRedBrickUnlock(ItemID - RedBrickPurchOffset);
                     break;
-                case < 1016:
-                    HubHandler.UnlockSpell(ItemID - SpellPurchOffset);
+                case < 1030:
+                    SpellHandler.UnlockSpell(ItemID - SpellPurchOffset);
                     break;
                 default:
                     Console.WriteLine($"Unknown item received: {ItemID}");
@@ -1021,7 +1021,7 @@ public class Game
     {
         HubHandler.ResetGoldBrickCount();
         HubHandler.ResetRedBrickUnlock();
-        HubHandler.ResetSpells();
+        SpellHandler.ResetSpells();
         LevelHandler.ResetLevels();
         CharacterHandler.ResetTokens();
         CharacterHandler.ResetUnlocks();
