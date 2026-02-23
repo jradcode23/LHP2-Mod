@@ -185,18 +185,20 @@ public class LevelHandler
     {
         switch (map)
         {
-            // TODO: Update this so 1) spells aren't available in the map until the lesson is completed and 2) move the NOP return to Hub code here
-            // Specs Lesson
-            case 179 when !Mod.LHP2_Archipelago!.IsLocationChecked(1016):
-                Game.LessonRestoreReturnToHub();
+            // DADA Locked
+            case 301 when !Mod.LHP2_Archipelago!.IsLocationChecked(1007) && Mod.LHP2_Archipelago.IsLocationChecked(1006):
+                SpellHandler.LockPassiveSpell(46); // Ensure lesson can be beaten since game doesn't like when you already have it
                 break;
-            // Reducto Lesson
+            // Aguamenti Lesson
             case 195 when !Mod.LHP2_Archipelago!.IsLocationChecked(1020) && Mod.LHP2_Archipelago.IsLocationChecked(1019):
-                Game.LessonRestoreReturnToHub();
+                SpellHandler.LockPassiveSpell(27); // Ensure lesson can be beaten since game doesn't like when you already have it
                 break;
-            // Charms Lesson
             case 196 when !Mod.LHP2_Archipelago!.IsLocationChecked(1021) && Mod.LHP2_Archipelago.IsLocationChecked(1020):
-                Game.LessonRestoreReturnToHub();
+                SpellHandler.LockPassiveSpell(30); // Ensure lesson can be beaten since game doesn't like when you already have it
+                break;
+            // London when Apparition is supposed to be unlocked
+            case 103 when !Mod.LHP2_Archipelago!.IsLocationChecked(1027):
+                Game.LessonReturnToHubNOP();
                 break;
             // Diagon Alley
             case 370:

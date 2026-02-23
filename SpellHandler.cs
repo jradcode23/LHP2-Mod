@@ -21,9 +21,9 @@ public class SpellHandler
         }
     }
 
-    public static unsafe void UnlockPassiveSpell(int byteoffset, int bitOffset)
+    public static unsafe void UnlockPassiveSpell(int byteOffset, int bitOffset)
     {
-        byte* ptr = spellBaseAddress + byteoffset;
+        byte* ptr = spellBaseAddress + byteOffset;
 
         if (ptr == null)
         {
@@ -33,6 +33,21 @@ public class SpellHandler
         *ptr |= (byte)(1 << bitOffset);
     }
 
+    public static unsafe void LockPassiveSpell(int id)
+    {
+        int byteOffset = id / 8;
+        int bitOffset = id % 8;
+
+        byte* ptr = spellBaseAddress + byteOffset;
+
+        if (ptr == null)
+        {
+            Console.WriteLine("SpellBaseAddress: null pointer");
+            return;
+        }
+        *ptr &= unchecked((byte)~(byte)(1 << bitOffset));
+    }
+    
     public static unsafe void MakeSpellVisible(int id)
     {
         if (spellVisibilityBaseAddress == null)
@@ -157,7 +172,7 @@ public class SpellHandler
         }
 
         byte* ptr = spellVisibilityBaseAddress + 8 * 2;
-        Console.WriteLine($"Making Spells invisible starting at {(nuint)ptr:X}");
+        // Console.WriteLine($"Making Spells invisible starting at {(nuint)ptr:X}");
         *ptr = 3; // Make Diffindo invisible
 
         ptr += 16; // Move to Aguamenti
@@ -166,6 +181,20 @@ public class SpellHandler
         {
             *ptr = 3;
             ptr += 8;
+        }
+    }
+
+    public static unsafe void UnlockAllPassiveSpells()
+    {
+        for(int i = 0; i < 7; i++)
+        {
+            if (i ==4)
+            {
+                continue; // Skip Unknown Spells
+            }
+
+            byte* passivePTR = spellBaseAddress + i;
+            *passivePTR = 0xFF;
         }
     }
 }

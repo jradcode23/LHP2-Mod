@@ -390,34 +390,40 @@ public class HubHandler
                     break;
                 case 0x4: // DADA Banned Lesson Complete
                     Game.CheckAndReportLocation(1007);
-                    Game.LessonReturnToHubNOP(); // TODO: Provide a Failsafe in case the player restarts game
                     break;
                 case 0x8: // Thestral Forest Lesson Complete
                     Game.CheckAndReportLocation(1008);
                     *y5GhostPtr |= 1 << 4; // Mark Dumbledore's Army Story as Complete
+                    // Game.LessonRestoreReturnToHub();
                     break;
                 case 0x20: // Dueling Lesson Complete
                     Game.CheckAndReportLocation(1009);
                     *y5GhostPtr |= 1 << 6; // Mark Focus! Story as Complete
+                    // Game.LessonRestoreReturnToHub();
                     break;
                 case 0x80: // Diffindo Lesson Complete
                     Game.CheckAndReportLocation(1010);
                     *y5GhostPtr2 |= 1 << 0; // Mark Kreacher Discomfort Story as Complete
+                    // Game.LessonRestoreReturnToHub();
                     break;
                 case 0x200: // Patroneous Lesson Complete
                     Game.CheckAndReportLocation(1011);
+                    // Game.LessonRestoreReturnToHub();
                     break;
                 case 0x400: // Befriend Grawp Lesson Complete
                     Game.CheckAndReportLocation(1012);
+                    // Game.LessonRestoreReturnToHub();
                     break;
                 case 0x800: // Snape's Worst Memory Complete
                     Game.CheckAndReportLocation(1013);
+                    // Game.LessonRestoreReturnToHub();
                     break;
                 case 0x1000: // WWW Box Lesson Complete
                     Game.CheckAndReportLocation(1014);
                     *y5GhostPtr2 |= 1 << 5; // Mark A Giant Viruoso Story Complete
                     *y5GhostPtr2 |= 1 << 6; // Mark A Veiled Threat Story Complete
                     Game.CheckAndReportLocation(1015); // Send Y5 Story Complete
+                    // Game.LessonRestoreReturnToHub();
                     break;
                 default:
                     Console.WriteLine($"Unhandled Y5 Ghost Path with dx: 0x{dx:X}");
@@ -429,26 +435,25 @@ public class HubHandler
             {
                 case 0x4: // Specs Lesson Complete
                     Game.CheckAndReportLocation(1016);
-                    Game.LessonReturnToHubNOP();
                     break;
                 case 0x8: // Arrive at Hogwarts Y6
                     Game.CheckAndReportLocation(1017);
                     break;
                 case 0x10: // Draught of Living Death Lesson Complete
                     Game.CheckAndReportLocation(1018);
+                    // Game.LessonRestoreReturnToHub();
                     break;
                 case 0x20: // Dumbledore's First Lesson Complete
                     Game.CheckAndReportLocation(1019);
                     *y6GhostPtr |= 1 << 6; // Mark Just Desserts Story Complete
+                    // Game.LessonRestoreReturnToHub();
                     break;
                 case 0x80: // Aguamenti Lesson Complete
                     Game.CheckAndReportLocation(1020);
                     *y6GhostPtr2 |= 1 << 0; // Mark A Not So Merry Christmas Story Complete
-                    Game.LessonReturnToHubNOP();
                     break;
                 case 0x200: // Reducto Lesson Complete
                     Game.CheckAndReportLocation(1021);
-                    Game.LessonReturnToHubNOP();
                     break;
                 case 0x400: // Dumledore's Second Lesson Complete
                     Game.CheckAndReportLocation(1022);
@@ -465,7 +470,9 @@ public class HubHandler
         {
             if (dx == 4) // Cafe Fight Complete
             {
-                Game.CheckAndReportLocation(1024);
+                Game.CheckAndReportLocation(1027);
+                *y7GhostPtr = 254; // Mark all Y7 Ghost Paths as Complete
+                Game.LessonRestoreReturnToHub();
             }
             
         } else 

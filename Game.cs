@@ -143,10 +143,6 @@ public class Game
             //NOP Unlock Next Story Level
             Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B809C, [0x90, 0x90, 0x90, 0x90, 0x90]);
 
-            if (Mod.LHP2_Archipelago!.IsLocationChecked(1006))
-            {
-                LessonReturnToHubNOP();
-            }
         }
     }
 
@@ -793,6 +789,10 @@ public class Game
     {
         Mod.GameInstance!.PrevMapID = Mod.GameInstance!.MapID;
         Mod.GameInstance!.MapID = value;
+        if(Mod.GameInstance!.PrevMapID == 196 && !Mod.LHP2_Archipelago!.IsLocationChecked(1021) && Mod.LHP2_Archipelago.IsLocationChecked(1020))
+        {
+            LessonRestoreReturnToHub();
+        }
         Console.WriteLine($"Map ID updated to {value}.");
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
@@ -892,6 +892,7 @@ public class Game
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, MaxItemID);
             HubHandler.GetGoldBrickCount();
+            SpellHandler.UnlockAllPassiveSpells();
         }
     }
 
@@ -925,6 +926,7 @@ public class Game
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
+        LevelHandler.ImplementMapLogic(Mod.GameInstance!.MapID);
     }
 
     [Function(CallingConventions.Fastcall)]
@@ -960,6 +962,7 @@ public class Game
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
+        LevelHandler.ImplementMapLogic(Mod.GameInstance!.MapID);
     }
 
     [Function([], FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
