@@ -56,7 +56,6 @@ public class Mod : ModBase // <= Do not Remove.
         });
         thread1.Start();
 
-
     }
 
     #region Standard Overrides

@@ -583,4 +583,24 @@ public class HubHandler
         return returningAddress;
 
     }
+
+    public static unsafe void ClearLeaky2LondonY7()
+    {
+        byte* ActiveLoadingZoneBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55E1C);
+
+        if (ActiveLoadingZoneBaseAddress == null)
+        {
+            Console.WriteLine("Active Loading Zone Base Address is null, can't clear Leaky2London Y7 flag.");
+        }
+        byte* ptr = *(byte**)(ActiveLoadingZoneBaseAddress + 0xB10); // First Pointer
+        Console.WriteLine($"Active Loading Zone Pointer is 0x{(nuint)ptr:X}");
+        if (ptr == null || (nuint)ptr == 0xB10 || (nuint)ptr == 0xB11)
+        {
+            Console.WriteLine("Active Loading Zone Pointer is null, can't clear Leaky2London Y7 flag.");
+            return;
+        }
+        ptr += 0x7A; // Second Pointer
+        Console.WriteLine($"Clearing Leaky2London Y7 Flag at address 0x{(nuint)ptr:X}");
+        // *ptr = 1; // Remove the Loading Zone Flag to bring to level
+    }
 }

@@ -200,6 +200,10 @@ public class LevelHandler
             case 103 when !Mod.LHP2_Archipelago!.IsLocationChecked(1027):
                 Game.LessonReturnToHubNOP();
                 break;
+            case 374 when !Mod.LHP2_Archipelago!.IsLocationChecked(1027):
+                MakeAllBoardsVisible();
+                HubHandler.ClearLeaky2LondonY7();
+                break;
             // Diagon Alley
             case 370:
             case 376:
