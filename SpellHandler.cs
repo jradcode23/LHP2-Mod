@@ -65,7 +65,7 @@ public class SpellHandler
             id -= 21;
         }
         byte* ptr = spellVisibilityBaseAddress + offset * id;
-        Console.WriteLine($"Making Spell ID {id} visible at offset {offset * id}");
+        // Console.WriteLine($"Making Spell ID {id} visible at offset {offset * id}");
         *ptr = 1;
     }
 
@@ -195,6 +195,33 @@ public class SpellHandler
 
             byte* passivePTR = spellBaseAddress + i;
             *passivePTR = 0xFF;
+        }
+    }
+
+    public static void SpellMapLogic(int map)
+    {
+        switch (map)
+        {
+            // DADA Locked
+            case 301 when !Mod.LHP2_Archipelago!.IsLocationChecked(1007) && Mod.LHP2_Archipelago.IsLocationChecked(1006):
+                SpellHandler.LockPassiveSpell(46); // Ensure lesson can be beaten since game doesn't like when you already have it
+                Game.LessonRestoreReturnToHub();
+                break;
+            // Aguamenti Lesson
+            case 195 when !Mod.LHP2_Archipelago!.IsLocationChecked(1020) && Mod.LHP2_Archipelago.IsLocationChecked(1019):
+                SpellHandler.LockPassiveSpell(27); // Ensure lesson can be beaten since game doesn't like when you already have it
+                Game.LessonRestoreReturnToHub();
+                break;
+            case 196 when !Mod.LHP2_Archipelago!.IsLocationChecked(1021) && Mod.LHP2_Archipelago.IsLocationChecked(1020):
+                SpellHandler.LockPassiveSpell(30); // Ensure lesson can be beaten since game doesn't like when you already have it
+                Game.LessonRestoreReturnToHub();
+                break;
+            // London when Apparition is supposed to be unlocked
+            case 103 when !Mod.LHP2_Archipelago!.IsLocationChecked(1027):
+                Game.LessonReturnToHubNOP();
+                break;
+            default:
+                break;
         }
     }
 }

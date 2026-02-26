@@ -185,24 +185,10 @@ public class LevelHandler
     {
         switch (map)
         {
-            // DADA Locked
-            case 301 when !Mod.LHP2_Archipelago!.IsLocationChecked(1007) && Mod.LHP2_Archipelago.IsLocationChecked(1006):
-                SpellHandler.LockPassiveSpell(46); // Ensure lesson can be beaten since game doesn't like when you already have it
-                break;
-            // Aguamenti Lesson
-            case 195 when !Mod.LHP2_Archipelago!.IsLocationChecked(1020) && Mod.LHP2_Archipelago.IsLocationChecked(1019):
-                SpellHandler.LockPassiveSpell(27); // Ensure lesson can be beaten since game doesn't like when you already have it
-                break;
-            case 196 when !Mod.LHP2_Archipelago!.IsLocationChecked(1021) && Mod.LHP2_Archipelago.IsLocationChecked(1020):
-                SpellHandler.LockPassiveSpell(30); // Ensure lesson can be beaten since game doesn't like when you already have it
-                break;
-            // London when Apparition is supposed to be unlocked
-            case 103 when !Mod.LHP2_Archipelago!.IsLocationChecked(1027):
-                Game.LessonReturnToHubNOP();
-                break;
+            // Leaky in Y7 specifically has a weird loading zone thing
             case 374 when !Mod.LHP2_Archipelago!.IsLocationChecked(1027):
                 MakeAllBoardsVisible();
-                HubHandler.ClearLeaky2LondonY7();
+                // HubHandler.ClearLeaky2LondonY7();
                 break;
             // Diagon Alley
             case 370:

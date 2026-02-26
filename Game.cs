@@ -82,27 +82,26 @@ public class Game
         }
     }
 
-    // Currently unused, but leaving in for future items that are instant benefit/detriment and not collectables
-    // public static unsafe bool PlayerControllable()
-    // {
-    //     try
-    //     {
-    //         byte** basePtr = (byte**)(Mod.BaseAddress + 0xC5763C);
-    //         if (basePtr == null || *basePtr == null)
-    //             return false;
+    public static unsafe bool PlayerControllable()
+    {
+        try
+        {
+            byte** basePtr = (byte**)(Mod.BaseAddress + 0xC5763C);
+            if (basePtr == null || *basePtr == null)
+                return false;
 
-    //         byte* finalPtr = (byte*)(*basePtr + 0x119C);
-    //         if (finalPtr == null)
-    //             return false;
+            byte* finalPtr = (byte*)(*basePtr + 0x119C);
+            if (finalPtr == null)
+                return false;
 
-    //         return *finalPtr == 1;
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         Console.WriteLine($"Error in InGame check: {ex.Message}");
-    //         return false;
-    //     }
-    // }
+            return *finalPtr == 1;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in InGame check: {ex.Message}");
+            return false;
+        }
+    }
 
     public static void WriteN0CUT5Flag()
     {
@@ -267,6 +266,7 @@ public class Game
     private static IReverseWrapper<CharacterCmp> _reverseWrapOnCharacterCmp = default!;
     private static IReverseWrapper<OpenPolyjuicePot> _reverseWrapOnOpenPolyjuicePot = default!;
     private static IReverseWrapper<ClosePolyjuicePot> _reverseWrapOnClosePolyjuicePot = default!;
+    private static IReverseWrapper<ChangeCharacters> _reverseWrapOnChangeCharacters = default!;
     private static IReverseWrapper<ChangeYears> _reverseWrapChangeYears = default!;
 
     public void SetupHooks(IReloadedHooks hooks)
@@ -453,7 +453,7 @@ public class Game
             "use32",
             "pushfd",
             "pushad",
-            $"{hooks.Utilities.GetAbsoluteCallMnemonics(onShopChange, out _reverseWrapOnShopUpdate)}",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnShopChange, out _reverseWrapOnShopUpdate)}",
             "popad",
             "popfd",
         };
@@ -464,7 +464,7 @@ public class Game
             "use32",
             "pushfd",
             "pushad",
-            $"{hooks.Utilities.GetAbsoluteCallMnemonics(onOpenMenu, out _reverseWrapOnOpenMenu)}",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnOpenMenu, out _reverseWrapOnOpenMenu)}",
             "popad",
             "popfd",
         };
@@ -475,7 +475,7 @@ public class Game
             "use32",
             "pushfd",
             "pushad",
-            $"{hooks.Utilities.GetAbsoluteCallMnemonics(onCharacterCmp, out _reverseWrapOnCharacterCmp)}",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnCharacterCmp, out _reverseWrapOnCharacterCmp)}",
             "test al, al",
             "jnz skip_cmp", 
 
@@ -507,7 +507,7 @@ public class Game
             "use32",
             "pushfd",
             "pushad",
-            $"{hooks.Utilities.GetAbsoluteCallMnemonics(onCloseMenu, out _reverseWrapOnCloseMenu)}",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnCloseMenu, out _reverseWrapOnCloseMenu)}",
             "popad",
             "popfd",
         };
@@ -518,7 +518,7 @@ public class Game
             "use32",
             "pushfd",
             "pushad",
-            $"{hooks.Utilities.GetAbsoluteCallMnemonics(onOpenPolyjuicePot, out _reverseWrapOnOpenPolyjuicePot)}",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnOpenPolyjuicePot, out _reverseWrapOnOpenPolyjuicePot)}",
             "popad",
             "popfd",
         };
@@ -529,18 +529,32 @@ public class Game
             "use32",
             "pushfd",
             "pushad",
-            $"{hooks.Utilities.GetAbsoluteCallMnemonics(onClosePolyjuicePot, out _reverseWrapOnClosePolyjuicePot)}",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnClosePolyjuicePot, out _reverseWrapOnClosePolyjuicePot)}",
             "popad",
             "popfd",
         };
         _asmHooks.Add(hooks.CreateAsmHook(ClosePolyjuicePotHook, (int)(Mod.BaseAddress + 0x3C69B0), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] ChangeCharactersHook =
+        {
+            "use32",
+            "push edx",
+            "mov edx, ebp", 
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnChangeCharacters, out _reverseWrapOnChangeCharacters)}",
+            "popad",
+            "popfd",
+            "pop edx",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(ChangeCharactersHook, (int)(Mod.BaseAddress + 0x5440EC), AsmHookBehaviour.ExecuteFirst).Activate());
 
         string[] ChangeYearsHook =
         {
             "use32",
             "pushfd",
             "pushad",
-            $"{hooks.Utilities.GetAbsoluteCallMnemonics(onChangeYears, out _reverseWrapChangeYears)}",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnChangeYears, out _reverseWrapChangeYears)}",
             "popad",
             "popfd",
         };
@@ -800,10 +814,27 @@ public class Game
         LevelHandler.ImplementMapLogic(value);
     }
 
+    [Function([FunctionAttribute.Register.edx],
+    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void ChangeCharacters(int edx);
+
+    public static unsafe void OnChangeCharacters(int edx)
+    {
+        Console.WriteLine($"Chanacter Function ran, EDX: {edx:X}");
+        ushort* initialValue = (ushort*)(Mod.BaseAddress + 0xC5F4C4);
+        if (*initialValue == 0xFFFF)
+        {
+            Console.WriteLine("Active Character Changed, updating spells");
+            SpellHandler.ResetSpells();
+            Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
+            SpellHandler.SpellMapLogic(Mod.GameInstance!.MapID);
+        }
+    }
+
     [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.esp], 
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void OpenCloseShop(int eax, int esp);
-    private static void onShopChange(int eax, int esp)
+    private static void OnShopChange(int eax, int esp)
     {
         bool eaxBit0Set = (eax & 1) != 0;
         int lastNibble = esp & 0xF;
@@ -859,7 +890,7 @@ public class Game
     [Function([FunctionAttribute.Register.edi], 
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void OpenMenu(int edi);
-    private static unsafe void onOpenMenu(int edi)
+    private static unsafe void OnOpenMenu(int edi)
     {
         if(edi != 2)
         {
@@ -899,7 +930,7 @@ public class Game
     [Function([], FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate bool CharacterCmp();
 
-    private static bool onCharacterCmp()
+    private static bool OnCharacterCmp()
     {
         // Only run CMP on menu map or levels 1–4
         if (Mod.GameInstance!.MapID == 402)
@@ -914,7 +945,7 @@ public class Game
 
     [Function(CallingConventions.Fastcall)]
     public delegate void CloseMenu();
-    private static void onCloseMenu()
+    private static void OnCloseMenu()
     {
         // Take into account that this code runs multiple times.
         if(!Mod.GameInstance!.PrevInMenu)
@@ -927,11 +958,12 @@ public class Game
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
         LevelHandler.ImplementMapLogic(Mod.GameInstance!.MapID);
+        SpellHandler.SpellMapLogic(Mod.GameInstance!.MapID);
     }
 
     [Function(CallingConventions.Fastcall)]
     public delegate void OpenPolyjuicePot();
-    private static unsafe void onOpenPolyjuicePot()
+    private static unsafe void OnOpenPolyjuicePot()
     {
         byte* cauldronBaseAddress = (byte*)*(int*)(Mod.BaseAddress + 0xC54290);
         nuint cauldronItem = Memory.Instance.Read<nuint>((nuint)(cauldronBaseAddress + 0x68));
@@ -949,7 +981,7 @@ public class Game
 
     [Function(CallingConventions.Fastcall)]
     public delegate void ClosePolyjuicePot();
-    private static unsafe void onClosePolyjuicePot()
+    private static unsafe void OnClosePolyjuicePot()
     {
         byte* cauldronBaseAddress = (byte*)*(int*)(Mod.BaseAddress + 0xC54290);
         nuint cauldronItem = Memory.Instance.Read<nuint>((nuint)(cauldronBaseAddress + 0x68));
@@ -963,11 +995,12 @@ public class Game
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
         LevelHandler.ImplementMapLogic(Mod.GameInstance!.MapID);
+        SpellHandler.SpellMapLogic(Mod.GameInstance!.MapID);
     }
 
     [Function([], FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void ChangeYears();
-    private static unsafe void onChangeYears()
+    private static unsafe void OnChangeYears()
     {
         if(Mod.GameInstance!.MapID == 365 || Mod.GameInstance!.MapID == 371 
             || Mod.GameInstance!.MapID == 377 || Mod.GameInstance!.MapID == 381)

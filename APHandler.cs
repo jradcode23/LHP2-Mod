@@ -117,11 +117,21 @@ public class ArchipelagoHandler
                 {
                     Game.ManageItem(gameID);
                 }
+                return;
             }
             if(Mod.GameInstance != null && Mod.GameInstance.PrevInLevelSelect)
             {
                 int gameID = (int)item.ItemId - gameOffset;
                 Game.ManageItem(gameID);
+                return;
+            }
+            if(Mod.GameInstance != null && Game.PlayerControllable())
+            {
+                int gameID = (int)item.ItemId - gameOffset;
+                if(gameID >= 998)
+                {
+                    Game.ManageItem(gameID);
+                }
             }
         }
     }
