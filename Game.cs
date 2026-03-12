@@ -424,7 +424,7 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(hubGhostPathHook, (int)(Mod.BaseAddress + 0x37CE63), AsmHookBehaviour.ExecuteAfter).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(hubGhostPathHook, (int)(Mod.BaseAddress + 0x37CE63), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
 
         string[] updateLevelHook =
         {

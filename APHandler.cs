@@ -108,7 +108,6 @@ public class ArchipelagoHandler
         {
             var itemIndex = helper.Index;
             var item = helper.DequeueItem();
-             //TODO: Add a check for spells once sending/receiving spells is implemented
             if(Mod.GameInstance != null && Mod.GameInstance.PrevInShop)
             {
                 int gameID = (int)item.ItemId - gameOffset;

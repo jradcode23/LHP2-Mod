@@ -387,35 +387,43 @@ public class HubHandler
             {
                 case 0x2: // Arrive at Hogwarts Y5
                     Game.CheckAndReportLocation(1006);
+                    *y5GhostPtr |= 1 << 1; // Mark Arrive at Hogwarts Complete
                     break;
-                case 0x4: // DADA Banned Lesson Complete
+                case 0x4 when !Mod.LHP2_Archipelago!.IsLocationChecked(1007): // DADA Banned Lesson Complete
                     Game.CheckAndReportLocation(1007);
+                    *y5GhostPtr |= 1 << 2; // Mark DADA Banned Complete
                     break;
                 case 0x8: // Thestral Forest Lesson Complete
                     Game.CheckAndReportLocation(1008);
+                    *y5GhostPtr |= 1 << 3; // Mark Thestral Forest Complete
                     *y5GhostPtr |= 1 << 4; // Mark Dumbledore's Army Story as Complete
                     // Game.LessonRestoreReturnToHub();
                     break;
                 case 0x20: // Dueling Lesson Complete
                     Game.CheckAndReportLocation(1009);
+                    *y5GhostPtr |= 1 << 5; // Mark Dueling Complete
                     *y5GhostPtr |= 1 << 6; // Mark Focus! Story as Complete
                     // Game.LessonRestoreReturnToHub();
                     break;
                 case 0x80: // Diffindo Lesson Complete
                     Game.CheckAndReportLocation(1010);
+                    *y5GhostPtr |= 1 << 7; // Mark Diffindo Complete
                     *y5GhostPtr2 |= 1 << 0; // Mark Kreacher Discomfort Story as Complete
                     // Game.LessonRestoreReturnToHub();
                     break;
                 case 0x200: // Patroneous Lesson Complete
                     Game.CheckAndReportLocation(1011);
+                    *y5GhostPtr2 |= 1 << 1; // Mark Patronus Complete
                     // Game.LessonRestoreReturnToHub();
                     break;
                 case 0x400: // Befriend Grawp Lesson Complete
                     Game.CheckAndReportLocation(1012);
+                    *y5GhostPtr2 |= 1 << 2; // Mark Befriend Grawp Complete
                     // Game.LessonRestoreReturnToHub();
                     break;
                 case 0x800: // Snape's Worst Memory Complete
                     Game.CheckAndReportLocation(1013);
+                    *y5GhostPtr2 |= 1 << 4; // Mark Snape's Worst Memory Story Complete
                     // Game.LessonRestoreReturnToHub();
                     break;
                 case 0x1000: // WWW Box Lesson Complete
@@ -426,7 +434,7 @@ public class HubHandler
                     // Game.LessonRestoreReturnToHub();
                     break;
                 default:
-                    Console.WriteLine($"Unhandled Y5 Ghost Path with dx: 0x{dx:X}");
+                    Console.WriteLine($"Level Beaten, doing nothing: 0x{dx:X}");
                     break;
             }
         } else if (eax == (int)y6GhostPtr)
@@ -435,35 +443,42 @@ public class HubHandler
             {
                 case 0x4: // Specs Lesson Complete
                     Game.CheckAndReportLocation(1016);
+                    *y6GhostPtr |= 1 << 2; // Mark Specs Complete
                     break;
                 case 0x8: // Arrive at Hogwarts Y6
                     Game.CheckAndReportLocation(1017);
+                    *y6GhostPtr |= 1 << 3; // Mark Arrive at Hogwarts Complete
                     break;
                 case 0x10: // Draught of Living Death Lesson Complete
                     Game.CheckAndReportLocation(1018);
+                    *y6GhostPtr |= 1 << 4; // Mark Draught of Living Death Complete
                     // Game.LessonRestoreReturnToHub();
                     break;
                 case 0x20: // Dumbledore's First Lesson Complete
                     Game.CheckAndReportLocation(1019);
+                    *y6GhostPtr |= 1 << 5; // Mark Dumbledore's First Lesson Complete
                     *y6GhostPtr |= 1 << 6; // Mark Just Desserts Story Complete
                     // Game.LessonRestoreReturnToHub();
                     break;
                 case 0x80: // Aguamenti Lesson Complete
                     Game.CheckAndReportLocation(1020);
+                    *y6GhostPtr |= 1 << 7; // Mark Aguamenti Lesson Complete
                     *y6GhostPtr2 |= 1 << 0; // Mark A Not So Merry Christmas Story Complete
                     break;
                 case 0x200: // Reducto Lesson Complete
                     Game.CheckAndReportLocation(1021);
+                    *y6GhostPtr2 |= 1 << 1; // Mark Reducto Lesson Complete
                     break;
                 case 0x400: // Dumledore's Second Lesson Complete
                     Game.CheckAndReportLocation(1022);
+                    *y6GhostPtr2 |= 1 << 2; // Mark Dumledore's Second Lesson Complete
                     *y6GhostPtr2 |= 1 << 3; // Mark Love Hurts Story Complete
                     *y6GhostPtr2 |= 1 << 4; // Mark Felix Felicis Story Complete
                     *y6GhostPtr2 |= 1 << 5; // Mark The Horcrux and The Hand Story Complete
                     Game.CheckAndReportLocation(1023); // Send Y6 Story Complete
                     break;
                 default:
-                    Console.WriteLine($"Unhandled Y6 Ghost Path with dx: 0x{dx:X}");
+                    Console.WriteLine($"Level Beaten, doing nothing: 0x{dx:X}");
                     break;
             }
         } else if (eax == (int)y7GhostPtr)

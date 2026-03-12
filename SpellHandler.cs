@@ -124,7 +124,10 @@ public class SpellHandler
         UnlockSpell(42); // Draught of Living Death
         UnlockSpell(43); // Thestral Spell
         UnlockSpell(44); // Dueling
-        UnlockSpell(46); // DADA
+        if (Mod.LHP2_Archipelago!.IsLocationChecked(1007))
+        {
+            UnlockSpell(46); // DADA
+        }
         UnlockSpell(47); // Grawp Befriended
         UnlockSpell(48); // Slughorn Vial
         UnlockSpell(52); // Unknown Spell
@@ -203,7 +206,7 @@ public class SpellHandler
         switch (map)
         {
             // DADA Locked
-            case 301 when !Mod.LHP2_Archipelago!.IsLocationChecked(1007) && Mod.LHP2_Archipelago.IsLocationChecked(1006):
+            case 301 when !Mod.LHP2_Archipelago!.IsLocationChecked(1007):
                 SpellHandler.LockPassiveSpell(46); // Ensure lesson can be beaten since game doesn't like when you already have it
                 Game.LessonRestoreReturnToHub();
                 break;
