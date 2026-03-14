@@ -645,7 +645,6 @@ public class Game
 
     }
 
-    // TODO: will need to be adjusted for unlockable spells later
     [Function([FunctionAttribute.Register.eax], 
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void SpellPurchase(int eax);
@@ -999,7 +998,7 @@ public class Game
         SpellHandler.SpellMapLogic(Mod.GameInstance!.MapID);
     }
 
-    [Function([], FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    [Function(CallingConventions.Fastcall)]
     public delegate void ChangeYears();
     private static unsafe void OnChangeYears()
     {
