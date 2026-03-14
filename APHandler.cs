@@ -4,7 +4,6 @@ using Archipelago.MultiClient.Net.Enums;
 using Archipelago.MultiClient.Net.Helpers;
 using Archipelago.MultiClient.Net.MessageLog.Messages;
 
-
 namespace LHP2_Archi_Mod;
 
 // Thank you Sonic Heros AP Devs for being the implementation example
@@ -208,4 +207,5 @@ public class ArchipelagoHandler
     {
         Console.WriteLine(message.ToString() ?? string.Empty);
     }
+
 }

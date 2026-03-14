@@ -1,3 +1,5 @@
+namespace LHP2_Archi_Mod;
+
 public class SlotData
 {
     public SlotData(Dictionary<string, object> slotData)
@@ -41,23 +43,23 @@ public class SlotData
     /// </summary>
     public void PrintData()
     {
-        Console.WriteLine("=== Slot Data ===");
-        Console.WriteLine($"EndGoal: {EndGoal}");
+        Mod.Logger?.WriteLineAsync("=== Slot Data ===");
+        Mod.Logger?.WriteLineAsync($"EndGoal: {EndGoal}");
         
         if (EndGoal == -1)
         {
-            Console.WriteLine("EndGoal not found or invalid. Please report to the devs.");
+            Mod.Logger?.WriteLineAsync("EndGoal not found or invalid. Please report to the devs.");
         }
 
         if (EndGoal == 1)
         {
-            Console.WriteLine("CollectiblesRequired:");
-            Console.WriteLine("=================");
+            Mod.Logger?.WriteLineAsync("CollectiblesRequired:");
+            Mod.Logger?.WriteLineAsync("=================");
             foreach (var kvp in CollectiblesRequired)
             {
-                Console.WriteLine($"  {kvp.Key}: {kvp.Value}");
+                Mod.Logger?.WriteLineAsync($"  {kvp.Key}: {kvp.Value}");
             }
-            Console.WriteLine("=================");
+            Mod.Logger?.WriteLineAsync("=================");
         }
     }
 }

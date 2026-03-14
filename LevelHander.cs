@@ -93,7 +93,7 @@ public class LevelHandler
         byte* ptr = levelBaseAddress + (ushort)level;
         if (ptr == null || levelBaseAddress == null) 
         {
-            Console.WriteLine($"Can't Unlock Level, null pointer at 0x{(nuint)ptr:X}");
+            Mod.Logger?.WriteLineAsync($"Can't Unlock Level, null pointer at 0x{(nuint)ptr:X}");
         } 
         *ptr |= (byte)(BitMask.StoryUnlocked | BitMask.FreeplayUnlocked);
     }
@@ -103,7 +103,7 @@ public class LevelHandler
         byte* ptr = levelBaseAddress + (ushort)level;
         if (ptr == null || levelBaseAddress == null) 
         {
-            Console.WriteLine($"Can't Unlock GC, null pointer at 0x{(nuint)ptr:X}");
+            Mod.Logger?.WriteLineAsync($"Can't Unlock GC, null pointer at 0x{(nuint)ptr:X}");
         } 
         *ptr |= (byte)BitMask.GryfCrest;
     }
@@ -113,7 +113,7 @@ public class LevelHandler
         byte* ptr = levelBaseAddress + (ushort)level;
         if (ptr == null || levelBaseAddress == null) 
         {
-            Console.WriteLine($"Can't Unlock SC, null pointer at 0x{(nuint)ptr:X}");
+            Mod.Logger?.WriteLineAsync($"Can't Unlock SC, null pointer at 0x{(nuint)ptr:X}");
         } 
         *ptr |= (byte)BitMask.SlythCrest;
     }
@@ -123,7 +123,7 @@ public class LevelHandler
         byte* ptr = levelBaseAddress + (ushort)level;
         if (ptr == null || levelBaseAddress == null) 
         {
-            Console.WriteLine($"Can't Unlock RC, null pointer at 0x{(nuint)ptr:X}");
+            Mod.Logger?.WriteLineAsync($"Can't Unlock RC, null pointer at 0x{(nuint)ptr:X}");
         } 
         *ptr |= (byte)BitMask.RavenCrest;
     }
@@ -133,7 +133,7 @@ public class LevelHandler
         byte* ptr = levelBaseAddress + (ushort)level;
         if (ptr == null || levelBaseAddress == null) 
         {
-            Console.WriteLine($"Can't Unlock HC, null pointer at 0x{(nuint)ptr:X}");
+            Mod.Logger?.WriteLineAsync($"Can't Unlock HC, null pointer at 0x{(nuint)ptr:X}");
         } 
         *ptr |= (byte)BitMask.HuffleCrest;
     }
@@ -143,7 +143,7 @@ public class LevelHandler
         byte* ptr = levelBaseAddress + (ushort)level;
         if (ptr == null || levelBaseAddress == null) 
         {
-            Console.WriteLine($"Can't Unlock SIP, null pointer at 0x{(nuint)ptr:X}");
+            Mod.Logger?.WriteLineAsync($"Can't Unlock SIP, null pointer at 0x{(nuint)ptr:X}");
         } 
         *ptr |= (byte)BitMask.StudentInPeril;
     }
@@ -154,7 +154,7 @@ public class LevelHandler
         byte* freeplay = story + 1;
         if (story == null || freeplay == null || levelBaseAddress == null) 
         {
-            Console.WriteLine($"Can't Unlock TW, null pointer at 0x{(nuint)story:X}");
+            Mod.Logger?.WriteLineAsync($"Can't Unlock TW, null pointer at 0x{(nuint)story:X}");
         } 
         *story = 1;
         *freeplay = 1;

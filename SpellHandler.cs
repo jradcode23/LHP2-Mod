@@ -27,7 +27,7 @@ public class SpellHandler
 
         if (ptr == null)
         {
-            Console.WriteLine("SpellBaseAddress: null pointer");
+            Mod.Logger?.WriteLineAsync("SpellBaseAddress: null pointer");
             return;
         }
         *ptr |= (byte)(1 << bitOffset);
@@ -42,7 +42,7 @@ public class SpellHandler
 
         if (ptr == null)
         {
-            Console.WriteLine("SpellBaseAddress: null pointer");
+            Mod.Logger?.WriteLineAsync("SpellBaseAddress: null pointer");
             return;
         }
         *ptr &= unchecked((byte)~(byte)(1 << bitOffset));
@@ -52,7 +52,7 @@ public class SpellHandler
     {
         if (spellVisibilityBaseAddress == null)
         {
-            Console.WriteLine("SpellVisibilityBaseAddress: null pointer");
+            Mod.Logger?.WriteLineAsync("SpellVisibilityBaseAddress: null pointer");
             return;
         }
 
@@ -65,7 +65,7 @@ public class SpellHandler
             id -= 21;
         }
         byte* ptr = spellVisibilityBaseAddress + offset * id;
-        // Console.WriteLine($"Making Spell ID {id} visible at offset {offset * id}");
+        // Mod.Logger?.WriteLineAsync($"Making Spell ID {id} visible at offset {offset * id}");
         *ptr = 1;
     }
 
@@ -75,7 +75,7 @@ public class SpellHandler
 
         if (activeSpellBaseAddress == null)
         {
-            // Console.WriteLine("ActiveSpellBaseAddress: null pointer");
+            // Mod.Logger?.WriteLineAsync("ActiveSpellBaseAddress: null pointer");
             return;
         }
 
@@ -145,7 +145,7 @@ public class SpellHandler
 
         if (activeSpellBaseAddress == null)
         {
-            // Console.WriteLine("ActiveSpellBaseAddress: null pointer");
+            // Mod.Logger?.WriteLineAsync("ActiveSpellBaseAddress: null pointer");
             return;
         }
 
@@ -170,12 +170,12 @@ public class SpellHandler
 
         if (spellVisibilityBaseAddress == null)
         {
-            Console.WriteLine("SpellVisibilityBaseAddress: null pointer");
+            Mod.Logger?.WriteLineAsync("SpellVisibilityBaseAddress: null pointer");
             return;
         }
 
         byte* ptr = spellVisibilityBaseAddress + 8 * 2;
-        // Console.WriteLine($"Making Spells invisible starting at {(nuint)ptr:X}");
+        // Mod.Logger?.WriteLineAsync($"Making Spells invisible starting at {(nuint)ptr:X}");
         *ptr = 3; // Make Diffindo invisible
 
         ptr += 16; // Move to Aguamenti

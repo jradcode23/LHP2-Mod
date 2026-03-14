@@ -31,14 +31,15 @@ public class Game
     public const int RedBrickPurchOffset = 950;
     public const int SpellPurchOffset = 975;
     public const int MaxItemID = 1030;
+
     public static void CheckGameLoaded()
     {
-        Console.WriteLine("Checking to see if game is loaded");
+        Mod.Logger?.WriteLineAsync("Checking to see if game is loaded");
         int rewriteNumber = 0;
         while(!MenuLoaded())
         {
             if (rewriteNumber % 10 == 0)
-                Console.WriteLine("Waiting for menu to load");
+                Mod.Logger?.WriteLineAsync("Waiting for menu to load");
             rewriteNumber++;
             System.Threading.Thread.Sleep(500);
 
@@ -52,11 +53,11 @@ public class Game
     //     while(!PlayerControllable())
     //     {
     //         if (rewriteNumber % 10 == 0)
-    //             Console.WriteLine("Waiting for game to be loaded");
+    //             Mod.Logger?.WriteLineAsync("Waiting for game to be loaded");
     //         rewriteNumber++;
     //         System.Threading.Thread.Sleep(500);
     //     }
-    //     Console.WriteLine("Save File Loaded");
+    //     Mod.Logger?.WriteLineAsync("Save File Loaded");
     // }
 
     public static unsafe bool MenuLoaded()
@@ -77,7 +78,7 @@ public class Game
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in checking if menu is loaded: {ex.Message}");
+            Mod.Logger?.WriteLineAsync($"Error in checking if menu is loaded: {ex.Message}");
             return false;
         }
     }
@@ -98,7 +99,7 @@ public class Game
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in InGame check: {ex.Message}");
+            Mod.Logger?.WriteLineAsync($"Error in InGame check: {ex.Message}");
             return false;
         }
     }
@@ -122,7 +123,7 @@ public class Game
             Mod.GameInstance!.MapID = Memory.Instance.Read<int>(Mod.BaseAddress + 0xC5B374);
             Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
             Mod.GameInstance!.PrevMapID = Mod.GameInstance!.MapID;
-            Console.WriteLine($"Initial Level ID: {Mod.GameInstance!.LevelID}, Map ID: {Mod.GameInstance!.MapID}");
+            Mod.Logger?.WriteLineAsync($"Initial Level ID: {Mod.GameInstance!.LevelID}, Map ID: {Mod.GameInstance!.MapID}");
             WriteN0CUT5Flag();
 
             // NOP GB Corrector #1
@@ -226,7 +227,7 @@ public class Game
                     SpellHandler.UnlockSpell(ItemID - SpellPurchOffset);
                     break;
                 default:
-                    Console.WriteLine($"Unknown item received: {ItemID}");
+                    Mod.Logger?.WriteLineAsync($"Unknown item received: {ItemID}");
                     break;
         }
     }
@@ -620,7 +621,7 @@ public class Game
                     CheckAndReportLocation(id + HuffleCrestOffset);
                     break;
                 default:
-                    Console.WriteLine($"Unknown Crest Completed value: {value}. Please report to the devs.");
+                    Mod.Logger?.WriteLineAsync($"Unknown Crest Completed value: {value}. Please report to the devs.");
                     break;
             }
         }
@@ -671,10 +672,10 @@ public class Game
         int itemID = CharacterHandler.GetHubTokenItemID(eax, edx);
         if (itemID == -1)
         {
-            Console.WriteLine("Error getting Level Token Item ID");
-            Console.WriteLine($"EAX is: 0x{eax:X}");
-            Console.WriteLine($"EDX is: 0x{edx:X}");
-            Console.WriteLine("Map ID is: " + Mod.GameInstance!.MapID);
+            Mod.Logger?.WriteLineAsync("Error getting Level Token Item ID");
+            Mod.Logger?.WriteLineAsync($"EAX is: 0x{eax:X}");
+            Mod.Logger?.WriteLineAsync($"EDX is: 0x{edx:X}");
+            Mod.Logger?.WriteLineAsync("Map ID is: " + Mod.GameInstance!.MapID);
             return;
         }
         CheckAndReportLocation(itemID + tokenOffset);
@@ -688,9 +689,9 @@ public class Game
         int itemID = CharacterHandler.GetLevelTokenItemID(ebx);
         if (itemID == -1)
         {
-            Console.WriteLine("Error getting Level Token Item ID");
-            Console.WriteLine($"EBX is: 0x{ebx:X}");
-            Console.WriteLine("Map ID is: " + Mod.GameInstance!.MapID);
+            Mod.Logger?.WriteLineAsync("Error getting Level Token Item ID");
+            Mod.Logger?.WriteLineAsync($"EBX is: 0x{ebx:X}");
+            Mod.Logger?.WriteLineAsync("Map ID is: " + Mod.GameInstance!.MapID);
             return;
         }
         CheckAndReportLocation(itemID + tokenOffset);
@@ -707,10 +708,10 @@ public class Game
             int itemID = CharacterHandler.GetPurchaseCharacterID(ecx, eax);
             if(itemID == -1)
             {
-                Console.WriteLine("Error getting Purchased Character ID");
-                Console.WriteLine($"EAX is: {eax:X}");
-                Console.WriteLine($"ECX is: {ecx:X}");
-                Console.WriteLine("Map ID is: " + Mod.GameInstance!.MapID);
+                Mod.Logger?.WriteLineAsync("Error getting Purchased Character ID");
+                Mod.Logger?.WriteLineAsync($"EAX is: {eax:X}");
+                Mod.Logger?.WriteLineAsync($"ECX is: {ecx:X}");
+                Mod.Logger?.WriteLineAsync("Map ID is: " + Mod.GameInstance!.MapID);
                 return;
             }
             CheckAndReportLocation(itemID);
@@ -726,11 +727,11 @@ public class Game
         int itemID = HubHandler.GetHubID(edx);
         if(itemID == -1)
         {
-            Console.WriteLine("Error getting SIP ID from Hub");
-            Console.WriteLine($"EDX is: 0x {edx:X}");
+            Mod.Logger?.WriteLineAsync("Error getting SIP ID from Hub");
+            Mod.Logger?.WriteLineAsync($"EDX is: 0x {edx:X}");
             int lookupvalue = edx * 4 + 2;
-            Console.WriteLine($"Lookup Value should be: 0x{lookupvalue:X}");
-            Console.WriteLine("Map ID is: " + Mod.GameInstance!.MapID);
+            Mod.Logger?.WriteLineAsync($"Lookup Value should be: 0x{lookupvalue:X}");
+            Mod.Logger?.WriteLineAsync("Map ID is: " + Mod.GameInstance!.MapID);
             return;
         }
         CheckAndReportLocation(itemID + HubSIPOffset);
@@ -746,11 +747,11 @@ public class Game
         int itemID = HubHandler.GetHubID(eax);
         if(itemID == -1)
         {
-            Console.WriteLine("Error getting GB ID from Hub");
-            Console.WriteLine($"EAX is: 0x{eax:X}");
+            Mod.Logger?.WriteLineAsync("Error getting GB ID from Hub");
+            Mod.Logger?.WriteLineAsync($"EAX is: 0x{eax:X}");
             int lookupvalue = eax * 4 + 2;
-            Console.WriteLine($"Lookup Value should be: 0x{lookupvalue:X}");
-            Console.WriteLine("Map ID is: " + Mod.GameInstance!.MapID);
+            Mod.Logger?.WriteLineAsync($"Lookup Value should be: 0x{lookupvalue:X}");
+            Mod.Logger?.WriteLineAsync("Map ID is: " + Mod.GameInstance!.MapID);
             return;
         }
         CheckAndReportLocation(itemID + HubGBOffset);
@@ -766,11 +767,11 @@ public class Game
         int itemID = HubHandler.GetHubID(eax);
         if(itemID == -1)
         {
-            Console.WriteLine("Error getting RB ID from Hub");
-            Console.WriteLine($"EAX is: 0x{eax:X}");
+            Mod.Logger?.WriteLineAsync("Error getting RB ID from Hub");
+            Mod.Logger?.WriteLineAsync($"EAX is: 0x{eax:X}");
             int lookupvalue = eax * 4 + 2;
-            Console.WriteLine($"Lookup Value should be: 0x{lookupvalue:X}");
-            Console.WriteLine("Map ID is: " + Mod.GameInstance!.MapID);
+            Mod.Logger?.WriteLineAsync($"Lookup Value should be: 0x{lookupvalue:X}");
+            Mod.Logger?.WriteLineAsync("Map ID is: " + Mod.GameInstance!.MapID);
             return;
         }
         CheckAndReportLocation(itemID + RedBrickCollectOffset);
@@ -793,7 +794,7 @@ public class Game
     {
         Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
         Mod.GameInstance!.LevelID = value;
-        Console.WriteLine($"Level ID updated to {value}.");
+        Mod.Logger?.WriteLineAsync($"Level ID updated to {value}.");
     }
 
     [Function([FunctionAttribute.Register.ecx], 
@@ -807,7 +808,7 @@ public class Game
         {
             LessonRestoreReturnToHub();
         }
-        Console.WriteLine($"Map ID updated to {value}.");
+        Mod.Logger?.WriteLineAsync($"Map ID updated to {value}.");
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
@@ -820,11 +821,11 @@ public class Game
 
     public static unsafe void OnChangeCharacters(int edx)
     {
-        Console.WriteLine($"Chanacter Function ran, EDX: {edx:X}");
+        Mod.Logger?.WriteLineAsync($"Chanacter Function ran, EDX: {edx:X}");
         ushort* initialValue = (ushort*)(Mod.BaseAddress + 0xC5F4C4);
         if (*initialValue == 0xFFFF)
         {
-            Console.WriteLine("Active Character Changed, updating spells");
+            Mod.Logger?.WriteLineAsync("Active Character Changed, updating spells");
             SpellHandler.ResetSpells();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
             SpellHandler.SpellMapLogic(Mod.GameInstance!.MapID);
@@ -838,19 +839,19 @@ public class Game
     {
         bool eaxBit0Set = (eax & 1) != 0;
         int lastNibble = esp & 0xF;
-        // Console.WriteLine($"Last Nibble: {lastNibble}");
+        // Mod.Logger?.WriteLineAsync($"Last Nibble: {lastNibble}");
 
         if(eaxBit0Set && lastNibble == 0x08)
         {
             Mod.GameInstance!.PrevInLevelSelect = true;
-            Console.WriteLine("Level Selector Opened");
+            Mod.Logger?.WriteLineAsync("Level Selector Opened");
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, MaxItemID);
         }
         if(eaxBit0Set && lastNibble == 0x0C)
         {
             Mod.GameInstance!.PrevInShop = true;
-            Console.WriteLine("Shop Opened");
+            Mod.Logger?.WriteLineAsync("Shop Opened");
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(tokenOffset, levelOffset - 25);
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(0, tokenOffset - 1);
@@ -861,7 +862,7 @@ public class Game
         else if(!eaxBit0Set && Mod.GameInstance!.PrevInLevelSelect)
         {
             Mod.GameInstance!.PrevInLevelSelect = false;
-            Console.WriteLine("Level Selector Closed");
+            Mod.Logger?.WriteLineAsync("Level Selector Closed");
 
             // Game enters a level before thinking you are out of shop, so if we stay in hub, resetting levels here
             if (Mod.GameInstance!.LevelID >= 1 && Mod.GameInstance!.LevelID <= 4)
@@ -874,7 +875,7 @@ public class Game
         else if(!eaxBit0Set && Mod.GameInstance!.PrevInShop)
         {
             Mod.GameInstance!.PrevInShop = false;
-            Console.WriteLine("Shop Selector Closed");
+            Mod.Logger?.WriteLineAsync("Shop Selector Closed");
 
             // Game enters a level before thinking you are out of shop, so if we stay in hub, resetting levels here
             if (Mod.GameInstance!.LevelID >= 1 && Mod.GameInstance!.LevelID <= 4)
@@ -911,14 +912,14 @@ public class Game
         
         if (Mod.GameInstance!.LevelID < 1 || Mod.GameInstance!.LevelID > 4) // If in level, want to sync to locations so they can exit if level completed
         {
-            Console.WriteLine("Menu Opened");
+            Mod.Logger?.WriteLineAsync("Menu Opened");
             Mod.GameInstance!.PrevInMenu = true;
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(0, MaxItemID);
         }
         else // In Hub, want to show all items
         {
-            Console.WriteLine("Menu Opened");
+            Mod.Logger?.WriteLineAsync("Menu Opened");
             Mod.GameInstance!.PrevInMenu = true;
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, MaxItemID);
@@ -953,7 +954,7 @@ public class Game
             return;
         }
         Mod.GameInstance!.PrevInMenu = false;
-        Console.WriteLine("Menu Closed");
+        Mod.Logger?.WriteLineAsync("Menu Closed");
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
@@ -967,12 +968,12 @@ public class Game
     {
         byte* cauldronBaseAddress = (byte*)*(int*)(Mod.BaseAddress + 0xC54290);
         nuint cauldronItem = Memory.Instance.Read<nuint>((nuint)(cauldronBaseAddress + 0x68));
-        // Console.WriteLine($"Cauldron Item ID: {cauldronItem}");
+        // Mod.Logger?.WriteLineAsync($"Cauldron Item ID: {cauldronItem}");
         if(cauldronItem != 4 || Mod.GameInstance!.PrevInLevelSelect == true) // Only trigger on opening the Polyjuice Pot
         {
             return;
         }
-        Console.WriteLine("Polyjuice Pot Opened");
+        Mod.Logger?.WriteLineAsync("Polyjuice Pot Opened");
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, tokenOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
@@ -989,7 +990,7 @@ public class Game
         {
             return;
         }
-        Console.WriteLine("Polyjuice Pot Closed");
+        Mod.Logger?.WriteLineAsync("Polyjuice Pot Closed");
         Memory.Instance.Write<byte>((nuint)(cauldronBaseAddress + 0x68), 0); // Reset cauldron item to 0
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
@@ -1025,7 +1026,7 @@ public class Game
                 }
             }
             string yearString = new string(chars);
-            Console.WriteLine($"Year Requested is: {yearString}");
+            Mod.Logger?.WriteLineAsync($"Year Requested is: {yearString}");
             switch (yearString)
             {
                 case "YEAR05" when Mod.GameInstance!.LevelID != 1:
@@ -1048,7 +1049,7 @@ public class Game
                     break;
             }
         } else {   
-            Console.WriteLine("Please move to the Character Customization Room to change years.");
+            Mod.Logger?.WriteLineAsync("Please move to the Character Customization Room to change years.");
             return;
         }
     }
@@ -1068,10 +1069,10 @@ public class Game
     {
         if (Mod.LHP2_Archipelago!.IsLocationChecked(apID))
         {
-            Console.WriteLine($"Location for AP ID: {apID} already checked");
+            Mod.Logger?.WriteLineAsync($"Location for AP ID: {apID} already checked");
             return;
         }
-        Console.WriteLine($"Checking location for AP ID: {apID}");
+        Mod.Logger?.WriteLineAsync($"Checking location for AP ID: {apID}");
         Mod.LHP2_Archipelago!.CheckLocation(apID);
     }
 }
