@@ -856,8 +856,8 @@ public class Game
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(tokenOffset, levelOffset - 25);
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(0, tokenOffset - 1);
 
-            Mod.LHP2_Archipelago!.UpdateBasedOnItems(RedBrickCollectOffset, RedBrickPurchOffset - 1);
-            Mod.LHP2_Archipelago!.UpdateBasedOnLocations(GoldBrickPurchOffset, MaxItemID);
+            Mod.LHP2_Archipelago!.UpdateBasedOnItems(RedBrickCollectOffset, RedBrickPurchOffset - 27);
+            Mod.LHP2_Archipelago!.UpdateBasedOnLocations(RedBrickPurchOffset, MaxItemID);
         }
         else if(!eaxBit0Set && Mod.GameInstance!.PrevInLevelSelect)
         {

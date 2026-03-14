@@ -151,6 +151,8 @@ public class ArchipelagoHandler
     }
 
     private ConcurrentQueue<Int64> _locationsToCheck = new();
+    private readonly object _locationsLock = new();
+    private readonly object _itemsLock = new();
 
     public void RunCheckLocationsFromList()
     {
@@ -167,40 +169,52 @@ public class ArchipelagoHandler
 
     public bool IsLocationChecked(Int64 id)
     {
-        return _session.Locations.AllLocationsChecked.Contains(id + gameOffset);
+        lock (_locationsLock)
+        {
+            return _session.Locations.AllLocationsChecked.Contains(id + gameOffset);
+        }
     }
 
     public void UpdateBasedOnItems(Int64 minItemId, Int64 maxItemId)
     {
-        foreach (var item in _session.Items.AllItemsReceived)
+        lock (_itemsLock)
         {
-            // Only process items whose AP item ID falls within the desired range
-            if (item.ItemId - gameOffset < minItemId || item.ItemId - gameOffset > maxItemId)
-                continue;
+            foreach (var item in _session.Items.AllItemsReceived)
+            {
+                // Only process items whose AP item ID falls within the desired range
+                if (item.ItemId - gameOffset < minItemId || item.ItemId - gameOffset > maxItemId)
+                    continue;
 
-            var gameId = item.ItemId - gameOffset;
-            Game.ManageItem((int)gameId);
+                var gameId = item.ItemId - gameOffset;
+                Game.ManageItem((int)gameId);
+            }
         }
     }
 
     public void UpdateBasedOnLocations(Int64 minLocationId, Int64 maxLocationId)
     {
-        foreach (var location in _session.Locations.AllLocationsChecked)
+        lock (_locationsLock)
         {
-            // Only handle locations within the desired ID range
-            if (location - gameOffset < minLocationId || location - gameOffset > maxLocationId)
-                continue;
+            foreach (var location in _session.Locations.AllLocationsChecked)
+            {
+                // Only handle locations within the desired ID range
+                if (location - gameOffset < minLocationId || location - gameOffset > maxLocationId)
+                    continue;
 
-            var gameId = location - gameOffset;
-            Game.ManageItem((int)gameId);
+                var gameId = location - gameOffset;
+                Game.ManageItem((int)gameId);
+            }
         }
     }
 
     public int CountLocationsCheckedInRange(Int64 start, Int64 end)
     {
-        var startId = start + gameOffset;
-        var endId = end + gameOffset;
-        return _session.Locations.AllLocationsChecked.Count(loc => loc >= startId && loc < endId);
+        lock (_locationsLock)
+        {
+            var startId = start + gameOffset;
+            var endId = end + gameOffset;
+            return _session.Locations.AllLocationsChecked.Count(loc => loc >= startId && loc < endId);
+        }
     }
 
     static void OnMessageReceived(LogMessage message)
