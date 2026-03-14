@@ -70,7 +70,7 @@ public class Game
             if (basePtr == null || *basePtr == null)
                 return false;
 
-            byte* finalPtr = (byte*)(*basePtr + 0x190);
+            byte* finalPtr = *basePtr + 0x190;
             if (finalPtr == null)
                 return false;
 
@@ -91,7 +91,7 @@ public class Game
             if (basePtr == null || *basePtr == null)
                 return false;
 
-            byte* finalPtr = (byte*)(*basePtr + 0x119C);
+            byte* finalPtr = *basePtr + 0x119C;
             if (finalPtr == null)
                 return false;
 
@@ -210,12 +210,14 @@ public class Game
                     level = LevelHandler.ConvertIDToLeveData(ItemID - HuffleCrestOffset);
                     LevelHandler.UnlockHufflepuffCrest(level);
                     break;
-                case < 700:
+                case < 698:
                     level = LevelHandler.ConvertIDToLeveData(ItemID - TrueWizardOffset);
                     LevelHandler.UnlockTrueWizard(level);
                     break;
+                case < 700: // Purple Stud
+                    break;
                 case < 900:
-                    HubHandler.ReceivedGoldBrick();
+                    HubHandler.ReceivedGoldBrick(ItemID);
                     break;
                 case < 935:
                     HubHandler.UnlockHubRB(ItemID - RedBrickCollectOffset);

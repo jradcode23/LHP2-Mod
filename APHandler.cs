@@ -19,7 +19,6 @@ public class ArchipelagoHandler
     private string Slot { get; set; }
     private string? Seed { get; set; }
     private string Password { get; set; }
-    private double SlotInstance { get; set; }
 
     public static bool IsConnected;
     public static bool IsConnecting;
@@ -89,6 +88,7 @@ public class ArchipelagoHandler
             SlotDataInstance.PrintData();
             Mod.InitOnMenu();
             new Thread(RunCheckLocationsFromList).Start();
+            new Thread(HandleQueuedItems).Start();
             //resync here
             return true;
         }
@@ -105,11 +105,10 @@ public class ArchipelagoHandler
     {
         while (helper.Any())
         {
-            var itemIndex = helper.Index;
             var item = helper.DequeueItem();
-            if(Mod.GameInstance != null && Mod.GameInstance.PrevInShop)
+            int gameID = (int)item.ItemId - gameOffset;
+            if(Mod.GameInstance != null && Mod.GameInstance.PrevInShop && gameID != 699)
             {
-                int gameID = (int)item.ItemId - gameOffset;
                 // Token or red brick purchasable
                 if((gameID >= 900 && gameID <= 935) || (gameID >= 213 && gameID <= 425))
                 {
@@ -117,19 +116,29 @@ public class ArchipelagoHandler
                 }
                 return;
             }
-            if(Mod.GameInstance != null && Mod.GameInstance.PrevInLevelSelect)
+            if(Mod.GameInstance != null && Mod.GameInstance.PrevInLevelSelect && gameID != 699)
             {
-                int gameID = (int)item.ItemId - gameOffset;
                 Game.ManageItem(gameID);
                 return;
             }
             if(Mod.GameInstance != null && Game.PlayerControllable())
             {
-                int gameID = (int)item.ItemId - gameOffset;
                 if(gameID >= 998)
                 {
                     Game.ManageItem(gameID);
+                    return;
                 }
+                if(gameID == 699)
+                {
+                    HubHandler.HandlePurpleStud();
+                    return;
+                }
+            }
+            if(Mod.GameInstance != null && !Game.PlayerControllable() && gameID == 699)
+            {
+                // Console.WriteLine($"Queuing Purple Stud for later handling with game ID {gameID}");
+                _queuedItems.Enqueue(gameID);
+                return;
             }
         }
     }
@@ -140,17 +149,13 @@ public class ArchipelagoHandler
         _session.SetClientState(ArchipelagoClientState.ClientGoal);
     }
 
-    public void CheckLocations(Int64[] ids)
-    {
-        ids.ToList().ForEach(id => _locationsToCheck.Enqueue(id + gameOffset));
-    }
-
     public void CheckLocation(Int64 id)
     {
         _locationsToCheck.Enqueue(id + gameOffset);
     }
 
     private ConcurrentQueue<Int64> _locationsToCheck = new();
+    private ConcurrentQueue<Int64> _queuedItems = new();
     private readonly object _locationsLock = new();
     private readonly object _itemsLock = new();
 
@@ -160,6 +165,35 @@ public class ArchipelagoHandler
         {
             if (_locationsToCheck.TryDequeue(out var locationId))
                 _session.Locations.CompleteLocationChecks(locationId);
+            else
+            {
+                Thread.Sleep(100);
+            }
+        }
+    }
+
+    public void HandleQueuedItems()
+    {
+        while (true)
+        {
+            if (_queuedItems.TryPeek(out var itemId))
+            {
+                if (Mod.GameInstance != null && Game.PlayerControllable())
+                {
+                    if (_queuedItems.TryDequeue(out itemId))
+                    {
+                        Console.WriteLine($"Handling queued item with game ID {itemId}");
+                        if (itemId == 699)
+                        {
+                            HubHandler.HandlePurpleStud();
+                        }
+                    }
+                }
+                else
+                {
+                    Thread.Sleep(100);
+                }
+            }
             else
             {
                 Thread.Sleep(100);
@@ -214,6 +248,15 @@ public class ArchipelagoHandler
             var startId = start + gameOffset;
             var endId = end + gameOffset;
             return _session.Locations.AllLocationsChecked.Count(loc => loc >= startId && loc < endId);
+        }
+    }
+
+    public int CountItemsReceivedWithId(Int64 gameId)
+    {
+        lock (_itemsLock)
+        {
+            var targetId = gameId + gameOffset;
+            return _session.Items.AllItemsReceived.Count(item => item.ItemId == targetId);
         }
     }
 

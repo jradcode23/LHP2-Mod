@@ -7,12 +7,14 @@ public class HubHandler
     public static unsafe readonly byte* hubBaseAddress = *(byte**)(Mod.BaseAddress + 0xC5B3B4);
     private static unsafe readonly byte* goldBrickBaseAddress = *(byte**)(Mod.BaseAddress + 0xC54554);
     private static unsafe readonly byte* redBrickPurchBaseAddress = *(byte**)(Mod.BaseAddress + 0xC575F4);
+    private static unsafe readonly long* studTotalBaseAddress = *(long**)(Mod.BaseAddress + 0xC5B600);
+    private static unsafe readonly byte* purpleCountAddress = (byte*)studTotalBaseAddress + 0x30;   
     private static unsafe readonly byte* firstLevelMapPointer = *(byte**)(Mod.BaseAddress + 0x00B06A5C);
     private static unsafe readonly byte* secondLevelMapPointer = *(byte**)(firstLevelMapPointer + 0x44);
     private static unsafe readonly byte* ghostPathBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55F2C);
     private static unsafe readonly byte* mapFlagsBaseAddress = *(byte**)(Mod.BaseAddress + 0xC5D5F4);
     private static unsafe readonly byte* hogwartWarpEntranceBaseAddress = *(byte**)(Mod.BaseAddress + 0x00C4EE5C);
-    private static unsafe readonly byte* SecondPointerWarp = *(byte**)(hogwartWarpEntranceBaseAddress + 0x04);
+    private static unsafe readonly byte* secondPointerWarp = *(byte**)(hogwartWarpEntranceBaseAddress + 0x04);
     private static unsafe byte* leaky2LondonAddress = null;
     private static unsafe byte* hogPath2CourtyardAddress = null;
     private static unsafe byte* wildernessAddress = null;
@@ -180,21 +182,21 @@ public class HubHandler
         return hubOffsets.TryGetValue(offset, out int sipID) ? sipID : -1;
     }
 
-    public static unsafe void UnlockHubGB(int ID)
-    {
-        var kvp = hubOffsets.FirstOrDefault(k => k.Value == ID);
-        if (kvp.Key == 0 && kvp.Value == 0)
-        {
-            Mod.Logger?.WriteLineAsync($"[Hub] Could not find Hub RB offset for ID {ID}");
-            return;
-        }
-        byte* ptr = hubBaseAddress + (nuint)kvp.Key;;
-        if (ptr == null || hubBaseAddress == null) 
-        {
-            Mod.Logger?.WriteLineAsync($"[Hub] Can't Unlock Hub RB, null pointer at 0x{(nuint)ptr:X}");
-        }
-        *ptr |= (byte)BitMask.GoldBrick;
-    }
+    // public static unsafe void UnlockHubGB(int ID)
+    // {
+    //     var kvp = hubOffsets.FirstOrDefault(k => k.Value == ID);
+    //     if (kvp.Key == 0 && kvp.Value == 0)
+    //     {
+    //         Mod.Logger?.WriteLineAsync($"[Hub] Could not find Hub RB offset for ID {ID}");
+    //         return;
+    //     }
+    //     byte* ptr = hubBaseAddress + (nuint)kvp.Key;;
+    //     if (ptr == null || hubBaseAddress == null) 
+    //     {
+    //         Mod.Logger?.WriteLineAsync($"[Hub] Can't Unlock Hub RB, null pointer at 0x{(nuint)ptr:X}");
+    //     }
+    //     *ptr |= (byte)BitMask.GoldBrick;
+    // }
 
     public static unsafe void UnlockHubRB(int ID)
     {
@@ -267,14 +269,45 @@ public class HubHandler
             *ptr = 0;
         }
     }
+
+    public static unsafe void HandlePurpleStud()
+    {
+        int purpleStudCount = Mod.LHP2_Archipelago?.CountItemsReceivedWithId(699) ?? 0;
+        // Console.WriteLine($"Handling Purple Stud. Count received from Archipelago: {purpleStudCount}");
+        // Console.WriteLine($"Current Purple Stud count: {*purpleCountAddress}");
+        // Console.WriteLine($"Purple Stud Address: 0x{(nuint)purpleCountAddress:X}");
+        if (purpleStudCount == 0)
+        {
+            return;
+        }
+        if (studTotalBaseAddress == null || purpleCountAddress == null)        
+        {
+            Mod.Logger?.WriteLineAsync($"Can't Update Stud Total, null pointer at 0x{(nuint)studTotalBaseAddress:X}");
+            return;
+        }
+        if( *purpleCountAddress < purpleStudCount)
+        {
+            *purpleCountAddress += 1;
+            *studTotalBaseAddress += 10000;
+            // Mod.Logger?.WriteLineAsync($"Updating Stud Total at 0x{(nuint)studTotalBaseAddress:X}");
+            // Mod.Logger?.WriteLineAsync($"Purple Studs received: {purpleStudCount}, Purple Studs counted: {*purpleCountAddress}");
+        }
+
+    }
     
     //TODO: Consider making Gold Bricks not static
     public static byte goldBrickCount { get; private set; } = 0;
 
-    public static void ReceivedGoldBrick ()
+    public static void ReceivedGoldBrick (int id)
     {
-        goldBrickCount ++;
-        
+        if (id == 700)
+        {
+            goldBrickCount ++;
+        }
+        else if (id == 701)
+        {
+            goldBrickCount += 5;
+        }
     }
 
     public static unsafe void GetGoldBrickCount ()
@@ -295,7 +328,7 @@ public class HubHandler
 
     public static unsafe void ClearReturnToHogwartsLocation()
     {
-        byte* entrancePTR = SecondPointerWarp + 0x31C;
+        byte* entrancePTR = secondPointerWarp + 0x31C;
         for (int i = 0; i < 0x40; i++)
         {
             byte* ptr = entrancePTR + i;
