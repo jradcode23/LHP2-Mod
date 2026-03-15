@@ -574,7 +574,13 @@ public class Game
 
         int? apID = GetApID(level, prevLevel);
         if (apID is int id)
+        {
             CheckAndReportLocation(id + levelOffset);
+            if (apID == 12)
+            {
+                CheckAndReportLocation(1026);
+            }
+        }
     }
 
     [Function(CallingConventions.Fastcall)]
