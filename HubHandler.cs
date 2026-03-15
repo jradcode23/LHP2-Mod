@@ -18,6 +18,7 @@ public class HubHandler
     private static unsafe byte* leaky2LondonAddress = null;
     private static unsafe byte* hogPath2CourtyardAddress = null;
     private static unsafe byte* wildernessAddress = null;
+    private static unsafe byte* quadAddress = null;
 
     [Flags]
     public enum BitMask
@@ -534,11 +535,13 @@ public class HubHandler
     {
         leaky2LondonAddress = GetHubMapAddress("HubLeakyCauldron", 0xB7B); // Leaky2London Loading Zone
         hogPath2CourtyardAddress = GetHubMapAddress("HogsApproach", 0x1A90); // HogPath2Courtyard Loading Zone
-        wildernessAddress = GetHubMapAddress("ForestHub", 0); // Wilderness Loading Zone
+        wildernessAddress = GetHubMapAddress("ForestHub", 0); // Wilderness
+        quadAddress = GetHubMapAddress("Quad", 0); // Quad
 
         AdjustLeakyCauldron();
         AdjustHogsPath();
         AdjustWilderness();
+        AdjustQuad();
         CompleteStartingGhostLevels();
     }
 
@@ -597,7 +600,23 @@ public class HubHandler
         Mod.Logger?.WriteLineAsync($"Address of Wilderness Xenophilius Token Flag is 0x{(nuint)xenoTokenFlag:X}");
         *xenoTokenFlag |= 1 << 3; // Ensure the Xenophilius token spawns
         xenoTokenFlag -= 0x12;
-        *xenoTokenFlag |= 1 << 3; // Ensure the Xenophilius token can has a hitbox
+        *xenoTokenFlag |= 1 << 3; // Ensure the Token has a hitbox
+    }
+
+    // TODO: Make this only run after cafe lesson is completed
+    private static unsafe void AdjustQuad()
+    {
+        if (quadAddress == mapFlagsBaseAddress + 0x40)
+        {
+            Mod.Logger?.WriteLineAsync("Quad Save info hasn't been written yet.");
+            return;
+        }
+        Mod.Logger?.WriteLineAsync($"Updating Quad Flags; Address is 0x{(nuint)quadAddress:X}");
+        byte* mcgBlackFlag = quadAddress + 0x20B6;
+        Mod.Logger?.WriteLineAsync($"Address of Quad McGonagall Flag is 0x{(nuint)mcgBlackFlag:X}");
+        *mcgBlackFlag |= 1 << 1; // Ensure the Token is spawned
+        mcgBlackFlag += 0x1A;
+        *mcgBlackFlag |= 1 << 1; // Ensure the Token has a hitbox
     }
 
     private static unsafe byte* GetHubMapAddress(string mapName, int offset)
