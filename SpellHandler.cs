@@ -1,8 +1,10 @@
+using Archipelago.MultiClient.Net.Helpers;
+
 namespace LHP2_Archi_Mod;
 
 public class SpellHandler
 {
-    private static unsafe readonly byte* spellBaseAddress = (byte*)(Mod.BaseAddress + 0xB06AB0);
+    public static unsafe readonly byte* spellBaseAddress = (byte*)(Mod.BaseAddress + 0xB06AB0);
     private static unsafe readonly byte* spellVisibilityBaseAddress = (byte*)(Mod.BaseAddress + 0xB067C4);
 
     public static void UnlockSpell(int id)
@@ -222,6 +224,16 @@ public class SpellHandler
             // London when Apparition is supposed to be unlocked
             case 103 when !Mod.LHP2_Archipelago!.IsLocationChecked(1027):
                 Game.LessonReturnToHubNOP();
+                break;
+            case 166:
+                if (!Mod.LHP2_Archipelago!.IsLocationChecked(1001))
+                {
+                    SpellHandler.LockPassiveSpell(26);
+                }
+                if (!Mod.LHP2_Archipelago!.IsLocationChecked(1025))
+                {
+                    SpellHandler.LockPassiveSpell(50);
+                }
                 break;
             default:
                 break;

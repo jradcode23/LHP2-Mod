@@ -253,7 +253,7 @@ public class Game
     private static IReverseWrapper<CrestsComplete> _reverseWrapOnCrests = default!;
     private static IReverseWrapper<RedBrickPurchase> _reverseWrapOnRedBrickPurch = default!;
     private static IReverseWrapper<GoldBrickPurchase> _reverseWrapOnGoldBrickPurch = default!;
-    private static IReverseWrapper<SpellPurchase> _reverseWrapOnSpellPurch = default!;
+    private static IReverseWrapper<SpellUnlock> _reverseWrapOnSpellUnlock = default!;
     private static IReverseWrapper<HubCharacterCollected> _reverseWrapOnHubCharacterCollected = default!;
     private static IReverseWrapper<LevelCharacterCollected> _reverseWrapOnLevelCharacterCollected = default!;
     private static IReverseWrapper<CharacterPurchased> _reverseWrapOnCharacterPurchased = default!;
@@ -346,7 +346,7 @@ public class Game
             "use32",
             "pushfd",
             "pushad",
-            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnSpellPurchase, out _reverseWrapOnSpellPurch)}",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnSpellPurchase, out _reverseWrapOnSpellUnlock)}",
             "popad",
             "popfd",
         };
@@ -653,18 +653,25 @@ public class Game
 
     }
 
-    [Function([FunctionAttribute.Register.eax], 
+    [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.edx], 
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
-    public delegate void SpellPurchase(int eax);
-    private static void OnSpellPurchase(int eax)
+    public delegate void SpellUnlock(int eax, int edx);
+    private static void OnSpellPurchase(int eax, int edx)
     {
-        if ((Mod.GameInstance!.MapID == 369 || Mod.GameInstance!.MapID == 375
-            || Mod.GameInstance!.MapID == 383 || Mod.GameInstance!.MapID == 387) && Mod.GameInstance!.PrevInShop == true) //Make sure Player is in shop
+        if (Mod.GameInstance!.MapID == 369 || Mod.GameInstance!.MapID == 375
+            || Mod.GameInstance!.MapID == 383 || Mod.GameInstance!.MapID == 387 || Mod.GameInstance!.MapID == 166)
         {
+            Console.WriteLine($"EDX is {edx} and EAX is {eax}");
+            if (edx == 0x80000)
+            {
+                CheckAndReportLocation(1025);
+                return;
+            }
             int itemId = BitOperations.TrailingZeroCount(eax);
             itemId += SpellPurchOffset;
-            if(itemId == 975 || itemId > 994)
+            if(itemId <= 975 || (itemId > 994 && itemId != 1001))
             {
+                Console.WriteLine($"ItemID is {itemId}, returning");
                 return; // Ignore non purchased spells that are unlocked
             }
             CheckAndReportLocation(itemId);
