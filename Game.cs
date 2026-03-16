@@ -16,6 +16,7 @@ public class Game
     public bool PrevInShop { get; private set; } = false;
     public bool PrevInLevelSelect { get; private set; } = false;
     public bool PrevInMenu { get; private set; } = false;
+    public int CurrentCharID { get; private set; } = 0;
     public const int tokenOffset = 213;
     public const int levelOffset = 450;
     public const int SIPOffset = 475;
@@ -226,7 +227,7 @@ public class Game
                     HubHandler.ReceivedRedBrickUnlock(ItemID - RedBrickPurchOffset);
                     break;
                 case < 1030:
-                    SpellHandler.UnlockSpell(ItemID - SpellPurchOffset);
+                    SpellHandler.UnlockSpell(ItemID - SpellPurchOffset, Mod.GameInstance!.CurrentCharID);
                     break;
                 default:
                     Mod.Logger?.WriteLineAsync($"Unknown item received: {ItemID}");
@@ -835,11 +836,12 @@ public class Game
 
     public static unsafe void OnChangeCharacters(int edx)
     {
-        Mod.Logger?.WriteLineAsync($"Chanacter Function ran, EDX: {edx:X}");
         ushort* initialValue = (ushort*)(Mod.BaseAddress + 0xC5F4C4);
         if (*initialValue == 0xFFFF)
         {
+            Mod.Logger?.WriteLineAsync($"Character Function ran, EDX: {edx:X}");
             Mod.Logger?.WriteLineAsync("Active Character Changed, updating spells");
+            Mod.GameInstance!.CurrentCharID = edx;
             SpellHandler.ResetSpells();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
             SpellHandler.SpellMapLogic(Mod.GameInstance!.MapID);
