@@ -7,14 +7,15 @@ public class SpellHandler
         {0x0067, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x50]}, // Padfoot
         {0x0073, [0x01, 0x00, 0x00, 0x80, 0x00, 0x00, 0x90]}, // Hagrid
         {0x007B, [0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x50]}, // Fang
+        {0x007F, [0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00]}, // Crookshanks
         {0x0094, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]}, // Pigwidgeon
         {0x0096, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40]}, // McGonagall Cat
+        {0x0097, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]}, // Bug (Rita Skeeter)
+        {0x009A, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]}, // Wormtail Rat
         {0x00A4, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]}, // Slughorn Chair
         {0x00AC, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]}, // Decoy Detanator
         {0x00A7, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]}, // Peacock
         {0x00B2, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]}, // Arnold
-        {0x0286, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]}, // Bug (Rita Skeeter)
-        {0x009A, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]}, // Wormtail Rat
         {0x00B5, [0x01, 0x00, 0x00, 0x80, 0x00, 0x00, 0x90]}, // Hagrid (Wedding)
         {0x00BE, [0xFF, 0xFF, 0x8F, 0xCB, 0xFD, 0xF5, 0x07]}, // Hogwarts Statue
         {0x0112, [0xFF, 0xFF, 0x8F, 0xEB, 0xFD, 0xF7, 0x07]}, // Professor Flitwick
@@ -361,7 +362,7 @@ public class SpellHandler
         {0x02BE, [0xFF, 0xFF, 0x8F, 0xEB, 0xFD, 0xF7, 0x07]}, // Tonks (Pink Coat)
         {0x02BF, [0xFF, 0xFF, 0x9F, 0xEF, 0xFD, 0xFD, 0x07]}, // Ron (Winter Clothes)
         {0x02C0, [0xFF, 0xFF, 0x9F, 0xEF, 0xFD, 0xFD, 0x07]}, // Ron (Pyjamas Legilimency)
-        {0x0261, [0xFF, 0xFF, 0x8F, 0xCB, 0xFD, 0xF7, 0x07]}, // Snape (Underwear)
+        {0x02C1, [0xFF, 0xFF, 0x8F, 0xCB, 0xFD, 0xF7, 0x07]}, // Snape (Underwear)
         {0x02C4, [0xFF, 0xFF, 0xCF, 0xFB, 0xFD, 0xF7, 0x07]}, // Thorfinn Rowle
         {0x02C5, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]}, // Petunia Dursley
         {0x02C8, [0xFF, 0xFF, 0x9F, 0xEF, 0xFD, 0xFD, 0x07]}, // Ron (Brown Jacket)
@@ -410,7 +411,7 @@ public class SpellHandler
         return (b & mask) != 0;
     }
 
-    public static unsafe readonly byte* spellBaseAddress = (byte*)(Mod.BaseAddress + 0xB06AB0);
+    private static unsafe readonly byte* spellBaseAddress = (byte*)(Mod.BaseAddress + 0xB06AB0);
     private static unsafe readonly byte* spellVisibilityBaseAddress = (byte*)(Mod.BaseAddress + 0xB067C4);
 
     public static void UnlockSpell(int spellId, int charID)
@@ -536,21 +537,21 @@ public class SpellHandler
 
     public static unsafe void ResetSpells()
     {
-
+        try
+        {
         // Reset Passive Spells
         for(int i = 0; i < 7; i++)
         {
-            if (i ==4)
-            {
-                continue; // Skip Unknown Spells
-            }
-
             byte* passivePTR = spellBaseAddress + i;
             *passivePTR = 0;
         }
-
         ResetActiveSpells();
         MakeSpellsInvisible();
+        }
+        catch (Exception e)
+        {
+            Mod.Logger!.Write(e.ToString());
+        }
 
         // Set the Default Spells
         UnlockSpell(0, Mod.GameInstance!.CurrentCharID); // Wingardium Leviosa
@@ -626,11 +627,6 @@ public class SpellHandler
 
         for(int i = 0; i < 7; i++)
         {
-            if (i ==4)
-            {
-                continue; // Skip Unknown Spells
-            }
-
             byte* activePTR = activeSecondPointer + i;
             *activePTR = 0;
         }
@@ -644,14 +640,9 @@ public class SpellHandler
             Mod.Logger?.WriteLineAsync("SpellVisibilityBaseAddress: null pointer");
             return;
         }
+        byte* ptr = spellVisibilityBaseAddress + 8;
 
-        byte* ptr = spellVisibilityBaseAddress + 8 * 2;
-        // Mod.Logger?.WriteLineAsync($"Making Spells invisible starting at {(nuint)ptr:X}");
-        *ptr = 3; // Make Diffindo invisible
-
-        ptr += 16; // Move to Aguamenti
-
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < 7; i++)
         {
             *ptr = 3;
             ptr += 8;

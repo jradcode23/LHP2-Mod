@@ -13,6 +13,7 @@ public class ArchipelagoHandler
     private const string GAME_NAME = "Lego Harry Potter 5-7";
     private ArchipelagoSession _session;
     private LoginSuccessful _loginSuccessful;
+    public SlotData SlotDataInstance;
 
     private string Server { get; set; }
     private int Port { get; set; }
@@ -84,7 +85,7 @@ public class ArchipelagoHandler
         if (result.Successful)
         {
             _loginSuccessful = (LoginSuccessful)result;
-            SlotData SlotDataInstance = new(_loginSuccessful.SlotData);
+            SlotDataInstance = new(_loginSuccessful.SlotData);
             SlotDataInstance.PrintData();
             Mod.InitOnMenu();
             new Thread(RunCheckLocationsFromList).Start();
@@ -241,13 +242,13 @@ public class ArchipelagoHandler
         }
     }
 
-    public int CountLocationsCheckedInRange(Int64 start, Int64 end)
+    public int CountItemsCheckedInRange(Int64 start, Int64 end)
     {
-        lock (_locationsLock)
+        lock (_itemsLock)
         {
             var startId = start + gameOffset;
             var endId = end + gameOffset;
-            return _session.Locations.AllLocationsChecked.Count(loc => loc >= startId && loc < endId);
+            return _session.Items.AllItemsReceived.Count(item => item.ItemId >= startId && item.ItemId <= endId);
         }
     }
 

@@ -347,7 +347,7 @@ public class Game
             "use32",
             "pushfd",
             "pushad",
-            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnSpellPurchase, out _reverseWrapOnSpellUnlock)}",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnSpellUnlock, out _reverseWrapOnSpellUnlock)}",
             "popad",
             "popfd",
         };
@@ -577,9 +577,13 @@ public class Game
         if (apID is int id)
         {
             CheckAndReportLocation(id + levelOffset);
-            if (apID == 12)
+            if (id == 12)
             {
                 CheckAndReportLocation(1026);
+            }
+            if (id == 23)
+            {
+                CheckWinCon();
             }
         }
     }
@@ -657,7 +661,7 @@ public class Game
     [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.edx], 
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void SpellUnlock(int eax, int edx);
-    private static void OnSpellPurchase(int eax, int edx)
+    private static void OnSpellUnlock(int eax, int edx)
     {
         if (Mod.GameInstance!.MapID == 369 || Mod.GameInstance!.MapID == 375
             || Mod.GameInstance!.MapID == 383 || Mod.GameInstance!.MapID == 387 || Mod.GameInstance!.MapID == 166)
@@ -1090,5 +1094,18 @@ public class Game
         }
         Mod.Logger?.WriteLineAsync($"Checking location for AP ID: {apID}");
         Mod.LHP2_Archipelago!.CheckLocation(apID);
+    }
+
+    public static void CheckWinCon()
+    {
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 0)
+        {
+            int horcruxesReceived = Mod.LHP2_Archipelago!.CountItemsCheckedInRange(440, 445);
+            Mod.Logger?.WriteLineAsync($"Player Has Received {horcruxesReceived} Horcruxes");
+            if (horcruxesReceived == 6)
+            {
+                Mod.LHP2_Archipelago!.Release();
+            }
+        }
     }
 }
