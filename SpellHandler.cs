@@ -426,7 +426,7 @@ public class SpellHandler
 
         if (hasAbility)
         {
-            Mod.Logger?.WriteLineAsync($"Character ID 0x{charID:X} has Spell ID {spellId}");
+            // Mod.Logger?.WriteLineAsync($"Character ID 0x{charID:X} has Spell ID {spellId}");
             UnlockPassiveSpell(byteOffset, bitOffset);
             UnlockActiveSpell(byteOffset, bitOffset);
 
@@ -441,10 +441,10 @@ public class SpellHandler
             // Deluminator and polyjuice are tied together so making polyjuice usable by another other than ron
             UnlockPassiveSpell(byteOffset, bitOffset); 
         }
-        else 
-        {
-            Mod.Logger?.WriteLineAsync($"Character ID 0x{charID:X} does not have spell {spellId}");
-        }
+        // else 
+        // {
+        //     Mod.Logger?.WriteLineAsync($"Character ID 0x{charID:X} does not have spell {spellId}");
+        // }
     }
 
     public static unsafe void UnlockPassiveSpell(int byteOffset, int bitOffset)
@@ -513,7 +513,7 @@ public class SpellHandler
         }
 
         byte* ptr = spellVisibilityBaseAddress + offset * slot;
-        Mod.Logger?.WriteLineAsync($"Making Spell ID {spellId} visible at offset {offset * slot}");
+        // Mod.Logger?.WriteLineAsync($"Making Spell ID {spellId} visible at offset {offset * slot}");
         *ptr = 1;
     }
 
