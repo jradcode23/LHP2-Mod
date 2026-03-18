@@ -930,12 +930,13 @@ public class Game
             Memory.Instance.Write<byte>((nuint)(menuCheatAddress + i), bytes[i]);
         }
         
-        if (Mod.GameInstance!.LevelID < 1 || Mod.GameInstance!.LevelID > 4) // If in level, want to sync to locations so they can exit if level completed
+        if (Mod.GameInstance!.LevelID < 1 || Mod.GameInstance!.LevelID > 4) // If in level, want to sync to locations except for Red bricks & Spells
         {
             Mod.Logger?.WriteLineAsync("Menu Opened");
             Mod.GameInstance!.PrevInMenu = true;
             ResetItems();
-            Mod.LHP2_Archipelago!.UpdateBasedOnLocations(0, MaxItemID);
+            Mod.LHP2_Archipelago!.UpdateBasedOnLocations(0, RedBrickPurchOffset - 1);
+            Mod.LHP2_Archipelago!.UpdateBasedOnItems(RedBrickPurchOffset, MaxItemID);
         }
         else // In Hub, want to show all items
         {

@@ -457,11 +457,12 @@ public class HubHandler
                     break;
                 case 0x800: // Snape's Worst Memory Complete
                     Game.CheckAndReportLocation(1013);
-                    *y5GhostPtr2 |= 1 << 4; // Mark Snape's Worst Memory Story Complete
+                    *y5GhostPtr2 |= 1 << 3; // Mark Snape's Worst Memory Story Complete
                     // Game.LessonRestoreReturnToHub();
                     break;
                 case 0x1000: // WWW Box Lesson Complete
                     Game.CheckAndReportLocation(1014);
+                    *y5GhostPtr2 |= 1 << 4; // Mark OWLs Complete
                     *y5GhostPtr2 |= 1 << 5; // Mark A Giant Viruoso Story Complete
                     *y5GhostPtr2 |= 1 << 6; // Mark A Veiled Threat Story Complete
                     Game.CheckAndReportLocation(1015); // Send Y5 Story Complete

@@ -369,6 +369,8 @@ public class SpellHandler
         {0x02C9, [0xFF, 0xFF, 0x9F, 0xEB, 0xFD, 0xFD, 0x07]}, // Neville (Grey Stripe Jumper)
         {0x02CA, [0xFF, 0xFF, 0x9F, 0xEB, 0xFD, 0xFD, 0x07]}, // Neville (Grey Tank Top)
         {0x02CB, [0xFF, 0xFF, 0x9F, 0xEB, 0xFD, 0xFD, 0x07]}, // Neville (Tank Top)
+        {0x02CC, [0xFF, 0xFF, 0x9F, 0xEB, 0xFD, 0xF7, 0x07]}, // Sirius Black (Young)
+        {0x02CD, [0xFF, 0xFF, 0x9F, 0xEB, 0xFD, 0xF7, 0x07]}, // Remus Lupin (Young)
         {0x02CE, [0xFF, 0xFF, 0x9F, 0xEB, 0xFD, 0xFD, 0x07]}, // Neville (Winter)
         {0x02CF, [0xFF, 0xFF, 0x8F, 0xEB, 0xFD, 0xF5, 0x07]}, // Padma (Winter)
         {0x02D0, [0xFF, 0xFF, 0x8F, 0xEB, 0xFD, 0xF5, 0x07]}, // Parvarti Patil
@@ -677,8 +679,14 @@ public class SpellHandler
                 SpellHandler.LockPassiveSpell(27); // Ensure lesson can be beaten since game doesn't like when you already have it
                 Game.LessonRestoreReturnToHub();
                 break;
+            // Reducto Lesson
             case 196 when !Mod.LHP2_Archipelago!.IsLocationChecked(1021) && Mod.LHP2_Archipelago.IsLocationChecked(1020):
                 SpellHandler.LockPassiveSpell(30); // Ensure lesson can be beaten since game doesn't like when you already have it
+                Game.LessonRestoreReturnToHub();
+                break;
+            // Specs Lesson
+            case 179 when !Mod.LHP2_Archipelago!.IsLocationChecked(1016):
+                SpellHandler.LockPassiveSpell(50); // Ensure lesson can be beaten since game doesn't like when you already have it
                 Game.LessonRestoreReturnToHub();
                 break;
             // London when Apparition is supposed to be unlocked
@@ -692,7 +700,7 @@ public class SpellHandler
                 }
                 if (!Mod.LHP2_Archipelago!.IsLocationChecked(1025))
                 {
-                    SpellHandler.LockPassiveSpell(50);
+                    SpellHandler.LockPassiveSpell(51);
                 }
                 break;
             default:
