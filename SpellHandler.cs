@@ -377,6 +377,7 @@ public class SpellHandler
         {0x02D1, [0xFF, 0xFF, 0x9F, 0xEF, 0xFD, 0xFD, 0x07]}, // Ron (Red Sweater)
         {0x02D2, [0xFF, 0xFF, 0x8F, 0xEB, 0xFD, 0xF7, 0x07]}, // Ollivander
         {0x02D3, [0xFF, 0xFF, 0x8F, 0xEB, 0xFD, 0xF5, 0x07]}, // Seamus (Winter)
+        {0x02D4, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x50]}, // Lupin (Young Werewolf)
         {0x02D5, [0xFF, 0xFF, 0x9F, 0xEF, 0xFD, 0xFD, 0x07]}, // Ron (Dark Red Jacket)
         {0x02D6, [0xFF, 0xFF, 0x9F, 0xEF, 0xFD, 0xFD, 0x07]}, // Ron (Underwear)
         {0x02D7, [0xFF, 0xFF, 0x9F, 0xEF, 0xFD, 0xFD, 0x07]}, // Ron (Wedding)
@@ -592,7 +593,7 @@ public class SpellHandler
         UnlockSpell(40, Mod.GameInstance!.CurrentCharID); // Unknown Spell
         UnlockSpell(41, Mod.GameInstance!.CurrentCharID); // Unknown Spell
         UnlockSpell(42, Mod.GameInstance!.CurrentCharID); // Draught of Living Death
-        UnlockSpell(43, Mod.GameInstance!.CurrentCharID); // Thestral Spell
+        UnlockSpell(43, Mod.GameInstance!.CurrentCharID); // Thestral Riding
         UnlockSpell(44, Mod.GameInstance!.CurrentCharID); // Dueling
         // 45 Apparition
         if (Mod.LHP2_Archipelago!.IsLocationChecked(1007))
@@ -665,34 +666,46 @@ public class SpellHandler
         }
     }
 
-    public static void SpellMapLogic(int map)
+    public static unsafe  void SpellMapLogic(int map)
     {
+        byte* y5GhostPtr = HubHandler.ghostPathBaseAddress + 0x20;
+        byte* y5GhostPtr2 = HubHandler.ghostPathBaseAddress + 0x21;
+        byte* y6GhostPtr = HubHandler.ghostPathBaseAddress + 0x34;
+        byte* y6GhostPtr2 = HubHandler.ghostPathBaseAddress + 0x35;
+        byte* y7GhostPtr = HubHandler.ghostPathBaseAddress + 0x48;
+
         switch (map)
         {
             // DADA Locked
-            case 301 when !Mod.LHP2_Archipelago!.IsLocationChecked(1007):
+            case 301 when !Mod.LHP2_Archipelago!.IsLocationChecked(1007) || (*y5GhostPtr & (1 << 2)) == 0:
                 SpellHandler.LockPassiveSpell(46); // Ensure lesson can be beaten since game doesn't like when you already have it
                 Game.LessonRestoreReturnToHub();
                 break;
+            // Thestral Flying
+            case 295 when !Mod.LHP2_Archipelago!.IsLocationChecked(1008) || (*y5GhostPtr & (1 << 3)) == 0:
+                SpellHandler.LockPassiveSpell(43); // Flying the thestral during the lesson can cause issues
+                Game.LessonRestoreReturnToHub();
+                break;
             // Aguamenti Lesson
-            case 195 when !Mod.LHP2_Archipelago!.IsLocationChecked(1020) && Mod.LHP2_Archipelago.IsLocationChecked(1019):
+            case 195 when !Mod.LHP2_Archipelago!.IsLocationChecked(1020) || (*y6GhostPtr & (1 << 7)) == 0:
                 SpellHandler.LockPassiveSpell(27); // Ensure lesson can be beaten since game doesn't like when you already have it
                 Game.LessonRestoreReturnToHub();
                 break;
             // Reducto Lesson
-            case 196 when !Mod.LHP2_Archipelago!.IsLocationChecked(1021) && Mod.LHP2_Archipelago.IsLocationChecked(1020):
+            case 196 when !Mod.LHP2_Archipelago!.IsLocationChecked(1021) || (*y6GhostPtr2 & (1 << 1)) == 0:
                 SpellHandler.LockPassiveSpell(30); // Ensure lesson can be beaten since game doesn't like when you already have it
                 Game.LessonRestoreReturnToHub();
                 break;
             // Specs Lesson
-            case 179 when !Mod.LHP2_Archipelago!.IsLocationChecked(1016):
+            case 179 when !Mod.LHP2_Archipelago!.IsLocationChecked(1016) || (*y6GhostPtr & (1 << 2)) == 0:
                 SpellHandler.LockPassiveSpell(50); // Ensure lesson can be beaten since game doesn't like when you already have it
                 Game.LessonRestoreReturnToHub();
                 break;
             // London when Apparition is supposed to be unlocked
-            case 103 when !Mod.LHP2_Archipelago!.IsLocationChecked(1027):
+            case 103 when !Mod.LHP2_Archipelago!.IsLocationChecked(1027) || (*y7GhostPtr & (1 << 2)) == 0:
                 Game.LessonReturnToHubNOP();
                 break;
+            // Delum & Herm Bag
             case 166:
                 if (!Mod.LHP2_Archipelago!.IsLocationChecked(1001))
                 {

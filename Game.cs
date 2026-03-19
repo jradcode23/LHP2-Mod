@@ -674,7 +674,7 @@ public class Game
             }
             int itemId = BitOperations.TrailingZeroCount(eax);
             itemId += SpellPurchOffset;
-            if(itemId <= 975 || (itemId > 994 && itemId != 1001))
+            if (itemId <= 975 || (itemId > 994 && itemId != 1001))
             {
                 Console.WriteLine($"ItemID is {itemId}, returning");
                 return; // Ignore non purchased spells that are unlocked
@@ -721,11 +721,11 @@ public class Game
     public delegate void CharacterPurchased(IntPtr ecx, int eax);
     private static void OnCharacterPurchased(IntPtr ecx, int eax)
     {
-        if((Mod.GameInstance!.MapID == 366 || Mod.GameInstance!.MapID == 372 
+        if ((Mod.GameInstance!.MapID == 366 || Mod.GameInstance!.MapID == 372 
             || Mod.GameInstance!.MapID == 378 || Mod.GameInstance!.MapID == 382) && Mod.GameInstance!.PrevInShop == true) //Make sure Player is in shop
         {
             int itemID = CharacterHandler.GetPurchaseCharacterID(ecx, eax);
-            if(itemID == -1)
+            if (itemID == -1)
             {
                 Mod.Logger?.WriteLineAsync("Error getting Purchased Character ID");
                 Mod.Logger?.WriteLineAsync($"EAX is: {eax:X}");
@@ -744,7 +744,7 @@ public class Game
     {
 
         int itemID = HubHandler.GetHubID(edx);
-        if(itemID == -1)
+        if (itemID == -1)
         {
             Mod.Logger?.WriteLineAsync("Error getting SIP ID from Hub");
             Mod.Logger?.WriteLineAsync($"EDX is: 0x {edx:X}");
@@ -764,7 +764,7 @@ public class Game
     {
 
         int itemID = HubHandler.GetHubID(eax);
-        if(itemID == -1)
+        if (itemID == -1)
         {
             Mod.Logger?.WriteLineAsync("Error getting GB ID from Hub");
             Mod.Logger?.WriteLineAsync($"EAX is: 0x{eax:X}");
@@ -784,7 +784,7 @@ public class Game
     {
 
         int itemID = HubHandler.GetHubID(eax);
-        if(itemID == -1)
+        if (itemID == -1)
         {
             Mod.Logger?.WriteLineAsync("Error getting RB ID from Hub");
             Mod.Logger?.WriteLineAsync($"EAX is: 0x{eax:X}");
@@ -823,7 +823,7 @@ public class Game
     {
         Mod.GameInstance!.PrevMapID = Mod.GameInstance!.MapID;
         Mod.GameInstance!.MapID = value;
-        if(Mod.GameInstance!.PrevMapID == 196 && !Mod.LHP2_Archipelago!.IsLocationChecked(1021) && Mod.LHP2_Archipelago.IsLocationChecked(1020))
+        if (Mod.GameInstance!.PrevMapID == 196 && !Mod.LHP2_Archipelago!.IsLocationChecked(1021) && Mod.LHP2_Archipelago.IsLocationChecked(1020))
         {
             LessonRestoreReturnToHub();
         }
@@ -861,14 +861,14 @@ public class Game
         int lastNibble = esp & 0xF;
         // Mod.Logger?.WriteLineAsync($"Last Nibble: {lastNibble}");
 
-        if(eaxBit0Set && lastNibble == 0x08)
+        if (eaxBit0Set && lastNibble == 0x08)
         {
             Mod.GameInstance!.PrevInLevelSelect = true;
             Mod.Logger?.WriteLineAsync("Level Selector Opened");
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, MaxItemID);
         }
-        if(eaxBit0Set && lastNibble == 0x0C)
+        if (eaxBit0Set && lastNibble == 0x0C)
         {
             Mod.GameInstance!.PrevInShop = true;
             Mod.Logger?.WriteLineAsync("Shop Opened");
@@ -879,7 +879,7 @@ public class Game
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(RedBrickCollectOffset, RedBrickPurchOffset - 27);
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(RedBrickPurchOffset, MaxItemID);
         }
-        else if(!eaxBit0Set && Mod.GameInstance!.PrevInLevelSelect)
+        else if (!eaxBit0Set && Mod.GameInstance!.PrevInLevelSelect)
         {
             Mod.GameInstance!.PrevInLevelSelect = false;
             Mod.Logger?.WriteLineAsync("Level Selector Closed");
@@ -892,7 +892,7 @@ public class Game
                 Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
             }
         }
-        else if(!eaxBit0Set && Mod.GameInstance!.PrevInShop)
+        else if (!eaxBit0Set && Mod.GameInstance!.PrevInShop)
         {
             Mod.GameInstance!.PrevInShop = false;
             Mod.Logger?.WriteLineAsync("Shop Selector Closed");
@@ -913,12 +913,12 @@ public class Game
     public delegate void OpenMenu(int edi);
     private static unsafe void OnOpenMenu(int edi)
     {
-        if(edi != 2)
+        if (edi != 2)
         {
             return;
         }
         // Take into account that menu opens when selecting freeplay/story.
-        if(Mod.GameInstance!.PrevInShop == true)
+        if (Mod.GameInstance!.PrevInShop == true)
         {
             return;
         } 
@@ -970,7 +970,7 @@ public class Game
     private static void OnCloseMenu()
     {
         // Take into account that this code runs multiple times.
-        if(!Mod.GameInstance!.PrevInMenu)
+        if (!Mod.GameInstance!.PrevInMenu)
         {
             return;
         }
@@ -990,7 +990,7 @@ public class Game
         byte* cauldronBaseAddress = (byte*)*(int*)(Mod.BaseAddress + 0xC54290);
         nuint cauldronItem = Memory.Instance.Read<nuint>((nuint)(cauldronBaseAddress + 0x68));
         // Mod.Logger?.WriteLineAsync($"Cauldron Item ID: {cauldronItem}");
-        if(cauldronItem != 4 || Mod.GameInstance!.PrevInLevelSelect == true) // Only trigger on opening the Polyjuice Pot
+        if (cauldronItem != 4 || Mod.GameInstance!.PrevInLevelSelect == true) // Only trigger on opening the Polyjuice Pot
         {
             return;
         }
@@ -1007,7 +1007,7 @@ public class Game
     {
         byte* cauldronBaseAddress = (byte*)*(int*)(Mod.BaseAddress + 0xC54290);
         nuint cauldronItem = Memory.Instance.Read<nuint>((nuint)(cauldronBaseAddress + 0x68));
-        if(cauldronItem != 4 || Mod.GameInstance!.PrevInLevelSelect == true) // Only trigger on opening the Polyjuice Pot
+        if (cauldronItem != 4 || Mod.GameInstance!.PrevInLevelSelect == true) // Only trigger on opening the Polyjuice Pot
         {
             return;
         }
@@ -1024,7 +1024,7 @@ public class Game
     public delegate void ChangeYears();
     private static unsafe void OnChangeYears()
     {
-        if(Mod.GameInstance!.MapID == 365 || Mod.GameInstance!.MapID == 371 
+        if (Mod.GameInstance!.MapID == 365 || Mod.GameInstance!.MapID == 371 
             || Mod.GameInstance!.MapID == 377 || Mod.GameInstance!.MapID == 381)
         {
             byte* menuCheatAddress = (byte*)(Mod.BaseAddress + 0xC575E0);
@@ -1052,24 +1052,26 @@ public class Game
             {
                 case "YEAR05" when Mod.GameInstance!.LevelID != 1:
                     HubHandler.SwitchYears(5);
-                    HubHandler.AdjustHubMaps();
+                    HubHandler.AdjustHubMaps(5);
                     break;
                 case "YEAR06" when Mod.GameInstance!.LevelID != 2:
                     HubHandler.SwitchYears(6);
-                    HubHandler.AdjustHubMaps();
+                    HubHandler.AdjustHubMaps(6);
                     break;
                 case "YEAR07" when Mod.GameInstance!.LevelID != 3:
                     HubHandler.SwitchYears(7);
-                    HubHandler.AdjustHubMaps();
+                    HubHandler.AdjustHubMaps(7);
                     break;
                 case "YEAR08" when Mod.GameInstance!.LevelID != 4:
                     HubHandler.SwitchYears(8);
-                    HubHandler.AdjustHubMaps();
+                    HubHandler.AdjustHubMaps(8);
                     break;
                 default:
                     break;
             }
-        } else {   
+        } 
+        else 
+        {   
             Mod.Logger?.WriteLineAsync("Please move to the Character Customization Room to change years.");
             return;
         }
@@ -1101,9 +1103,15 @@ public class Game
     {
         if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 0)
         {
-            int horcruxesReceived = Mod.LHP2_Archipelago!.CountItemsCheckedInRange(440, 445);
+            int horcruxesReceived = Mod.LHP2_Archipelago!.CountItemsCheckedInRange(440, 446);
+            int requiredHorcruxes = Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredHorcruxes;
+            if (requiredHorcruxes == -1)
+            {
+                Mod.Logger?.WriteLineAsync("Can't Determine if the game is completed, Horcrux slot data not available.");
+                return;
+            }
             Mod.Logger?.WriteLineAsync($"Player Has Received {horcruxesReceived} Horcruxes");
-            if (horcruxesReceived == 6)
+            if (horcruxesReceived >= requiredHorcruxes)
             {
                 Mod.LHP2_Archipelago!.Release();
             }

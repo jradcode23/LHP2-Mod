@@ -11,7 +11,7 @@ public class HubHandler
     private static unsafe readonly byte* purpleCountAddress = (byte*)studTotalBaseAddress + 0x30;   
     private static unsafe readonly byte* firstLevelMapPointer = *(byte**)(Mod.BaseAddress + 0x00B06A5C);
     private static unsafe readonly byte* secondLevelMapPointer = *(byte**)(firstLevelMapPointer + 0x44);
-    private static unsafe readonly byte* ghostPathBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55F2C);
+    public static unsafe readonly byte* ghostPathBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55F2C);
     private static unsafe readonly byte* mapFlagsBaseAddress = *(byte**)(Mod.BaseAddress + 0xC5D5F4);
     private static unsafe readonly byte* hogwartWarpEntranceBaseAddress = *(byte**)(Mod.BaseAddress + 0x00C4EE5C);
     private static unsafe readonly byte* secondPointerWarp = *(byte**)(hogwartWarpEntranceBaseAddress + 0x04);
@@ -286,7 +286,7 @@ public class HubHandler
             Mod.Logger?.WriteLineAsync($"Can't Update Stud Total, null pointer at 0x{(nuint)studTotalBaseAddress:X}");
             return;
         }
-        if( *purpleCountAddress < purpleStudCount)
+        if ( *purpleCountAddress < purpleStudCount)
         {
             *purpleCountAddress += 1;
             *studTotalBaseAddress += 10000;
@@ -358,6 +358,12 @@ public class HubHandler
 
     public static unsafe void SwitchYears(int year)
     {
+        byte* y5GhostPtr = HubHandler.ghostPathBaseAddress + 0x20;
+        if ((*y5GhostPtr & (1 << 1)) == 0)
+        {
+            Mod.Logger!.WriteLineAsync("Please complete DADA Banned Lesson before changing years");
+            return;
+        }
         // 5, 6, 7, 8 in hex are 0x35, 0x36, 0x37, 0x38
         byte* y5MapPtr = secondLevelMapPointer + 0xF02;
         byte* y6MapPtr = secondLevelMapPointer + 0xA5A;
@@ -423,7 +429,7 @@ public class HubHandler
                     Game.CheckAndReportLocation(1006);
                     *y5GhostPtr |= 1 << 1; // Mark Arrive at Hogwarts Complete
                     break;
-                case 0x4 when !Mod.LHP2_Archipelago!.IsLocationChecked(1007): // DADA Banned Lesson Complete
+                case 0x4 when !Mod.LHP2_Archipelago!.IsLocationChecked(1007) || (*y5GhostPtr & (1 << 2)) == 0: // DADA Banned Lesson Complete
                     Game.CheckAndReportLocation(1007);
                     *y5GhostPtr |= 1 << 2; // Mark DADA Banned Complete
                     break;
@@ -469,10 +475,11 @@ public class HubHandler
                     // Game.LessonRestoreReturnToHub();
                     break;
                 default:
-                    Mod.Logger?.WriteLineAsync($"Level Beaten, doing nothing: 0x{dx:X}");
+                    Mod.Logger?.WriteLineAsync($"Y5 Level Beaten, doing nothing: 0x{dx:X}");
                     break;
             }
-        } else if (eax == (int)y6GhostPtr)
+        } 
+        else if (eax == (int)y6GhostPtr)
         {
             switch (dx)
             {
@@ -513,26 +520,32 @@ public class HubHandler
                     Game.CheckAndReportLocation(1023); // Send Y6 Story Complete
                     break;
                 default:
-                    Mod.Logger?.WriteLineAsync($"Level Beaten, doing nothing: 0x{dx:X}");
+                    Mod.Logger?.WriteLineAsync($"Y6 Level Beaten, doing nothing: 0x{dx:X}");
                     break;
             }
-        } else if (eax == (int)y7GhostPtr)
+        } 
+        else if (eax == (int)y7GhostPtr)
         {
             if (dx == 4) // Cafe Fight Complete
             {
                 Game.CheckAndReportLocation(1027);
                 *y7GhostPtr = 254; // Mark all Y7 Ghost Paths as Complete
                 Game.LessonRestoreReturnToHub();
+            } 
+            else 
+            {
+                Mod.Logger?.WriteLineAsync($"Y7 Level Beaten, doing nothing with eax: 0x{eax:X} and dx: 0x{dx:X}");
             }
             
-        } else 
+        } 
+        else 
         {
-            Mod.Logger?.WriteLineAsync($"Unhandled Ghost Path with eax: 0x{eax:X} and dx: 0x{dx:X}");
+            Mod.Logger?.WriteLineAsync($"Y8 Level Beaten, doing nothing with eax: 0x{eax:X} and dx: 0x{dx:X}");
         }
 
     }
 
-    public static unsafe void AdjustHubMaps()
+    public static unsafe void AdjustHubMaps(int year)
     {
         leaky2LondonAddress = GetHubMapAddress("HubLeakyCauldron", 0xB7B); // Leaky2London Loading Zone
         hogPath2CourtyardAddress = GetHubMapAddress("HogsApproach", 0x1A90); // HogPath2Courtyard Loading Zone
@@ -541,9 +554,12 @@ public class HubHandler
 
         AdjustLeakyCauldron();
         AdjustHogsPath();
-        AdjustWilderness();
-        AdjustQuad();
         CompleteStartingGhostLevels();
+        if (year == 7 || year == 8)
+        {
+            AdjustWilderness();
+            AdjustQuad();
+        }
     }
 
     private static unsafe void AdjustLeakyCauldron()
@@ -604,7 +620,6 @@ public class HubHandler
         *xenoTokenFlag |= 1 << 3; // Ensure the Token has a hitbox
     }
 
-    // TODO: Make this only run after cafe lesson is completed
     private static unsafe void AdjustQuad()
     {
         if (quadAddress == mapFlagsBaseAddress + 0x40)
