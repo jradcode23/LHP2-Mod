@@ -226,7 +226,7 @@ public class Game
                 case < 975:
                     HubHandler.ReceivedRedBrickUnlock(ItemID - RedBrickPurchOffset);
                     break;
-                case < 1030:
+                case < 1027:
                     SpellHandler.UnlockSpell(ItemID - SpellPurchOffset, Mod.GameInstance!.CurrentCharID);
                     break;
                 default:
