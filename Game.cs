@@ -211,7 +211,7 @@ public class Game
                     level = LevelHandler.ConvertIDToLeveData(ItemID - HuffleCrestOffset);
                     LevelHandler.UnlockHufflepuffCrest(level);
                     break;
-                case < 698:
+                case < 699:
                     level = LevelHandler.ConvertIDToLeveData(ItemID - TrueWizardOffset);
                     LevelHandler.UnlockTrueWizard(level);
                     break;
