@@ -69,15 +69,15 @@ public class Mod : ModBase // <= Do not Remove.
         int hookCount = Game._asmHooks.Count;
         if (hookCount > 0)
         {
-            Console.WriteLine($"Hooks already set up. Count: {hookCount}, skipping setup.");
+            Logger?.WriteLine($"Hooks already set up. Count: {hookCount}, skipping setup.");
             return;
         }
         Game.ModifyInstructions();
         if (Mod._hooks != null)
         {
-            Console.WriteLine("Menu loaded, setting up hooks. Please wait for hook setup before loading a save file.");
+            Logger?.WriteLine("Menu loaded, setting up hooks. Please wait for hook setup before loading a save file.");
             GameInstance!.SetupHooks(Mod._hooks!);
-            Console.WriteLine("Hooks set up complete. You may now load a save file.");
+            Logger?.WriteLine("Hooks set up complete. You may now load a save file.");
         }
     }
 
