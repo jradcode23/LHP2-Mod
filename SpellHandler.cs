@@ -402,7 +402,7 @@ public class SpellHandler
     {
         if (!characterAbilities.TryGetValue(charID, out var abilities))
         {
-            Mod.Logger?.WriteLineAsync($"Could Not find Character ID 0x{charID:X}. Leaving all spells locked");
+            Mod.Logger!.WriteLineAsync($"Could Not find Character ID 0x{charID:X}. Leaving all spells locked");
             return false;
         }
         if (byteOffset < 0 || byteOffset >= abilities.Length)
@@ -429,7 +429,7 @@ public class SpellHandler
 
         if (hasAbility)
         {
-            // Mod.Logger?.WriteLineAsync($"Character ID 0x{charID:X} has Spell ID {spellId}");
+            // Mod.Logger!.WriteLineAsync($"Character ID 0x{charID:X} has Spell ID {spellId}");
             UnlockPassiveSpell(byteOffset, bitOffset);
             UnlockActiveSpell(byteOffset, bitOffset);
 
@@ -446,7 +446,7 @@ public class SpellHandler
         }
         // else 
         // {
-        //     Mod.Logger?.WriteLineAsync($"Character ID 0x{charID:X} does not have spell {spellId}");
+        //     Mod.Logger!.WriteLineAsync($"Character ID 0x{charID:X} does not have spell {spellId}");
         // }
     }
 
@@ -456,7 +456,7 @@ public class SpellHandler
 
         if (ptr == null)
         {
-            Mod.Logger?.WriteLineAsync("SpellBaseAddress: null pointer");
+            Mod.Logger!.WriteLineAsync("SpellBaseAddress: null pointer");
             return;
         }
         *ptr |= (byte)(1 << bitOffset);
@@ -471,7 +471,7 @@ public class SpellHandler
 
         if (ptr == null)
         {
-            Mod.Logger?.WriteLineAsync("SpellBaseAddress: null pointer");
+            Mod.Logger!.WriteLineAsync("SpellBaseAddress: null pointer");
             return;
         }
         *ptr &= unchecked((byte)~(byte)(1 << bitOffset));
@@ -481,7 +481,7 @@ public class SpellHandler
     {
         if (spellVisibilityBaseAddress == null)
         {
-            Mod.Logger?.WriteLineAsync("SpellVisibilityBaseAddress: null pointer");
+            Mod.Logger!.WriteLineAsync("SpellVisibilityBaseAddress: null pointer");
             return;
         }
 
@@ -516,7 +516,7 @@ public class SpellHandler
         }
 
         byte* ptr = spellVisibilityBaseAddress + offset * slot;
-        // Mod.Logger?.WriteLineAsync($"Making Spell ID {spellId} visible at offset {offset * slot}");
+        // Mod.Logger!.WriteLineAsync($"Making Spell ID {spellId} visible at offset {offset * slot}");
         *ptr = 1;
     }
 
@@ -526,7 +526,7 @@ public class SpellHandler
 
         if (activeSpellBaseAddress == null)
         {
-            // Mod.Logger?.WriteLineAsync("ActiveSpellBaseAddress: null pointer");
+            // Mod.Logger!.WriteLineAsync("ActiveSpellBaseAddress: null pointer");
             return;
         }
 
@@ -620,7 +620,7 @@ public class SpellHandler
 
         if (activeSpellBaseAddress == null)
         {
-            // Mod.Logger?.WriteLineAsync("ActiveSpellBaseAddress: null pointer");
+            // Mod.Logger!.WriteLineAsync("ActiveSpellBaseAddress: null pointer");
             return;
         }
 
@@ -640,7 +640,7 @@ public class SpellHandler
 
         if (spellVisibilityBaseAddress == null)
         {
-            Mod.Logger?.WriteLineAsync("SpellVisibilityBaseAddress: null pointer");
+            Mod.Logger!.WriteLineAsync("SpellVisibilityBaseAddress: null pointer");
             return;
         }
         byte* ptr = spellVisibilityBaseAddress + 8;

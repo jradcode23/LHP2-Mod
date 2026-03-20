@@ -48,24 +48,24 @@ public class SlotData
     /// </summary>
     public void PrintData()
     {
-        Mod.Logger?.WriteLineAsync("=== Slot Data ===");
-        Mod.Logger?.WriteLineAsync($"EndGoal: {EndGoal}");
-        Mod.Logger?.WriteLineAsync($"Required Horcruxes: {NumberOfRequiredHorcruxes}");
+        Mod.Logger!.WriteLineAsync("=== Slot Data ===");
+        Mod.Logger!.WriteLineAsync($"EndGoal: {EndGoal}");
+        Mod.Logger!.WriteLineAsync($"Required Horcruxes: {NumberOfRequiredHorcruxes}");
         
         if (EndGoal == -1 || NumberOfRequiredHorcruxes == -1)
         {
-            Mod.Logger?.WriteLineAsync("EndGoal or Horcrux value not found or invalid. Please report to the devs.");
+            Mod.Logger!.WriteLineAsync("EndGoal or Horcrux value not found or invalid. Please report to the devs.");
         }
 
         // if (EndGoal == 1)
         // {
-        //     Mod.Logger?.WriteLineAsync("CollectiblesRequired:");
-        //     Mod.Logger?.WriteLineAsync("=================");
+        //     Mod.Logger!.WriteLineAsync("CollectiblesRequired:");
+        //     Mod.Logger!.WriteLineAsync("=================");
         //     foreach (var kvp in CollectiblesRequired)
         //     {
-        //         Mod.Logger?.WriteLineAsync($"  {kvp.Key}: {kvp.Value}");
+        //         Mod.Logger!.WriteLineAsync($"  {kvp.Key}: {kvp.Value}");
         //     }
-        //     Mod.Logger?.WriteLineAsync("=================");
+        //     Mod.Logger!.WriteLineAsync("=================");
         // }
     }
 }

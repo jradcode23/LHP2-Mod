@@ -188,13 +188,13 @@ public class HubHandler
     //     var kvp = hubOffsets.FirstOrDefault(k => k.Value == ID);
     //     if (kvp.Key == 0 && kvp.Value == 0)
     //     {
-    //         Mod.Logger?.WriteLineAsync($"[Hub] Could not find Hub RB offset for ID {ID}");
+    //         Mod.Logger!.WriteLineAsync($"[Hub] Could not find Hub RB offset for ID {ID}");
     //         return;
     //     }
     //     byte* ptr = hubBaseAddress + (nuint)kvp.Key;;
     //     if (ptr == null || hubBaseAddress == null) 
     //     {
-    //         Mod.Logger?.WriteLineAsync($"[Hub] Can't Unlock Hub RB, null pointer at 0x{(nuint)ptr:X}");
+    //         Mod.Logger!.WriteLineAsync($"[Hub] Can't Unlock Hub RB, null pointer at 0x{(nuint)ptr:X}");
     //     }
     //     *ptr |= (byte)BitMask.GoldBrick;
     // }
@@ -204,13 +204,13 @@ public class HubHandler
         var kvp = hubOffsets.FirstOrDefault(k => k.Value == ID);
         if (kvp.Key == 0 && kvp.Value == 0)
         {
-            Mod.Logger?.WriteLineAsync($"[Hub] Could not find Hub RB offset for ID {ID}");
+            Mod.Logger!.WriteLineAsync($"[Hub] Could not find Hub RB offset for ID {ID}");
             return;
         }
         byte* ptr = hubBaseAddress + (nuint)kvp.Key;;
         if (ptr == null || hubBaseAddress == null) 
         {
-            Mod.Logger?.WriteLineAsync($"[Hub] Can't Unlock Hub RB, null pointer at 0x{(nuint)ptr:X}");
+            Mod.Logger!.WriteLineAsync($"[Hub] Can't Unlock Hub RB, null pointer at 0x{(nuint)ptr:X}");
         }
         *ptr |= (byte)BitMask.RedBrick;
     }
@@ -220,13 +220,13 @@ public class HubHandler
         var kvp = hubOffsets.FirstOrDefault(k => k.Value == ID);
         if (kvp.Key == 0 && kvp.Value == 0)
         {
-            Mod.Logger?.WriteLineAsync($"[Hub] Could not find Hub SIP offset for ID {ID}");
+            Mod.Logger!.WriteLineAsync($"[Hub] Could not find Hub SIP offset for ID {ID}");
             return;
         }
         byte* ptr = hubBaseAddress + (nuint)kvp.Key;;
         if (ptr == null || hubBaseAddress == null) 
         {
-            Mod.Logger?.WriteLineAsync($"[Hub] Can't Unlock Hub SIP, null pointer at 0x{(nuint)ptr:X}");
+            Mod.Logger!.WriteLineAsync($"[Hub] Can't Unlock Hub SIP, null pointer at 0x{(nuint)ptr:X}");
         }
         *ptr |= (byte)BitMask.StudentInPeril;
     }
@@ -239,7 +239,7 @@ public class HubHandler
 
             if (ptr == null)
             {
-                Mod.Logger?.WriteLineAsync($"Hub pointer invalid at offset 0x{kvp.Key:X}");
+                Mod.Logger!.WriteLineAsync($"Hub pointer invalid at offset 0x{kvp.Key:X}");
                 continue;
             }
             *ptr &= unchecked((byte)~(byte)BitMask.RedBrick);
@@ -255,10 +255,10 @@ public class HubHandler
         byte* ptr = redBrickPurchBaseAddress + byteOffset;
         if (ptr == null || redBrickPurchBaseAddress == null) 
         {
-            Mod.Logger?.WriteLineAsync($"Can't Unlock Red Brick, null pointer at 0x{(nuint)ptr:X}");
+            Mod.Logger!.WriteLineAsync($"Can't Unlock Red Brick, null pointer at 0x{(nuint)ptr:X}");
             return;
         } 
-        // Mod.Logger?.WriteLineAsync($"Unlocking Red Brick ID {id} at byte offset {byteOffset}, bit offset {bitOffset}");
+        // Mod.Logger!.WriteLineAsync($"Unlocking Red Brick ID {id} at byte offset {byteOffset}, bit offset {bitOffset}");
         *ptr |= (byte)(1 << bitOffset);
     }
 
@@ -273,7 +273,7 @@ public class HubHandler
 
     public static unsafe void HandlePurpleStud()
     {
-        int purpleStudCount = Mod.LHP2_Archipelago?.CountItemsReceivedWithId(699) ?? 0;
+        int purpleStudCount = Mod.LHP2_Archipelago!.CountItemsReceivedWithId(699);
         // Console.WriteLine($"Handling Purple Stud. Count received from Archipelago: {purpleStudCount}");
         // Console.WriteLine($"Current Purple Stud count: {*purpleCountAddress}");
         // Console.WriteLine($"Purple Stud Address: 0x{(nuint)purpleCountAddress:X}");
@@ -283,15 +283,15 @@ public class HubHandler
         }
         if (studTotalBaseAddress == null || purpleCountAddress == null)        
         {
-            Mod.Logger?.WriteLineAsync($"Can't Update Stud Total, null pointer at 0x{(nuint)studTotalBaseAddress:X}");
+            Mod.Logger!.WriteLineAsync($"Can't Update Stud Total, null pointer at 0x{(nuint)studTotalBaseAddress:X}");
             return;
         }
         if ( *purpleCountAddress < purpleStudCount)
         {
             *purpleCountAddress += 1;
             *studTotalBaseAddress += 10000;
-            // Mod.Logger?.WriteLineAsync($"Updating Stud Total at 0x{(nuint)studTotalBaseAddress:X}");
-            // Mod.Logger?.WriteLineAsync($"Purple Studs received: {purpleStudCount}, Purple Studs counted: {*purpleCountAddress}");
+            // Mod.Logger!.WriteLineAsync($"Updating Stud Total at 0x{(nuint)studTotalBaseAddress:X}");
+            // Mod.Logger!.WriteLineAsync($"Purple Studs received: {purpleStudCount}, Purple Studs counted: {*purpleCountAddress}");
         }
 
     }
@@ -316,7 +316,7 @@ public class HubHandler
         byte* ptr = goldBrickBaseAddress + 0x01A7A;
         if (ptr == null || goldBrickBaseAddress == null) 
         {
-            Mod.Logger?.WriteLineAsync($"Can't Show Gold Bricks, null pointer at 0x{(nuint)ptr:X}");
+            Mod.Logger!.WriteLineAsync($"Can't Show Gold Bricks, null pointer at 0x{(nuint)ptr:X}");
             return;
         } 
         *ptr = goldBrickCount;
@@ -350,10 +350,10 @@ public class HubHandler
         *y7MapPtr = 0x37;
         *y8MapPtr = 0x38;
 
-        Mod.Logger?.WriteLineAsync($"y5MapPtr is 0x{(nuint)y5MapPtr:X} and the value is 0x{*y5MapPtr:X}");
-        Mod.Logger?.WriteLineAsync($"y6MapPtr is 0x{(nuint)y6MapPtr:X} and the value is 0x{*y6MapPtr:X}");
-        Mod.Logger?.WriteLineAsync($"y7MapPtr is 0x{(nuint)y7MapPtr:X} and the value is 0x{*y7MapPtr:X}");
-        Mod.Logger?.WriteLineAsync($"y8MapPtr is 0x{(nuint)y8MapPtr:X} and the value is 0x{*y8MapPtr:X}");
+        Mod.Logger!.WriteLineAsync($"y5MapPtr is 0x{(nuint)y5MapPtr:X} and the value is 0x{*y5MapPtr:X}");
+        Mod.Logger!.WriteLineAsync($"y6MapPtr is 0x{(nuint)y6MapPtr:X} and the value is 0x{*y6MapPtr:X}");
+        Mod.Logger!.WriteLineAsync($"y7MapPtr is 0x{(nuint)y7MapPtr:X} and the value is 0x{*y7MapPtr:X}");
+        Mod.Logger!.WriteLineAsync($"y8MapPtr is 0x{(nuint)y8MapPtr:X} and the value is 0x{*y8MapPtr:X}");
     }
 
     public static unsafe void SwitchYears(int year)
@@ -385,7 +385,7 @@ public class HubHandler
                 *y8MapPtr = (byte)(0x30 + year);
                 break;
             default:
-                Mod.Logger?.WriteLineAsync("Can't switch years, not in hub.");
+                Mod.Logger!.WriteLineAsync("Can't switch years, not in hub.");
                 break;
         }
     }
@@ -411,9 +411,9 @@ public class HubHandler
 
     public static unsafe void HandleGhostPaths(int eax, int edx)
     {
-        Mod.Logger?.WriteLineAsync("Handling Ghost Paths");
+        Mod.Logger!.WriteLineAsync("Handling Ghost Paths");
         ushort dx = (ushort)(edx & 0xFFFF);
-        Mod.Logger?.WriteLineAsync($"eax: 0x{eax:X}, edx: 0x{edx:X}, dx: 0x{dx:X}");
+        Mod.Logger!.WriteLineAsync($"eax: 0x{eax:X}, edx: 0x{edx:X}, dx: 0x{dx:X}");
 
         byte* y5GhostPtr = ghostPathBaseAddress + 0x20;
         byte* y5GhostPtr2 = ghostPathBaseAddress + 0x21;
@@ -475,7 +475,7 @@ public class HubHandler
                     // Game.LessonRestoreReturnToHub();
                     break;
                 default:
-                    Mod.Logger?.WriteLineAsync($"Y5 Level Beaten, doing nothing: 0x{dx:X}");
+                    Mod.Logger!.WriteLineAsync($"Y5 Level Beaten, doing nothing: 0x{dx:X}");
                     break;
             }
         } 
@@ -520,7 +520,7 @@ public class HubHandler
                     Game.CheckAndReportLocation(1023); // Send Y6 Story Complete
                     break;
                 default:
-                    Mod.Logger?.WriteLineAsync($"Y6 Level Beaten, doing nothing: 0x{dx:X}");
+                    Mod.Logger!.WriteLineAsync($"Y6 Level Beaten, doing nothing: 0x{dx:X}");
                     break;
             }
         } 
@@ -534,13 +534,13 @@ public class HubHandler
             } 
             else 
             {
-                Mod.Logger?.WriteLineAsync($"Y7 Level Beaten, doing nothing with eax: 0x{eax:X} and dx: 0x{dx:X}");
+                Mod.Logger!.WriteLineAsync($"Y7 Level Beaten, doing nothing with eax: 0x{eax:X} and dx: 0x{dx:X}");
             }
             
         } 
         else 
         {
-            Mod.Logger?.WriteLineAsync($"Y8 Level Beaten, doing nothing with eax: 0x{eax:X} and dx: 0x{dx:X}");
+            Mod.Logger!.WriteLineAsync($"Y8 Level Beaten, doing nothing with eax: 0x{eax:X} and dx: 0x{dx:X}");
         }
 
     }
@@ -566,10 +566,10 @@ public class HubHandler
     {
         if (leaky2LondonAddress == mapFlagsBaseAddress + 0x40)
         {
-            Mod.Logger?.WriteLineAsync("Leaky Cauldron Save info hasn't been written yet.");
+            Mod.Logger!.WriteLineAsync("Leaky Cauldron Save info hasn't been written yet.");
             return;
         }
-        Mod.Logger?.WriteLineAsync($"Turning Off Leaky Cutscenes: Address is 0x{(nuint)leaky2LondonAddress:X}");
+        Mod.Logger!.WriteLineAsync($"Turning Off Leaky Cutscenes: Address is 0x{(nuint)leaky2LondonAddress:X}");
         *leaky2LondonAddress |= 1 << 0; // Ensure Normal Loading Zones are on
         *leaky2LondonAddress |= 1 << 1; // Ensure Normal Loading Zones are on
 
@@ -577,7 +577,7 @@ public class HubHandler
         *leaky2LondonAddress &= unchecked((byte)~(1 << 3)); // Clear Seven Harrys Cutscene
 
         byte* leaky2LondonAddress2 = leaky2LondonAddress + 0x2;
-        Mod.Logger?.WriteLineAsync($"Address of second Leaky Cauldron flag is 0x{(nuint)leaky2LondonAddress2:X}");
+        Mod.Logger!.WriteLineAsync($"Address of second Leaky Cauldron flag is 0x{(nuint)leaky2LondonAddress2:X}");
         *leaky2LondonAddress2 &= unchecked((byte)~(1 << 4)); // Clear Thief's Downfall Cutscene
     }
 
@@ -585,14 +585,14 @@ public class HubHandler
     {
         if (hogPath2CourtyardAddress == mapFlagsBaseAddress + 0x40)
         {
-            Mod.Logger?.WriteLineAsync("HogsPath Save info hasn't been written yet.");
+            Mod.Logger!.WriteLineAsync("HogsPath Save info hasn't been written yet.");
             return;
         }
-        Mod.Logger?.WriteLineAsync($"Updating HogsPath Flags; Address is 0x{(nuint)hogPath2CourtyardAddress:X}");
+        Mod.Logger!.WriteLineAsync($"Updating HogsPath Flags; Address is 0x{(nuint)hogPath2CourtyardAddress:X}");
         *hogPath2CourtyardAddress &= unchecked((byte)~(1 << 5)); // Clear Y5 Hogs Intro Cutscene
         *hogPath2CourtyardAddress |= 1 << 7; // Clear Y6 Hogs Intro Cutscene (Note that this one is inverted logic in-game)
         hogPath2CourtyardAddress -= 0x359; // Adjust to open hogsmeade
-        Mod.Logger?.WriteLineAsync($"Adjusted HogsPath Address to 0x{(nuint)hogPath2CourtyardAddress:X}");
+        Mod.Logger!.WriteLineAsync($"Adjusted HogsPath Address to 0x{(nuint)hogPath2CourtyardAddress:X}");
         *hogPath2CourtyardAddress |= 1 << 2; // Open the gate to Hogsmeade
     }
 
@@ -600,12 +600,12 @@ public class HubHandler
     {
         if (wildernessAddress == mapFlagsBaseAddress + 0x40)
         {
-            Mod.Logger?.WriteLineAsync("Wilderness Save info hasn't been written yet.");
+            Mod.Logger!.WriteLineAsync("Wilderness Save info hasn't been written yet.");
             return;
         }
-        Mod.Logger?.WriteLineAsync("Updating Wilderness Flags");
+        Mod.Logger!.WriteLineAsync("Updating Wilderness Flags");
         byte* invisibleWallFlag = wildernessAddress + 0x2905;
-        Mod.Logger?.WriteLineAsync($"Address of Wilderness Invisible Wall Flag is 0x{(nuint)invisibleWallFlag:X}");
+        Mod.Logger!.WriteLineAsync($"Address of Wilderness Invisible Wall Flag is 0x{(nuint)invisibleWallFlag:X}");
         *invisibleWallFlag &= unchecked((byte)~(1 << 2)); // Turn off the invisible wall by the rock pile
         invisibleWallFlag += 0x03; 
         *invisibleWallFlag &= unchecked((byte)~(1 << 6)); // Turn off the invisible wall by the snowman
@@ -614,7 +614,7 @@ public class HubHandler
         invisibleWallFlag += 0x03;
         *invisibleWallFlag &= unchecked((byte)~(1 << 6)); // Turn off the invisible wall by the Lake  
         byte* xenoTokenFlag = wildernessAddress + 0x2D8F;
-        Mod.Logger?.WriteLineAsync($"Address of Wilderness Xenophilius Token Flag is 0x{(nuint)xenoTokenFlag:X}");
+        Mod.Logger!.WriteLineAsync($"Address of Wilderness Xenophilius Token Flag is 0x{(nuint)xenoTokenFlag:X}");
         *xenoTokenFlag |= 1 << 3; // Ensure the Xenophilius token spawns
         xenoTokenFlag -= 0x12;
         *xenoTokenFlag |= 1 << 3; // Ensure the Token has a hitbox
@@ -624,12 +624,12 @@ public class HubHandler
     {
         if (quadAddress == mapFlagsBaseAddress + 0x40)
         {
-            Mod.Logger?.WriteLineAsync("Quad Save info hasn't been written yet.");
+            Mod.Logger!.WriteLineAsync("Quad Save info hasn't been written yet.");
             return;
         }
-        Mod.Logger?.WriteLineAsync($"Updating Quad Flags; Address is 0x{(nuint)quadAddress:X}");
+        Mod.Logger!.WriteLineAsync($"Updating Quad Flags; Address is 0x{(nuint)quadAddress:X}");
         byte* mcgBlackFlag = quadAddress + 0x20B6;
-        Mod.Logger?.WriteLineAsync($"Address of Quad McGonagall Flag is 0x{(nuint)mcgBlackFlag:X}");
+        Mod.Logger!.WriteLineAsync($"Address of Quad McGonagall Flag is 0x{(nuint)mcgBlackFlag:X}");
         *mcgBlackFlag |= 1 << 1; // Ensure the Token is spawned
         mcgBlackFlag += 0x1A;
         *mcgBlackFlag |= 1 << 1; // Ensure the Token has a hitbox
@@ -662,7 +662,7 @@ public class HubHandler
             }
         }
 
-        Mod.Logger?.WriteLineAsync($"Map Flags Address for {mapName} is 0x{(nuint)returningAddress:X}");
+        Mod.Logger!.WriteLineAsync($"Map Flags Address for {mapName} is 0x{(nuint)returningAddress:X}");
         return returningAddress;
 
     }
@@ -673,17 +673,17 @@ public class HubHandler
 
         if (ActiveLoadingZoneBaseAddress == null)
         {
-            Mod.Logger?.WriteLineAsync("Active Loading Zone Base Address is null, can't clear Leaky2London Y7 flag.");
+            Mod.Logger!.WriteLineAsync("Active Loading Zone Base Address is null, can't clear Leaky2London Y7 flag.");
         }
         byte* ptr = *(byte**)(ActiveLoadingZoneBaseAddress + 0xB10); // First Pointer
-        Mod.Logger?.WriteLineAsync($"Active Loading Zone Pointer is 0x{(nuint)ptr:X}");
+        Mod.Logger!.WriteLineAsync($"Active Loading Zone Pointer is 0x{(nuint)ptr:X}");
         if (ptr == null || (nuint)ptr == 0xB10 || (nuint)ptr == 0xB11)
         {
-            Mod.Logger?.WriteLineAsync("Active Loading Zone Pointer is null, can't clear Leaky2London Y7 flag.");
+            Mod.Logger!.WriteLineAsync("Active Loading Zone Pointer is null, can't clear Leaky2London Y7 flag.");
             return;
         }
         ptr += 0x7A; // Second Pointer
-        Mod.Logger?.WriteLineAsync($"Clearing Leaky2London Y7 Flag at address 0x{(nuint)ptr:X}");
+        Mod.Logger!.WriteLineAsync($"Clearing Leaky2London Y7 Flag at address 0x{(nuint)ptr:X}");
         // *ptr = 1; // Remove the Loading Zone Flag to bring to level
     }
 }

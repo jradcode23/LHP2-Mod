@@ -31,7 +31,7 @@ public class Mod : ModBase // <= Do not Remove.
 
 #if DEBUG
         // Attaches debugger in debug mode; ignored in release.
-        Debugger.Launch();
+        // Debugger.Launch();
 #endif
 
         GameInstance = new Game();
@@ -40,7 +40,8 @@ public class Mod : ModBase // <= Do not Remove.
         if (Configuration == null)
             return;
         LHP2_Archipelago = new ArchipelagoHandler(Configuration.ArchipelagoOptions.Server, Configuration.ArchipelagoOptions.Port, Configuration.ArchipelagoOptions.Slot, Configuration.ArchipelagoOptions.Password);
-        Logger.WriteLine($"[{_modConfig.ModId}] Mod Initialized with Server: {Configuration.ArchipelagoOptions.Server}, Port: {Configuration.ArchipelagoOptions.Port}, Slot: {Configuration.ArchipelagoOptions.Slot}");
+        Logger.WriteLineAsync($"[{_modConfig.ModId}] Mod Initialized with Server: {Configuration.ArchipelagoOptions.Server}, Port: {Configuration.ArchipelagoOptions.Port}, Slot: {Configuration.ArchipelagoOptions.Slot}");
+        Logger.WriteLineAsync($"[{_modConfig.ModId}] Mod Version: {_modConfig.ModId}");
 
         var thread1 = new Thread(start: () =>
         {
@@ -61,7 +62,7 @@ public class Mod : ModBase // <= Do not Remove.
     public override void ConfigurationUpdated(Config configuration)
     {
         Configuration = configuration;
-        Logger?.WriteLine($"[{_modConfig.ModId}] Config Updated: Applying");
+        Logger!.WriteLine($"[{_modConfig.ModId}] Config Updated: Applying");
     }
 
     public static void InitOnMenu()
@@ -69,15 +70,15 @@ public class Mod : ModBase // <= Do not Remove.
         int hookCount = Game._asmHooks.Count;
         if (hookCount > 0)
         {
-            Logger?.WriteLine($"Hooks already set up. Count: {hookCount}, skipping setup.");
+            Logger!.WriteLine($"Hooks already set up. Count: {hookCount}, skipping setup.");
             return;
         }
         Game.ModifyInstructions();
         if (Mod._hooks != null)
         {
-            Logger?.WriteLine("Menu loaded, setting up hooks. Please wait for hook setup before loading a save file.");
+            Logger!.WriteLine("Menu loaded, setting up hooks. Please wait for hook setup before loading a save file.");
             GameInstance!.SetupHooks(Mod._hooks!);
-            Logger?.WriteLine("Hooks set up complete. You may now load a save file.");
+            Logger!.WriteLine("Hooks set up complete. You may now load a save file.");
         }
     }
 

@@ -243,10 +243,10 @@ public class CharacterHandler
         byte* ptr = characterBaseAddress + byteOffset + TokenOffset;
         if (ptr == null || characterBaseAddress == null) 
         {
-            Mod.Logger?.WriteLineAsync($"Can't Unlock Character Purchase, null pointer at 0x{(nuint)ptr:X}");
-            Mod.Logger?.WriteLineAsync($"Character Base address is: 0x{(nuint)characterBaseAddress:X}");
-            Mod.Logger?.WriteLineAsync($"byteOffset is: {byteOffset}");
-            Mod.Logger?.WriteLineAsync($"bitOffset is: {bitOffset}");
+            Mod.Logger!.WriteLineAsync($"Can't Unlock Character Purchase, null pointer at 0x{(nuint)ptr:X}");
+            Mod.Logger!.WriteLineAsync($"Character Base address is: 0x{(nuint)characterBaseAddress:X}");
+            Mod.Logger!.WriteLineAsync($"byteOffset is: {byteOffset}");
+            Mod.Logger!.WriteLineAsync($"bitOffset is: {bitOffset}");
             return;
         } 
         *ptr |= (byte)(1 << bitOffset);
@@ -264,10 +264,10 @@ public class CharacterHandler
             byte* ptr = characterBaseAddress + byteOffset + TokenOffset;
             if (ptr == null || characterBaseAddress == null) 
                 {
-                    Mod.Logger?.WriteLineAsync($"Can't Reset Character Purchase, null pointer at 0x{(nuint)ptr:X}");
-                    Mod.Logger?.WriteLineAsync($"Character Base address is: 0x{(nuint)characterBaseAddress:X}");
-                    Mod.Logger?.WriteLineAsync($"byteOffset is: {byteOffset}");
-                    Mod.Logger?.WriteLineAsync($"bitOffset is: {bitOffset}");
+                    Mod.Logger!.WriteLineAsync($"Can't Reset Character Purchase, null pointer at 0x{(nuint)ptr:X}");
+                    Mod.Logger!.WriteLineAsync($"Character Base address is: 0x{(nuint)characterBaseAddress:X}");
+                    Mod.Logger!.WriteLineAsync($"byteOffset is: {byteOffset}");
+                    Mod.Logger!.WriteLineAsync($"bitOffset is: {bitOffset}");
                     return;
                 } 
             *ptr &= (byte)~(1 << bitOffset);
@@ -281,9 +281,9 @@ public class CharacterHandler
         byte* ptr = characterBaseAddress + byteOffset + unlockOffset;
         if (ptr == null || characterBaseAddress == null) 
         {
-            Mod.Logger?.WriteLineAsync($"Can't Unlock Character, null pointer at 0x{(nuint)ptr:X}");
-            Mod.Logger?.WriteLineAsync($"Character Base address is: 0x{(nuint)characterBaseAddress:X}");
-            Mod.Logger?.WriteLineAsync($"byteOffset is: {byteOffset}");
+            Mod.Logger!.WriteLineAsync($"Can't Unlock Character, null pointer at 0x{(nuint)ptr:X}");
+            Mod.Logger!.WriteLineAsync($"Character Base address is: 0x{(nuint)characterBaseAddress:X}");
+            Mod.Logger!.WriteLineAsync($"byteOffset is: {byteOffset}");
             return;
         } 
         *ptr = 1;
@@ -300,9 +300,9 @@ public class CharacterHandler
             byte* ptr = characterBaseAddress + byteOffset + unlockOffset;
             if (ptr == null || characterBaseAddress == null) 
                 {
-                    Mod.Logger?.WriteLineAsync($"Can't Unlock Character, null pointer at 0x{(nuint)ptr:X}");
-                    Mod.Logger?.WriteLineAsync($"Character Base address is: 0x{(nuint)characterBaseAddress:X}");
-                    Mod.Logger?.WriteLineAsync($"byteOffset is: {byteOffset}");
+                    Mod.Logger!.WriteLineAsync($"Can't Unlock Character, null pointer at 0x{(nuint)ptr:X}");
+                    Mod.Logger!.WriteLineAsync($"Character Base address is: 0x{(nuint)characterBaseAddress:X}");
+                    Mod.Logger!.WriteLineAsync($"byteOffset is: {byteOffset}");
 
                     return;
                 } 
@@ -320,7 +320,7 @@ public class CharacterHandler
         }
 
         int value = (int)(byteIndex * 8 + bitIndex );
-        Mod.Logger?.WriteLineAsync($"Hub Token Value is: {value:X}");
+        Mod.Logger!.WriteLineAsync($"Hub Token Value is: {value:X}");
         var kvp = characterMap.FirstOrDefault(k => k.Value == value);
         return kvp.Equals(default(KeyValuePair<int,int>)) ? -1 : kvp.Key;
     }
@@ -329,7 +329,7 @@ public class CharacterHandler
     {
         ushort bx = (ushort)(ID & 0xFFFF);
         bx -= 0x70; // There is a base 0x70 offset
-        Mod.Logger?.WriteLineAsync($"Level Token bx is: {bx}");
+        Mod.Logger!.WriteLineAsync($"Level Token bx is: {bx}");
         var kvp = characterMap.FirstOrDefault(k => k.Value == bx);
         return kvp.Equals(default(KeyValuePair<int,int>)) ? -1 : kvp.Key;
     }
