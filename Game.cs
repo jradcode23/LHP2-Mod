@@ -563,6 +563,13 @@ public class Game
             "popfd",
         };
         _asmHooks.Add(hooks.CreateAsmHook(ChangeYearsHook, (int)(Mod.BaseAddress + 0x3A584B), AsmHookBehaviour.ExecuteAfter).Activate());
+
+        string[] LoadedSpellHook =
+        {
+            "use32",
+            "xor eax, eax",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(LoadedSpellHook, (int)(Mod.BaseAddress + 0x4B18B0), AsmHookBehaviour.ExecuteFirst).Activate());
     }
 
     [Function(CallingConventions.Fastcall)]
@@ -902,6 +909,7 @@ public class Game
             if (Mod.GameInstance!.LevelID >= 1 && Mod.GameInstance!.LevelID <= 4)
             {
                 ResetItems();
+                SpellHandler.ResetSpells();
                 Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
                 Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
             }
