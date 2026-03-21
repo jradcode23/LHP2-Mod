@@ -642,6 +642,7 @@ public class HubHandler
         *mcgBlackFlag |= 1 << 1; // Ensure the Token has a hitbox
     }
 
+    // TODO: missing 3 more blocks
     private static unsafe void AdjustHogsStat()
     {
         if (hogsStatAddress == mapFlagsBaseAddress + 0x40)
