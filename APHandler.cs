@@ -3,6 +3,7 @@ using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.Enums;
 using Archipelago.MultiClient.Net.Helpers;
 using Archipelago.MultiClient.Net.MessageLog.Messages;
+using Archipelago.MultiClient.Net.Packets;
 
 namespace LHP2_Archi_Mod;
 
@@ -88,6 +89,7 @@ public class ArchipelagoHandler
             SlotDataInstance = new(_loginSuccessful.SlotData);
             SlotDataInstance.PrintData();
             Mod.InitOnMenu();
+            _session.DataStorage[Scope.Slot, "map"] = 402;
             new Thread(RunCheckLocationsFromList).Start();
             new Thread(HandleQueuedItems).Start();
             //resync here
@@ -263,7 +265,12 @@ public class ArchipelagoHandler
 
     static void OnMessageReceived(LogMessage message)
     {
-        Console.WriteLine(message.ToString() ?? string.Empty);
+        Mod.Logger!.WriteLineAsync(message.ToString() ?? string.Empty);
+    }
+
+    public void SendMapID(int MapID)
+    {
+        _session.DataStorage[Scope.Slot,"map"] = MapID;
     }
 
 }

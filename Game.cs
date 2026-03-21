@@ -828,6 +828,7 @@ public class Game
             LessonRestoreReturnToHub();
         }
         Mod.Logger!.WriteLineAsync($"Map ID updated to {value}.");
+        Mod.LHP2_Archipelago!.SendMapID(value);
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
