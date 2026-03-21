@@ -19,6 +19,7 @@ public class HubHandler
     private static unsafe byte* hogPath2CourtyardAddress = null;
     private static unsafe byte* wildernessAddress = null;
     private static unsafe byte* quadAddress = null;
+    private static unsafe byte* hogsStatAddress = null;
 
     [Flags]
     public enum BitMask
@@ -551,6 +552,8 @@ public class HubHandler
         hogPath2CourtyardAddress = GetHubMapAddress("HogsApproach", 0x1A90); // HogPath2Courtyard Loading Zone
         wildernessAddress = GetHubMapAddress("ForestHub", 0); // Wilderness
         quadAddress = GetHubMapAddress("Quad", 0); // Quad
+        hogsStatAddress = GetHubMapAddress("HogsStation", 0); //HogsStation
+        byte* y6GhostPtr = HubHandler.ghostPathBaseAddress + 0x34; 
 
         AdjustLeakyCauldron();
         AdjustHogsPath();
@@ -559,6 +562,10 @@ public class HubHandler
         {
             AdjustWilderness();
             AdjustQuad();
+        }
+        if (year != 6 && (!Mod.LHP2_Archipelago!.IsLocationChecked(1016) || (*y6GhostPtr & (1 << 2)) == 0))
+        {
+            AdjustHogsStat(); // Remove the barrier
         }
     }
 
@@ -633,6 +640,33 @@ public class HubHandler
         *mcgBlackFlag |= 1 << 1; // Ensure the Token is spawned
         mcgBlackFlag += 0x1A;
         *mcgBlackFlag |= 1 << 1; // Ensure the Token has a hitbox
+    }
+
+    private static unsafe void AdjustHogsStat()
+    {
+        if (hogsStatAddress == mapFlagsBaseAddress + 0x40)
+        {
+            Mod.Logger!.WriteLineAsync("Quad Save info hasn't been written yet.");
+            return;            
+        }
+        Mod.Logger!.WriteLineAsync($"Updating Hogs Station Flags. Address is 0x{(nuint)hogsStatAddress}");
+        hogsStatAddress += 0xA3;
+        Mod.Logger!.WriteLineAsync($"First Hogs Station Flag Address is 0x{(nuint)hogsStatAddress}");
+        *hogsStatAddress = 82; // Block 1
+        hogsStatAddress += 7;
+        *hogsStatAddress = 82; // Block 2
+        hogsStatAddress += 7;
+        *hogsStatAddress = 82; // Block 3
+        hogsStatAddress += 7;
+        *hogsStatAddress = 64; // Invisible wall 1 (side wall)
+        hogsStatAddress += 7;
+        *hogsStatAddress = 64; // Invisible wall 2 (front wall)
+        hogsStatAddress += 114;
+        *hogsStatAddress &= unchecked((byte)~(1 << 2)); // Block 4
+        hogsStatAddress += 3; 
+        *hogsStatAddress &= unchecked((byte)~(1 << 6)); // Block 5
+        hogsStatAddress += 2;
+        *hogsStatAddress &= unchecked((byte)~(1 << 2)); // Block 6
     }
 
     private static unsafe byte* GetHubMapAddress(string mapName, int offset)
