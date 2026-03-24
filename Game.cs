@@ -564,12 +564,12 @@ public class Game
         };
         _asmHooks.Add(hooks.CreateAsmHook(ChangeYearsHook, (int)(Mod.BaseAddress + 0x3A584B), AsmHookBehaviour.ExecuteAfter).Activate());
 
-        string[] LoadedSpellHook =
-        {
-            "use32",
-            "xor eax, eax",
-        };
-        _asmHooks.Add(hooks.CreateAsmHook(LoadedSpellHook, (int)(Mod.BaseAddress + 0x4B18B0), AsmHookBehaviour.ExecuteFirst).Activate());
+        // string[] LoadedSpellHook =
+        // {
+        //     "use32",
+        //     "xor eax, eax",
+        // };
+        // _asmHooks.Add(hooks.CreateAsmHook(LoadedSpellHook, (int)(Mod.BaseAddress + 0x4B18B0), AsmHookBehaviour.ExecuteFirst).Activate());
     }
 
     [Function(CallingConventions.Fastcall)]
