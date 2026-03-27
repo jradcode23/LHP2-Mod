@@ -208,7 +208,8 @@ public class HubHandler
             Mod.Logger!.WriteLineAsync($"[Hub] Could not find Hub RB offset for ID {ID}");
             return;
         }
-        byte* ptr = hubBaseAddress + (nuint)kvp.Key;;
+        byte* ptr = hubBaseAddress + (nuint)kvp.Key;
+        // Mod.Logger!.WriteLineAsync($"Unlocking Hub RB at 0x{(nuint)ptr:X} using ID 0x{ID}");
         if (ptr == null || hubBaseAddress == null) 
         {
             Mod.Logger!.WriteLineAsync($"[Hub] Can't Unlock Hub RB, null pointer at 0x{(nuint)ptr:X}");
