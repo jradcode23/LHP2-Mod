@@ -271,6 +271,7 @@ public class Game
     private static IReverseWrapper<OpenPolyjuicePot> _reverseWrapOnOpenPolyjuicePot = default!;
     private static IReverseWrapper<ClosePolyjuicePot> _reverseWrapOnClosePolyjuicePot = default!;
     private static IReverseWrapper<ChangeCharacters> _reverseWrapOnChangeCharacters = default!;
+    private static IReverseWrapper<MakeSpellVisible> _reverseWrapOnMakeSpellVisible = default!;
     private static IReverseWrapper<ChangeYears> _reverseWrapChangeYears = default!;
 
     public void SetupHooks(IReloadedHooks hooks)
@@ -550,6 +551,16 @@ public class Game
             "popad",
             "popfd",
             "pop edx",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(ChangeCharactersHook, (int)(Mod.BaseAddress + 0x5440EC), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string [] MakeSpellVisibleHook =
+        {
+            "use 32",
+            "push edi",
+            "mov edi, esi",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnMakeSpellVisible, out _reverseWrapOnMakeSpellVisible)}",
+            "pop edi",
         };
         _asmHooks.Add(hooks.CreateAsmHook(ChangeCharactersHook, (int)(Mod.BaseAddress + 0x5440EC), AsmHookBehaviour.ExecuteFirst).Activate());
 
@@ -858,6 +869,44 @@ public class Game
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
             SpellHandler.SpellMapLogic(Mod.GameInstance!.MapID);
         }
+    }
+
+    [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.edi],
+    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+
+    public delegate byte MakeSpellVisible(int eax, int edi);
+
+    public static byte OnMakeSpellVisible(int eax, int edi)
+    {
+        byte alValue = (byte)(eax & 0xFF);
+
+        if (alValue != 1)
+            return alValue;
+
+        switch (edi)
+        {
+            case 0:
+                break;
+            case 0x10:
+                alValue = SpellHandler.HandleSpellVisibility(23); // Check for Diffindo
+                break;
+            case 0x20:
+                alValue = SpellHandler.HandleSpellVisibility(27); // Check for Agua
+                break;
+            case 0x28:
+                alValue = SpellHandler.HandleSpellVisibility(28); // Check for Focus
+                break;
+            case 0x30:
+                alValue = SpellHandler.HandleSpellVisibility(29); // Check for Expecto
+                break;
+            case 0x38:
+                alValue = SpellHandler.HandleSpellVisibility(30); // Check for Reducto
+                break;
+            default:
+                break;
+        }
+
+        return alValue;
     }
 
     [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.esp], 

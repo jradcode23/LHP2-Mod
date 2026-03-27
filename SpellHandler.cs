@@ -415,9 +415,36 @@ public class SpellHandler
         return (b & mask) != 0;
     }
 
+    public static unsafe byte HandleSpellVisibility(int spellId)
+    {
+        int byteOffset = spellId / 8;
+        int bitOffset = spellId % 8;
+
+        bool hasAbility = HasAbility(Mod.GameInstance!.CurrentCharID, byteOffset, bitOffset);
+        int spellCount = Mod.LHP2_Archipelago!.CountItemsReceivedWithId(spellId + Game.SpellPurchOffset);
+        bool spellUnlocked = spellCount >= 1;
+
+        if (hasAbility && spellUnlocked)
+            return 1;
+        else
+        {
+            byte* spellSelectedAddress = spellSelectedBaseAddress + 0x18;
+            Mod.Logger!.WriteLineAsync($"Selected Spell Address: {(nuint)spellSelectedAddress}");
+            *spellSelectedAddress = 0;
+            spellSelectedAddress += 0x50;
+            *spellSelectedAddress = 0;
+            byte* activeShootingSpell = activeShootingSpellBaseAddress + 0xED3;
+            Mod.Logger!.WriteLineAsync($"Active Shooting Spell Address: {(nuint)activeShootingSpell}");
+            *activeShootingSpell = 0;
+            return 3;
+        }
+
+    }
+
     private static unsafe readonly byte* spellBaseAddress = (byte*)(Mod.BaseAddress + 0xB06AB0);
     private static unsafe readonly byte* spellVisibilityBaseAddress = (byte*)(Mod.BaseAddress + 0xB067C4);
-
+    private static unsafe readonly byte* spellSelectedBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55968);
+    private static unsafe readonly byte* activeShootingSpellBaseAddress = *(byte**)(Mod.BaseAddress + 0xC53930);
     public static void UnlockSpell(int spellId, int charID)
     {
         if (charID == 0 || charID == 0xFFFF)
@@ -667,7 +694,7 @@ public class SpellHandler
         }
     }
 
-    public static unsafe  void SpellMapLogic(int map)
+    public static unsafe void SpellMapLogic(int map)
     {
         byte* y5GhostPtr = HubHandler.ghostPathBaseAddress + 0x20;
         byte* y5GhostPtr2 = HubHandler.ghostPathBaseAddress + 0x21;
