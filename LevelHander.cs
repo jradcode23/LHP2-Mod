@@ -181,8 +181,20 @@ public class LevelHandler
         UnlockLevel(LevelData.TheThiefsDownfall);
     }
 
-    public static void ImplementMapLogic(int map)
+    public static unsafe void ImplementMapLogic(int map)
     {
+        byte* y5GhostPtr2 = HubHandler.ghostPathBaseAddress + 0x21;
+        // Game doesn't open WW Courtyard if these two bits are completed so plan is to handle them once map changes after the fact
+        bool locationChecked = Mod.LHP2_Archipelago!.IsLocationChecked(1014);
+        bool bitSet1 = (*y5GhostPtr2 & (1 << 4)) != 0;
+        bool bitSet2 = (*y5GhostPtr2 & (1 << 5)) == 0;
+        // Mod.Logger!.WriteLineAsync($"Location 1014 checked: {locationChecked}, Bit 4 set: {bitSet}, Bit value: {*y5GhostPtr2}");
+        if (locationChecked && bitSet1 && bitSet2 && Mod.GameInstance!.MapID != 293)
+        {
+            *y5GhostPtr2 |= 1 << 5; // Mark A Giant Viruoso Story Complete
+            *y5GhostPtr2 |= 1 << 6; // Mark A Veiled Threat Story Complete
+        }
+
         switch (map)
         {
             // Leaky in Y7 specifically has a weird loading zone thing

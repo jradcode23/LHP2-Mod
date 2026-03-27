@@ -470,8 +470,9 @@ public class HubHandler
                 case 0x1000: // WWW Box Lesson Complete
                     Game.CheckAndReportLocation(1014);
                     *y5GhostPtr2 |= 1 << 4; // Mark OWLs Complete
-                    *y5GhostPtr2 |= 1 << 5; // Mark A Giant Viruoso Story Complete
-                    *y5GhostPtr2 |= 1 << 6; // Mark A Veiled Threat Story Complete
+                    // Game doesn't open WW Courtyard if these 2 are marked complete
+                    // *y5GhostPtr2 |= 1 << 5; // Mark A Giant Viruoso Story Complete
+                    // *y5GhostPtr2 |= 1 << 6; // Mark A Veiled Threat Story Complete
                     Game.CheckAndReportLocation(1015); // Send Y5 Story Complete
                     // Game.LessonRestoreReturnToHub();
                     break;
