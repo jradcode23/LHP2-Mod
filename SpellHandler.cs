@@ -706,6 +706,7 @@ public class SpellHandler
         {
             // DADA Locked
             case 301 when !Mod.LHP2_Archipelago!.IsLocationChecked(1007) || (*y5GhostPtr & (1 << 2)) == 0:
+                SpellHandler.LockPassiveSpell(26); // Lock Polyjuice cause game acts weird if you use it
                 SpellHandler.LockPassiveSpell(46); // Ensure lesson can be beaten since game doesn't like when you already have it
                 Game.LessonRestoreReturnToHub();
                 break;
