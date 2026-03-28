@@ -3,7 +3,7 @@ using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.Enums;
 using Archipelago.MultiClient.Net.Helpers;
 using Archipelago.MultiClient.Net.MessageLog.Messages;
-using Archipelago.MultiClient.Net.Packets;
+using System.Diagnostics.CodeAnalysis;
 
 namespace LHP2_Archi_Mod;
 
@@ -35,6 +35,7 @@ public class ArchipelagoHandler
         CreateSession();
     }
 
+    [MemberNotNull(nameof(_session))]
     private void CreateSession()
     {
         _session = ArchipelagoSessionFactory.CreateSession(Server, Port);
@@ -54,7 +55,7 @@ public class ArchipelagoHandler
 
     private void OnSocketClosed(string reason)
     {
-        Console.WriteLine($"Connection closed ({reason}) Attempting reconnect...");
+        Mod.Logger!.WriteLineAsync($"Connection closed ({reason}) Attempting reconnect...");
         IsConnected = false;
     }
 
@@ -66,8 +67,7 @@ public class ArchipelagoHandler
         {
             Game.CheckGameLoaded();
             Seed = _session.ConnectAsync()?.Result?.SeedName;
-            Console.WriteLine(Seed + Slot);
-
+            Mod.Logger!.WriteLineAsync(Seed + Slot);
 
             result = _session.LoginAsync(
                 game: GAME_NAME,
@@ -99,8 +99,8 @@ public class ArchipelagoHandler
         var errorMessage = $"Failed to Connect to {Server}:{Port} as {Slot}";
         errorMessage = failure.Errors.Aggregate(errorMessage, (current, error) => current + $"\n    {error}");
         errorMessage = failure.ErrorCodes.Aggregate(errorMessage, (current, error) => current + $"\n    {error}");
-        Console.WriteLine(errorMessage);
-        Console.WriteLine($"Attempting reconnect...");
+        Mod.Logger!.WriteLineAsync(errorMessage);
+        Mod.Logger!.WriteLineAsync($"Attempting reconnect...");
         return false;
     }
 
@@ -185,7 +185,7 @@ public class ArchipelagoHandler
                 {
                     if (_queuedItems.TryDequeue(out itemId))
                     {
-                        Console.WriteLine($"Handling queued item with game ID {itemId}");
+                        // Console.WriteLine($"Handling queued item with game ID {itemId}");
                         if (itemId == 699)
                         {
                             HubHandler.HandlePurpleStud();
