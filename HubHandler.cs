@@ -20,6 +20,7 @@ public class HubHandler
     private static unsafe byte* wildernessAddress = null;
     private static unsafe byte* quadAddress = null;
     private static unsafe byte* hogsStatAddress = null;
+    private static unsafe byte* classLobbyAddress = null;
 
     [Flags]
     public enum BitMask
@@ -555,7 +556,9 @@ public class HubHandler
         wildernessAddress = GetHubMapAddress("ForestHub", 0); // Wilderness
         quadAddress = GetHubMapAddress("Quad", 0); // Quad
         hogsStatAddress = GetHubMapAddress("HogsStation", 0); //HogsStation
-        byte* y6GhostPtr = HubHandler.ghostPathBaseAddress + 0x34; 
+        classLobbyAddress = GetHubMapAddress("ClassLobby", 0x1318); // Class Lobby
+        byte* y6GhostPtr = HubHandler.ghostPathBaseAddress + 0x34;
+        byte* y6GhostPtr2 = HubHandler.ghostPathBaseAddress + 0x35;
 
         AdjustLeakyCauldron();
         AdjustHogsPath();
@@ -567,7 +570,11 @@ public class HubHandler
         }
         if (year != 6 && (!Mod.LHP2_Archipelago!.IsLocationChecked(1016) || (*y6GhostPtr & (1 << 2)) == 0))
         {
-            AdjustHogsStat(); // Remove the barrier
+            AdjustHogsStat();
+        }
+        if (year != 6 && (!Mod.LHP2_Archipelago!.IsLocationChecked(1021) || (*y6GhostPtr2 & (1 << 0)) == 0))
+        {
+            AdjustClassLobby();
         }
     }
 
@@ -670,6 +677,17 @@ public class HubHandler
         *hogsStatAddress &= unchecked((byte)~(1 << 6)); // Block 5
         hogsStatAddress += 2;
         *hogsStatAddress &= unchecked((byte)~(1 << 2)); // Block 6
+    }
+
+    private static unsafe void AdjustClassLobby()
+    {
+        if (classLobbyAddress == mapFlagsBaseAddress + 0x40)
+        {
+            Mod.Logger!.WriteLineAsync("Class Lobby Save info hasn't been written yet.");
+            return;
+        }
+
+        *classLobbyAddress &= unchecked((byte)~(1 << 6)); // Clear out being forced into reducto lesson
     }
 
     private static unsafe byte* GetHubMapAddress(string mapName, int offset)
