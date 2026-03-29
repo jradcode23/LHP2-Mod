@@ -640,7 +640,10 @@ public class SpellHandler
         UnlockSpell(55, Mod.GameInstance!.CurrentCharID); // Unknown Spell
 
         byte* darkMagic = HubHandler.hubBaseAddress + 0x19B * 4 + 2;
-        *darkMagic |= 1 << 0;;
+        *darkMagic |= 1 << 0;
+
+        byte* hogPathCauldron = darkMagic + 0x900;
+        *hogPathCauldron |= 1 << 2;
     }
 
     public static unsafe void ResetActiveSpells()
