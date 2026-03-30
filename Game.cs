@@ -9,6 +9,7 @@ namespace LHP2_Archi_Mod;
 
 public class Game
 {
+    public readonly object StateLock = new object();
     public int PrevLevelID { get; private set; } = -1;
     public int LevelID { get; private set; } = -1;
     public int PrevMapID { get; private set; } = -1;
@@ -144,6 +145,8 @@ public class Game
             //NOP Unlock Next Story Level
             Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B809C, [0x90, 0x90, 0x90, 0x90, 0x90]);
 
+            // NOP Hint System
+            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3C733D, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
         }
     }
 
@@ -739,8 +742,13 @@ public class Game
     public delegate void CharacterPurchased(IntPtr ecx, int eax);
     private static void OnCharacterPurchased(IntPtr ecx, int eax)
     {
+        bool prevInShop;
+        lock (Mod.GameInstance!.StateLock)
+        {
+            prevInShop = Mod.GameInstance!.PrevInShop;
+        }
         if ((Mod.GameInstance!.MapID == 366 || Mod.GameInstance!.MapID == 372 
-            || Mod.GameInstance!.MapID == 378 || Mod.GameInstance!.MapID == 382) && Mod.GameInstance!.PrevInShop == true) //Make sure Player is in shop
+            || Mod.GameInstance!.MapID == 378 || Mod.GameInstance!.MapID == 382) && prevInShop == true) //Make sure Player is in shop
         {
             int itemID = CharacterHandler.GetPurchaseCharacterID(ecx, eax);
             if (itemID == -1)
@@ -920,14 +928,20 @@ public class Game
 
         if (eaxBit0Set && lastNibble == 0x08)
         {
-            Mod.GameInstance!.PrevInLevelSelect = true;
+            lock (Mod.GameInstance!.StateLock)
+            {
+                Mod.GameInstance!.PrevInLevelSelect = true;
+            }
             Mod.Logger!.WriteLineAsync("Level Selector Opened");
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, MaxItemID);
         }
         if (eaxBit0Set && lastNibble == 0x0C)
         {
-            Mod.GameInstance!.PrevInShop = true;
+            lock (Mod.GameInstance!.StateLock)
+            {
+                Mod.GameInstance!.PrevInShop = true;
+            }
             Mod.Logger!.WriteLineAsync("Shop Opened");
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(tokenOffset, levelOffset - 25);
@@ -936,31 +950,47 @@ public class Game
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(RedBrickCollectOffset, RedBrickPurchOffset - 17);
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(RedBrickPurchOffset, 1026);
         }
-        else if (!eaxBit0Set && Mod.GameInstance!.PrevInLevelSelect)
+        else
         {
-            Mod.GameInstance!.PrevInLevelSelect = false;
-            Mod.Logger!.WriteLineAsync("Level Selector Closed");
-
-            // Game enters a level before thinking you are out of shop, so if we stay in hub, resetting levels here
-            if (Mod.GameInstance!.LevelID >= 1 && Mod.GameInstance!.LevelID <= 4)
+            bool prevInLevelSelect, prevInShop;
+            lock (Mod.GameInstance!.StateLock)
             {
-                ResetItems();
-                Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
-                Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
+                prevInLevelSelect = Mod.GameInstance!.PrevInLevelSelect;
+                prevInShop = Mod.GameInstance!.PrevInShop;
             }
-        }
-        else if (!eaxBit0Set && Mod.GameInstance!.PrevInShop)
-        {
-            Mod.GameInstance!.PrevInShop = false;
-            Mod.Logger!.WriteLineAsync("Shop Selector Closed");
-
-            // Game enters a level before thinking you are out of shop, so if we stay in hub, resetting levels here
-            if (Mod.GameInstance!.LevelID >= 1 && Mod.GameInstance!.LevelID <= 4)
+            
+            if (!eaxBit0Set && prevInLevelSelect)
             {
-                ResetItems();
-                SpellHandler.ResetSpells();
-                Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
-                Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
+                lock (Mod.GameInstance!.StateLock)
+                {
+                    Mod.GameInstance!.PrevInLevelSelect = false;
+                }
+                Mod.Logger!.WriteLineAsync("Level Selector Closed");
+
+                // Game enters a level before thinking you are out of shop, so if we stay in hub, resetting levels here
+                if (Mod.GameInstance!.LevelID >= 1 && Mod.GameInstance!.LevelID <= 4)
+                {
+                    ResetItems();
+                    Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
+                    Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
+                }
+            }
+            else if (!eaxBit0Set && prevInShop)
+            {
+                lock (Mod.GameInstance!.StateLock)
+                {
+                    Mod.GameInstance!.PrevInShop = false;
+                }
+                Mod.Logger!.WriteLineAsync("Shop Selector Closed");
+
+                // Game enters a level before thinking you are out of shop, so if we stay in hub, resetting levels here
+                if (Mod.GameInstance!.LevelID >= 1 && Mod.GameInstance!.LevelID <= 4)
+                {
+                    ResetItems();
+                    SpellHandler.ResetSpells();
+                    Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
+                    Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
+                }
             }
         }
     }
@@ -976,7 +1006,12 @@ public class Game
             return;
         }
         // Take into account that menu opens when selecting freeplay/story.
-        if (Mod.GameInstance!.PrevInShop == true)
+        bool prevInShop;
+        lock (Mod.GameInstance!.StateLock)
+        {
+            prevInShop = Mod.GameInstance!.PrevInShop;
+        }
+        if (prevInShop == true)
         {
             return;
         } 
@@ -991,7 +1026,10 @@ public class Game
         if (Mod.GameInstance!.LevelID < 1 || Mod.GameInstance!.LevelID > 4) // If in level, want to sync to locations except for Red bricks & Spells
         {
             Mod.Logger!.WriteLineAsync("Menu Opened");
-            Mod.GameInstance!.PrevInMenu = true;
+            lock (Mod.GameInstance!.StateLock)
+            {
+                Mod.GameInstance!.PrevInMenu = true;
+            }
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(0, RedBrickPurchOffset - 1);
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(RedBrickPurchOffset, MaxItemID);
@@ -999,7 +1037,10 @@ public class Game
         else // In Hub, want to show all items
         {
             Mod.Logger!.WriteLineAsync("Menu Opened");
-            Mod.GameInstance!.PrevInMenu = true;
+            lock (Mod.GameInstance!.StateLock)
+            {
+                Mod.GameInstance!.PrevInMenu = true;
+            }
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, MaxItemID);
             HubHandler.GetGoldBrickCount();
@@ -1028,11 +1069,19 @@ public class Game
     private static void OnCloseMenu()
     {
         // Take into account that this code runs multiple times.
-        if (!Mod.GameInstance!.PrevInMenu)
+        bool prevInMenu;
+        lock (Mod.GameInstance!.StateLock)
+        {
+            prevInMenu = Mod.GameInstance!.PrevInMenu;
+        }
+        if (!prevInMenu)
         {
             return;
         }
-        Mod.GameInstance!.PrevInMenu = false;
+        lock (Mod.GameInstance!.StateLock)
+        {
+            Mod.GameInstance!.PrevInMenu = false;
+        }
         Mod.Logger!.WriteLineAsync("Menu Closed");
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
@@ -1048,7 +1097,12 @@ public class Game
         byte* cauldronBaseAddress = (byte*)*(int*)(Mod.BaseAddress + 0xC54290);
         nuint cauldronItem = Memory.Instance.Read<nuint>((nuint)(cauldronBaseAddress + 0x68));
         // Mod.Logger!.WriteLineAsync($"Cauldron Item ID: {cauldronItem}");
-        if (cauldronItem != 4 || Mod.GameInstance!.PrevInLevelSelect == true) // Only trigger on opening the Polyjuice Pot
+        bool prevInLevelSelect;
+        lock (Mod.GameInstance!.StateLock)
+        {
+            prevInLevelSelect = Mod.GameInstance!.PrevInLevelSelect;
+        }
+        if (cauldronItem != 4 || prevInLevelSelect == true) // Only trigger on opening the Polyjuice Pot
         {
             return;
         }
@@ -1065,7 +1119,12 @@ public class Game
     {
         byte* cauldronBaseAddress = (byte*)*(int*)(Mod.BaseAddress + 0xC54290);
         nuint cauldronItem = Memory.Instance.Read<nuint>((nuint)(cauldronBaseAddress + 0x68));
-        if (cauldronItem != 4 || Mod.GameInstance!.PrevInLevelSelect == true) // Only trigger on opening the Polyjuice Pot
+        bool prevInLevelSelect;
+        lock (Mod.GameInstance!.StateLock)
+        {
+            prevInLevelSelect = Mod.GameInstance!.PrevInLevelSelect;
+        }
+        if (cauldronItem != 4 || prevInLevelSelect == true) // Only trigger on opening the Polyjuice Pot
         {
             return;
         }
