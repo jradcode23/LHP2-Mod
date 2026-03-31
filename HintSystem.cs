@@ -3,10 +3,9 @@ using System.Collections.Concurrent;
 
 namespace LHP2_Archi_Mod;
 
-public unsafe struct HintData
+public struct HintData
 {
-    public const int MaxLength = 101;
-    public fixed char Text[MaxLength];
+    public const int MaxLength = 255;
 }
 
 public class HintSystem
@@ -39,6 +38,8 @@ public class HintSystem
     }
     
     private static readonly ConcurrentQueue<string> MessageQueue = new();
+    private static readonly LinkedList<string> InterruptedMessageQueue = new();
+    private static readonly object queueLock = new();
     
     public static void EnqueueMessage(string message)
     {
@@ -48,7 +49,6 @@ public class HintSystem
         }
     }
     
-
     public static unsafe void HandleMessages()
     {
         while (true)
@@ -68,25 +68,64 @@ public class HintSystem
 
             if (playerControllable && notInShop && notInLevelSelect && notInMenu && nothingOnScreen && hubCutscene)
             {
-                if (MessageQueue.TryDequeue(out string? message))
+                if (*hintPTRBaseAddress == 0 || *hintTimerBaseAddress >= 5.0f)
                 {
-                    uint messagePTRValue = GetMessagePTRValue();
-                    uint hintTextPTRAddress = GetHintTextAddress();
+                    string? message = null;
+                    lock (queueLock)
+                    {
+                        if (InterruptedMessageQueue.Count > 0)
+                        {
+                            // Mod.Logger!.WriteLineAsync($"There are {InterruptedMessageQueue.Count} messages in the interrupted queue.");
+                            message = InterruptedMessageQueue.First!.Value;
+                            InterruptedMessageQueue.RemoveFirst();
+                        }
+                    }
+                    if (message == null)
+                    {
+                        MessageQueue.TryDequeue(out message);
+                    }
                     
-                    Mod.Logger!.WriteLineAsync($"Message PTR Value: 0x{messagePTRValue:X}");
-                    Mod.Logger!.WriteLineAsync($"Hint Text PTR Address: 0x{hintTextPTRAddress:X}");
-                    SetMessageText(message, hintTextPTRAddress);
-                    *hintPTRBaseAddress = messagePTRValue; // Set hint system pointer to our message
-                    *hintTimerBaseAddress = 0f; // Restart Hint timer, shows for 5 seconds
+                    if (message != null)
+                    {
+                        uint messagePTRValue = GetMessagePTRValue();
+                        uint hintTextPTRAddress = GetHintTextAddress();
+                        
+                        // Mod.Logger!.WriteLineAsync($"Message PTR Value: 0x{messagePTRValue:X}");
+                        // Mod.Logger!.WriteLineAsync($"Hint Text PTR Address: 0x{hintTextPTRAddress:X}");
+                        SetMessageText(message, hintTextPTRAddress);
+                        *hintPTRBaseAddress = messagePTRValue; // Set hint system pointer to our message
+                        *hintTimerBaseAddress = 0f; // Restart Hint timer, shows for 5 seconds
+                    }
                 }
-                else
-                {
-                    Thread.Sleep(100);
-                }
+                Thread.Sleep(100);
             }
             else
             {
                 Thread.Sleep(100);
+            }
+        }
+    }
+
+    public static unsafe void HandleInterruptedMessage()
+    {
+        if (*hintTimerBaseAddress > 4.5f || *hintPTRBaseAddress == 0) // If timer is greater than 3 seconds or if there is nothing on screen, we can return
+        {
+            *hintPTRBaseAddress = 0; 
+            return;
+        }
+
+        uint hintTextPTRAddress = GetHintTextAddress();
+        string currentMessage = new((sbyte*)hintTextPTRAddress);
+        
+        if (!string.IsNullOrEmpty(currentMessage))
+        {
+            lock (queueLock)
+            {
+                if (!InterruptedMessageQueue.Contains(currentMessage))
+                {
+                    // Mod.Logger!.WriteLineAsync("Adding Message to Interrupted Queue");
+                    InterruptedMessageQueue.AddFirst(currentMessage);
+                }
             }
         }
     }

@@ -4,6 +4,7 @@ using Reloaded.Hooks.Definitions;
 using Reloaded.Hooks.Definitions.Enums;
 using Reloaded.Hooks.Definitions.X86;
 using System.Numerics;
+using Archipelago.MultiClient.Net.Models;
 
 namespace LHP2_Archi_Mod;
 
@@ -147,6 +148,8 @@ public class Game
 
             // NOP Hint System
             Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3C733D, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
+            // NOP Call to Hint System that doesn't clear old value
+            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x43D212, [0x90, 0x90, 0x90, 0x90, 0x90]);
         }
     }
 
@@ -276,6 +279,7 @@ public class Game
     private static IReverseWrapper<ChangeCharacters> _reverseWrapOnChangeCharacters = default!;
     private static IReverseWrapper<MakeSpellVisible> _reverseWrapOnMakeSpellVisible = default!;
     private static IReverseWrapper<ChangeYears> _reverseWrapChangeYears = default!;
+    private static IReverseWrapper<HandleInterruptedMessage> _reverseWrapOnHandleInterruptedMessage = default!;
 
     public void SetupHooks(IReloadedHooks hooks)
     {
@@ -578,12 +582,20 @@ public class Game
         };
         _asmHooks.Add(hooks.CreateAsmHook(ChangeYearsHook, (int)(Mod.BaseAddress + 0x3A584B), AsmHookBehaviour.ExecuteAfter).Activate());
 
-        // string[] LoadedSpellHook =
-        // {
-        //     "use32",
-        //     "xor eax, eax",
-        // };
-        // _asmHooks.Add(hooks.CreateAsmHook(LoadedSpellHook, (int)(Mod.BaseAddress + 0x4B18B0), AsmHookBehaviour.ExecuteFirst).Activate());
+        string[] HandleInterruptedMessageHook =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnHandleInterruptedMessage, out _reverseWrapOnHandleInterruptedMessage)}",
+            "popad",
+            "popfd",
+        };
+        // Normal Zero Out Hint Game Code
+        _asmHooks.Add(hooks.CreateAsmHook(HandleInterruptedMessageHook, (int)(Mod.BaseAddress + 0x3C77E7), AsmHookBehaviour.ExecuteFirst).Activate());
+        // Walking through Loading Zone Zero Out Hint Game Code
+        _asmHooks.Add(hooks.CreateAsmHook(HandleInterruptedMessageHook, (int)(Mod.BaseAddress + 0x3C727B), AsmHookBehaviour.ExecuteFirst).Activate());
+
     }
 
     [Function(CallingConventions.Fastcall)]
@@ -870,8 +882,8 @@ public class Game
         ushort* initialValue = (ushort*)(Mod.BaseAddress + 0xC5F4C4);
         if (*initialValue == 0xFFFF)
         {
-            Mod.Logger!.WriteLineAsync($"Character Function ran, EDX: {edx:X}");
-            Mod.Logger!.WriteLineAsync("Active Character Changed, updating spells");
+            Mod.Logger!.WriteLineAsync($"Character Changed, Spell Function ran, EDX: {edx:X}");
+            // Mod.Logger!.WriteLineAsync("Active Character Changed, updating spells");
             Mod.GameInstance!.CurrentCharID = edx;
             SpellHandler.ResetSpells();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
@@ -1192,6 +1204,13 @@ public class Game
             Mod.Logger!.WriteLineAsync("Please move to the Character Customization Room to change years.");
             return;
         }
+    }
+
+    [Function(CallingConventions.Fastcall)]
+    public delegate void HandleInterruptedMessage();
+    private static void OnHandleInterruptedMessage()
+    {
+        HintSystem.HandleInterruptedMessage();
     }
 
     private static void ResetItems()
