@@ -4,17 +4,17 @@ namespace LHP2_Archi_Mod;
 
 public class HubHandler
 {
-    public static unsafe readonly byte* hubBaseAddress = *(byte**)(Mod.BaseAddress + 0xC5B3B4);
-    private static unsafe readonly byte* goldBrickBaseAddress = *(byte**)(Mod.BaseAddress + 0xC54554);
-    private static unsafe readonly byte* redBrickPurchBaseAddress = *(byte**)(Mod.BaseAddress + 0xC575F4);
-    private static unsafe readonly long* studTotalBaseAddress = *(long**)(Mod.BaseAddress + 0xC5B600);
-    private static unsafe readonly byte* purpleCountAddress = (byte*)studTotalBaseAddress + 0x30;   
-    private static unsafe readonly byte* firstLevelMapPointer = *(byte**)(Mod.BaseAddress + 0x00B06A5C);
-    private static unsafe readonly byte* secondLevelMapPointer = *(byte**)(firstLevelMapPointer + 0x44);
-    public static unsafe readonly byte* ghostPathBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55F2C);
-    private static unsafe readonly byte* mapFlagsBaseAddress = *(byte**)(Mod.BaseAddress + 0xC5D5F4);
-    private static unsafe readonly byte* hogwartWarpEntranceBaseAddress = *(byte**)(Mod.BaseAddress + 0x00C4EE5C);
-    private static unsafe readonly byte* secondPointerWarp = *(byte**)(hogwartWarpEntranceBaseAddress + 0x04);
+    public static unsafe byte* HubBaseAddress => *(byte**)(Mod.BaseAddress + 0xC5B3B4);
+    private static unsafe byte* GoldBrickBaseAddress => *(byte**)(Mod.BaseAddress + 0xC54554);
+    private static unsafe byte* RedBrickPurchBaseAddress => *(byte**)(Mod.BaseAddress + 0xC575F4);
+    private static unsafe long* StudTotalBaseAddress => *(long**)(Mod.BaseAddress + 0xC5B600);
+    private static unsafe byte* PurpleCountAddress => (byte*)StudTotalBaseAddress + 0x30;
+    private static unsafe byte* FirstLevelMapPointer => *(byte**)(Mod.BaseAddress + 0x00B06A5C);
+    private static unsafe byte* SecondLevelMapPointer => *(byte**)(FirstLevelMapPointer + 0x44);
+    public static unsafe byte* GhostPathBaseAddress => *(byte**)(Mod.BaseAddress + 0xC55F2C);
+    private static unsafe byte* MapFlagsBaseAddress => *(byte**)(Mod.BaseAddress + 0xC5D5F4);
+    private static unsafe byte* HogwartWarpEntranceBaseAddress => *(byte**)(Mod.BaseAddress + 0x00C4EE5C);
+    private static unsafe byte* SecondPointerWarp => *(byte**)(HogwartWarpEntranceBaseAddress + 0x04);
     private static unsafe byte* leaky2LondonAddress = null;
     private static unsafe byte* hogPath2CourtyardAddress = null;
     private static unsafe byte* wildernessAddress = null;
@@ -193,8 +193,8 @@ public class HubHandler
     //         Mod.Logger!.WriteLineAsync($"[Hub] Could not find Hub RB offset for ID {ID}");
     //         return;
     //     }
-    //     byte* ptr = hubBaseAddress + (nuint)kvp.Key;;
-    //     if (ptr == null || hubBaseAddress == null) 
+    //     byte* ptr = HubBaseAddress + (nuint)kvp.Key;;
+    //     if (ptr == null || HubBaseAddress == null) 
     //     {
     //         Mod.Logger!.WriteLineAsync($"[Hub] Can't Unlock Hub RB, null pointer at 0x{(nuint)ptr:X}");
     //     }
@@ -209,9 +209,9 @@ public class HubHandler
             Mod.Logger!.WriteLineAsync($"[Hub] Could not find Hub RB offset for ID {ID}");
             return;
         }
-        byte* ptr = hubBaseAddress + (nuint)kvp.Key;
+        byte* ptr = HubBaseAddress + (nuint)kvp.Key;
         // Mod.Logger!.WriteLineAsync($"Unlocking Hub RB at 0x{(nuint)ptr:X} using ID 0x{ID}");
-        if (ptr == null || hubBaseAddress == null) 
+        if (ptr == null || HubBaseAddress == null) 
         {
             Mod.Logger!.WriteLineAsync($"[Hub] Can't Unlock Hub RB, null pointer at 0x{(nuint)ptr:X}");
         }
@@ -226,8 +226,8 @@ public class HubHandler
             Mod.Logger!.WriteLineAsync($"[Hub] Could not find Hub SIP offset for ID {ID}");
             return;
         }
-        byte* ptr = hubBaseAddress + (nuint)kvp.Key;;
-        if (ptr == null || hubBaseAddress == null) 
+        byte* ptr = HubBaseAddress + (nuint)kvp.Key;;
+        if (ptr == null || HubBaseAddress == null) 
         {
             Mod.Logger!.WriteLineAsync($"[Hub] Can't Unlock Hub SIP, null pointer at 0x{(nuint)ptr:X}");
         }
@@ -238,7 +238,7 @@ public class HubHandler
     {
         foreach (var kvp in hubOffsets)
         {
-            byte* ptr = hubBaseAddress + (nuint)kvp.Key;
+            byte* ptr = HubBaseAddress + (nuint)kvp.Key;
 
             if (ptr == null)
             {
@@ -255,8 +255,8 @@ public class HubHandler
         int byteOffset = id / 8;
         int bitOffset = id % 8;
 
-        byte* ptr = redBrickPurchBaseAddress + byteOffset;
-        if (ptr == null || redBrickPurchBaseAddress == null) 
+        byte* ptr = RedBrickPurchBaseAddress + byteOffset;
+        if (ptr == null || RedBrickPurchBaseAddress == null) 
         {
             Mod.Logger!.WriteLineAsync($"Can't Unlock Red Brick, null pointer at 0x{(nuint)ptr:X}");
             return;
@@ -269,7 +269,7 @@ public class HubHandler
     {
         for(int i = 0; i < 3; i++)
         {
-            byte* ptr = redBrickPurchBaseAddress + i;
+            byte* ptr = RedBrickPurchBaseAddress + i;
             *ptr = 0;
         }
     }
@@ -278,21 +278,21 @@ public class HubHandler
     {
         int purpleStudCount = Mod.LHP2_Archipelago!.CountItemsReceivedWithId(699);
         // Console.WriteLine($"Handling Purple Stud. Count received from Archipelago: {purpleStudCount}");
-        // Console.WriteLine($"Current Purple Stud count: {*purpleCountAddress}");
-        // Console.WriteLine($"Purple Stud Address: 0x{(nuint)purpleCountAddress:X}");
+        // Console.WriteLine($"Current Purple Stud count: {*PurpleCountAddress}");
+        // Console.WriteLine($"Purple Stud Address: 0x{(nuint)PurpleCountAddress:X}");
         if (purpleStudCount == 0)
         {
             return;
         }
-        if (studTotalBaseAddress == null || purpleCountAddress == null)        
+        if (StudTotalBaseAddress == null || PurpleCountAddress == null)        
         {
-            Mod.Logger!.WriteLineAsync($"Can't Update Stud Total, null pointer at 0x{(nuint)studTotalBaseAddress:X}");
+            Mod.Logger!.WriteLineAsync($"Can't Update Stud Total, null pointer at 0x{(nuint)StudTotalBaseAddress:X}");
             return;
         }
-        if ( *purpleCountAddress < purpleStudCount)
+        if (*PurpleCountAddress < purpleStudCount)
         {
-            *purpleCountAddress += 1;
-            *studTotalBaseAddress += 10000;
+            *PurpleCountAddress += 1;
+            *StudTotalBaseAddress += 10000;
             // Mod.Logger!.WriteLineAsync($"Updating Stud Total at 0x{(nuint)studTotalBaseAddress:X}");
             // Mod.Logger!.WriteLineAsync($"Purple Studs received: {purpleStudCount}, Purple Studs counted: {*purpleCountAddress}");
         }
@@ -316,8 +316,8 @@ public class HubHandler
 
     public static unsafe void GetGoldBrickCount ()
     {
-        byte* ptr = goldBrickBaseAddress + 0x01A7A;
-        if (ptr == null || goldBrickBaseAddress == null) 
+        byte* ptr = GoldBrickBaseAddress + 0x01A7A;
+        if (ptr == null || GoldBrickBaseAddress == null) 
         {
             Mod.Logger!.WriteLineAsync($"Can't Show Gold Bricks, null pointer at 0x{(nuint)ptr:X}");
             return;
@@ -332,7 +332,7 @@ public class HubHandler
 
     public static unsafe void ClearReturnToHogwartsLocation()
     {
-        byte* entrancePTR = secondPointerWarp + 0x31C;
+        byte* entrancePTR = SecondPointerWarp + 0x31C;
         for (int i = 0; i < 0x40; i++)
         {
             byte* ptr = entrancePTR + i;
@@ -343,10 +343,10 @@ public class HubHandler
     public static unsafe void VerifyCharCustMaps()
     {
         // 5, 6, 7, 8 in hex are 0x35, 0x36, 0x37, 0x38
-        byte* y5MapPtr = secondLevelMapPointer + 0xF02;
-        byte* y6MapPtr = secondLevelMapPointer + 0xA5A;
-        byte* y7MapPtr = secondLevelMapPointer + 0x39A;
-        byte* y8MapPtr = secondLevelMapPointer - 0x326;
+        byte* y5MapPtr = SecondLevelMapPointer + 0xF02;
+        byte* y6MapPtr = SecondLevelMapPointer + 0xA5A;
+        byte* y7MapPtr = SecondLevelMapPointer + 0x39A;
+        byte* y8MapPtr = SecondLevelMapPointer - 0x326;
 
         *y5MapPtr = 0x35;
         *y6MapPtr = 0x36;
@@ -361,17 +361,17 @@ public class HubHandler
 
     public static unsafe void SwitchYears(int year)
     {
-        byte* y5GhostPtr = HubHandler.ghostPathBaseAddress + 0x20;
+        byte* y5GhostPtr = HubHandler.GhostPathBaseAddress + 0x20;
         if ((*y5GhostPtr & (1 << 1)) == 0)
         {
             Mod.Logger!.WriteLineAsync("Please complete DADA Banned Lesson before changing years");
             return;
         }
         // 5, 6, 7, 8 in hex are 0x35, 0x36, 0x37, 0x38
-        byte* y5MapPtr = secondLevelMapPointer + 0xF02;
-        byte* y6MapPtr = secondLevelMapPointer + 0xA5A;
-        byte* y7MapPtr = secondLevelMapPointer + 0x39A;
-        byte* y8MapPtr = secondLevelMapPointer - 0x326;
+        byte* y5MapPtr = SecondLevelMapPointer + 0xF02;
+        byte* y6MapPtr = SecondLevelMapPointer + 0xA5A;
+        byte* y7MapPtr = SecondLevelMapPointer + 0x39A;
+        byte* y8MapPtr = SecondLevelMapPointer - 0x326;
 
         switch (Mod.GameInstance!.LevelID)
         {
@@ -395,9 +395,9 @@ public class HubHandler
 
     public static unsafe void CompleteStartingGhostLevels()
     {
-        byte* y6GhostPtr = ghostPathBaseAddress + 0x34;
-        byte* y7GhostPtr = ghostPathBaseAddress + 0x48;
-        byte* y8GhostPtr = ghostPathBaseAddress + 0x5C;
+        byte* y6GhostPtr = GhostPathBaseAddress + 0x34;
+        byte* y7GhostPtr = GhostPathBaseAddress + 0x48;
+        byte* y8GhostPtr = GhostPathBaseAddress + 0x5C;
 
         const byte CompletedBit = 1 << 1;
         const byte YearCompleteMask = 0x7E;
@@ -418,11 +418,11 @@ public class HubHandler
         ushort dx = (ushort)(edx & 0xFFFF);
         Mod.Logger!.WriteLineAsync($"eax: 0x{eax:X}, edx: 0x{edx:X}, dx: 0x{dx:X}");
 
-        byte* y5GhostPtr = ghostPathBaseAddress + 0x20;
-        byte* y5GhostPtr2 = ghostPathBaseAddress + 0x21;
-        byte* y6GhostPtr = ghostPathBaseAddress + 0x34;
-        byte* y6GhostPtr2 = ghostPathBaseAddress + 0x35;
-        byte* y7GhostPtr = ghostPathBaseAddress + 0x48;
+        byte* y5GhostPtr = GhostPathBaseAddress + 0x20;
+        byte* y5GhostPtr2 = GhostPathBaseAddress + 0x21;
+        byte* y6GhostPtr = GhostPathBaseAddress + 0x34;
+        byte* y6GhostPtr2 = GhostPathBaseAddress + 0x35;
+        byte* y7GhostPtr = GhostPathBaseAddress + 0x48;
 
         if (eax == (int)y5GhostPtr)
         {
@@ -557,8 +557,8 @@ public class HubHandler
         quadAddress = GetHubMapAddress("Quad", 0); // Quad
         hogsStatAddress = GetHubMapAddress("HogsStation", 0); //HogsStation
         classLobbyAddress = GetHubMapAddress("ClassLobby", 0x1318); // Class Lobby
-        byte* y6GhostPtr = HubHandler.ghostPathBaseAddress + 0x34;
-        byte* y6GhostPtr2 = HubHandler.ghostPathBaseAddress + 0x35;
+        byte* y6GhostPtr = HubHandler.GhostPathBaseAddress + 0x34;
+        byte* y6GhostPtr2 = HubHandler.GhostPathBaseAddress + 0x35;
 
         AdjustLeakyCauldron();
         AdjustHogsPath();
@@ -580,7 +580,7 @@ public class HubHandler
 
     private static unsafe void AdjustLeakyCauldron()
     {
-        if (leaky2LondonAddress == mapFlagsBaseAddress + 0x40)
+        if (leaky2LondonAddress == MapFlagsBaseAddress + 0x40)
         {
             Mod.Logger!.WriteLineAsync("Leaky Cauldron Save info hasn't been written yet.");
             return;
@@ -599,7 +599,7 @@ public class HubHandler
 
     private static unsafe void AdjustHogsPath()
     {
-        if (hogPath2CourtyardAddress == mapFlagsBaseAddress + 0x40)
+        if (hogPath2CourtyardAddress == MapFlagsBaseAddress + 0x40)
         {
             Mod.Logger!.WriteLineAsync("HogsPath Save info hasn't been written yet.");
             return;
@@ -614,7 +614,7 @@ public class HubHandler
 
     private static unsafe void AdjustWilderness()
     {
-        if (wildernessAddress == mapFlagsBaseAddress + 0x40)
+        if (wildernessAddress == MapFlagsBaseAddress + 0x40)
         {
             Mod.Logger!.WriteLineAsync("Wilderness Save info hasn't been written yet.");
             return;
@@ -638,7 +638,7 @@ public class HubHandler
 
     private static unsafe void AdjustQuad()
     {
-        if (quadAddress == mapFlagsBaseAddress + 0x40)
+        if (quadAddress == MapFlagsBaseAddress + 0x40)
         {
             Mod.Logger!.WriteLineAsync("Quad Save info hasn't been written yet.");
             return;
@@ -654,7 +654,7 @@ public class HubHandler
     // TODO: missing 3 more blocks
     private static unsafe void AdjustHogsStat()
     {
-        if (hogsStatAddress == mapFlagsBaseAddress + 0x40)
+        if (hogsStatAddress == MapFlagsBaseAddress + 0x40)
         {
             Mod.Logger!.WriteLineAsync("Quad Save info hasn't been written yet.");
             return;            
@@ -681,7 +681,7 @@ public class HubHandler
 
     private static unsafe void AdjustClassLobby()
     {
-        if (classLobbyAddress == mapFlagsBaseAddress + 0x40)
+        if (classLobbyAddress == MapFlagsBaseAddress + 0x40)
         {
             Mod.Logger!.WriteLineAsync("Class Lobby Save info hasn't been written yet.");
             return;
@@ -693,7 +693,7 @@ public class HubHandler
     private static unsafe byte* GetHubMapAddress(string mapName, int offset)
     {
         const int sectionSize = 300000; // Number of bytes in the memory section
-        byte* startingAddress = mapFlagsBaseAddress + 0x40;
+        byte* startingAddress = MapFlagsBaseAddress + 0x40;
         byte* returningAddress = startingAddress;
         byte[] sectionHeader = Encoding.ASCII.GetBytes(mapName);
 

@@ -277,7 +277,7 @@ public class Game
     private static IReverseWrapper<OpenPolyjuicePot> _reverseWrapOnOpenPolyjuicePot = default!;
     private static IReverseWrapper<ClosePolyjuicePot> _reverseWrapOnClosePolyjuicePot = default!;
     private static IReverseWrapper<ChangeCharacters> _reverseWrapOnChangeCharacters = default!;
-    private static IReverseWrapper<MakeSpellVisible> _reverseWrapOnMakeSpellVisible = default!;
+    // private static IReverseWrapper<MakeSpellVisible> _reverseWrapOnMakeSpellVisible = default!;
     private static IReverseWrapper<ChangeYears> _reverseWrapChangeYears = default!;
     private static IReverseWrapper<HandleInterruptedMessage> _reverseWrapOnHandleInterruptedMessage = default!;
 
@@ -561,15 +561,15 @@ public class Game
         };
         _asmHooks.Add(hooks.CreateAsmHook(ChangeCharactersHook, (int)(Mod.BaseAddress + 0x5440EC), AsmHookBehaviour.ExecuteFirst).Activate());
 
-        string [] MakeSpellVisibleHook =
-        {
-            "use 32",
-            "push edi",
-            "mov edi, esi",
-            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnMakeSpellVisible, out _reverseWrapOnMakeSpellVisible)}",
-            "pop edi",
-        };
-        _asmHooks.Add(hooks.CreateAsmHook(ChangeCharactersHook, (int)(Mod.BaseAddress + 0x5440EC), AsmHookBehaviour.ExecuteFirst).Activate());
+        // string [] MakeSpellVisibleHook =
+        // {
+        //     "use32",
+        //     "push edi",
+        //     "mov edi, esi",
+        //     $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnMakeSpellVisible, out _reverseWrapOnMakeSpellVisible)}",
+        //     "pop edi",
+        // };
+        // _asmHooks.Add(hooks.CreateAsmHook(MakeSpellVisibleHook, (int)(Mod.BaseAddress + 0x184EF), AsmHookBehaviour.ExecuteFirst).Activate());
 
         string[] ChangeYearsHook =
         {
@@ -888,46 +888,57 @@ public class Game
             SpellHandler.ResetSpells();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
             SpellHandler.SpellMapLogic(Mod.GameInstance!.MapID);
+
+            byte* spellSelectedAddress = SpellHandler.SpellSelectedBaseAddress + 0x18;
+            Mod.Logger!.WriteLineAsync($"Selected Spell Address: {(nuint)spellSelectedAddress:X}");
+            *spellSelectedAddress = 0; // Set selected spell to 0 so that if the character change gives you a spell you don't have equipped, it won't be selected.
+            spellSelectedAddress += 0x50;
+            *spellSelectedAddress = 0; // Sets the spell that you would switch to based on spell 0
+            byte* activeShootingSpell = SpellHandler.ActiveShootingSpellBaseAddress + 0xED3;
+            Mod.Logger!.WriteLineAsync($"Active Shooting Spell Address: {(nuint)activeShootingSpell:X}");
+            *activeShootingSpell = 0; // Sets active shooting spell to 0
+
         }
     }
 
-    [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.edi],
-    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    // [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.edi],
+    // FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
 
-    public delegate byte MakeSpellVisible(int eax, int edi);
+    // public delegate byte MakeSpellVisible(int eax, int edi);
 
-    public static byte OnMakeSpellVisible(int eax, int edi)
-    {
-        byte alValue = (byte)(eax & 0xFF);
+    // public static byte OnMakeSpellVisible(int eax, int edi)
+    // {
+    //     Mod.Logger!.WriteLineAsync($"Make Spell Visible called with EAX: {eax:X} and EDI: {edi:X}");
+    //     byte alValue = (byte)(eax & 0xFF);
 
-        if (alValue != 1)
-            return alValue;
+    //     if (alValue != 1)
+    //         return alValue;
 
-        switch (edi)
-        {
-            case 0:
-                break;
-            case 0x10:
-                alValue = SpellHandler.HandleSpellVisibility(23); // Check for Diffindo
-                break;
-            case 0x20:
-                alValue = SpellHandler.HandleSpellVisibility(27); // Check for Agua
-                break;
-            case 0x28:
-                alValue = SpellHandler.HandleSpellVisibility(28); // Check for Focus
-                break;
-            case 0x30:
-                alValue = SpellHandler.HandleSpellVisibility(29); // Check for Expecto
-                break;
-            case 0x38:
-                alValue = SpellHandler.HandleSpellVisibility(30); // Check for Reducto
-                break;
-            default:
-                break;
-        }
-
-        return alValue;
-    }
+    //     switch (edi)
+    //     {
+    //         case 0:
+    //             break;
+    //         case 0x10:
+    //             alValue = SpellHandler.HandleSpellVisibility(23); // Check for Diffindo
+    //             break;
+    //         case 0x20:
+    //             alValue = SpellHandler.HandleSpellVisibility(27); // Check for Agua
+    //             break;
+    //         case 0x28:
+    //             alValue = SpellHandler.HandleSpellVisibility(28); // Check for Focus
+    //             break;
+    //         case 0x30:
+    //             alValue = SpellHandler.HandleSpellVisibility(29); // Check for Expecto
+    //             break;
+    //         case 0x38:
+    //             alValue = SpellHandler.HandleSpellVisibility(30); // Check for Reducto
+    //             break;
+    //         default:
+    //             break;
+    //     }
+    //     Mod.Logger!.WriteLineAsync($"Returning AL value of {alValue} for EDI: {edi:X}");
+    //     return alValue;
+    // }
 
     [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.esp], 
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]

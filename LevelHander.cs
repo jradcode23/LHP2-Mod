@@ -3,7 +3,7 @@ namespace LHP2_Archi_Mod;
 
 public class LevelHandler
 {
-    public static unsafe readonly byte* levelBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55F2C);
+    public static unsafe byte* LevelBaseAddress => *(byte**)(Mod.BaseAddress + 0xC55F2C);
 
     [Flags]
     public enum BitMask
@@ -90,8 +90,8 @@ public class LevelHandler
 
     public static unsafe void UnlockLevel(LevelData level)
     {
-        byte* ptr = levelBaseAddress + (ushort)level;
-        if (ptr == null || levelBaseAddress == null) 
+        byte* ptr = LevelBaseAddress + (ushort)level;
+        if (ptr == null || LevelBaseAddress == null) 
         {
             Mod.Logger!.WriteLineAsync($"Can't Unlock Level, null pointer at 0x{(nuint)ptr:X}");
         } 
@@ -100,8 +100,8 @@ public class LevelHandler
 
     public static unsafe void UnlockGryffindorCrest(LevelData level)
     {
-        byte* ptr = levelBaseAddress + (ushort)level;
-        if (ptr == null || levelBaseAddress == null) 
+        byte* ptr = LevelBaseAddress + (ushort)level;
+        if (ptr == null || LevelBaseAddress == null) 
         {
             Mod.Logger!.WriteLineAsync($"Can't Unlock GC, null pointer at 0x{(nuint)ptr:X}");
         } 
@@ -110,8 +110,8 @@ public class LevelHandler
 
     public static unsafe void UnlockSlytherinCrest(LevelData level)
     {
-        byte* ptr = levelBaseAddress + (ushort)level;
-        if (ptr == null || levelBaseAddress == null) 
+        byte* ptr = LevelBaseAddress + (ushort)level;
+        if (ptr == null || LevelBaseAddress == null) 
         {
             Mod.Logger!.WriteLineAsync($"Can't Unlock SC, null pointer at 0x{(nuint)ptr:X}");
         } 
@@ -120,8 +120,8 @@ public class LevelHandler
 
     public static unsafe void UnlockRavenclawCrest(LevelData level)
     {
-        byte* ptr = levelBaseAddress + (ushort)level;
-        if (ptr == null || levelBaseAddress == null) 
+        byte* ptr = LevelBaseAddress + (ushort)level;
+        if (ptr == null || LevelBaseAddress == null) 
         {
             Mod.Logger!.WriteLineAsync($"Can't Unlock RC, null pointer at 0x{(nuint)ptr:X}");
         } 
@@ -130,8 +130,8 @@ public class LevelHandler
 
     public static unsafe void UnlockHufflepuffCrest(LevelData level)
     {
-        byte* ptr = levelBaseAddress + (ushort)level;
-        if (ptr == null || levelBaseAddress == null) 
+        byte* ptr = LevelBaseAddress + (ushort)level;
+        if (ptr == null || LevelBaseAddress == null) 
         {
             Mod.Logger!.WriteLineAsync($"Can't Unlock HC, null pointer at 0x{(nuint)ptr:X}");
         } 
@@ -140,8 +140,8 @@ public class LevelHandler
 
     public static unsafe void UnlockStudentInPeril(LevelData level)
     {
-        byte* ptr = levelBaseAddress + (ushort)level;
-        if (ptr == null || levelBaseAddress == null) 
+        byte* ptr = LevelBaseAddress + (ushort)level;
+        if (ptr == null || LevelBaseAddress == null) 
         {
             Mod.Logger!.WriteLineAsync($"Can't Unlock SIP, null pointer at 0x{(nuint)ptr:X}");
         } 
@@ -150,9 +150,9 @@ public class LevelHandler
 
     public static unsafe void UnlockTrueWizard(LevelData level)
     {
-        byte* story = levelBaseAddress + (ushort)level - 6;
+        byte* story = LevelBaseAddress + (ushort)level - 6;
         byte* freeplay = story + 1;
-        if (story == null || freeplay == null || levelBaseAddress == null) 
+        if (story == null || freeplay == null || LevelBaseAddress == null) 
         {
             Mod.Logger!.WriteLineAsync($"Can't Unlock TW, null pointer at 0x{(nuint)story:X}");
         } 
@@ -164,7 +164,7 @@ public class LevelHandler
     {
         for(int i = 0; i < LevelUnlockOrder.Length; i++)
         {
-            byte* level = levelBaseAddress + (ushort)LevelUnlockOrder[i];
+            byte* level = LevelBaseAddress + (ushort)LevelUnlockOrder[i];
             byte* story = level - 6;
             byte* freeplay = story + 1;
             *level = 0;
@@ -183,7 +183,7 @@ public class LevelHandler
 
     public static unsafe void ImplementMapLogic(int map)
     {
-        byte* y5GhostPtr2 = HubHandler.ghostPathBaseAddress + 0x21;
+        byte* y5GhostPtr2 = HubHandler.GhostPathBaseAddress + 0x21;
         // Game doesn't open WW Courtyard if these two bits are completed so plan is to handle them once map changes after the fact
         bool locationChecked = Mod.LHP2_Archipelago!.IsLocationChecked(1014);
         bool bitSet1 = (*y5GhostPtr2 & (1 << 4)) != 0;

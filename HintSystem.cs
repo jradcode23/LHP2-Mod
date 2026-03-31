@@ -12,18 +12,10 @@ public class HintSystem
 {
     private static unsafe readonly float* hintTimerBaseAddress = (float*)(Mod.BaseAddress + 0xC5839C);
     private static unsafe readonly uint* hintPTRBaseAddress = (uint*)(Mod.BaseAddress + 0xC5838C);
-    
-    private static unsafe uint GetHintTextAddress()
-    {
-        byte* hintTextBaseAddress = *(byte**)(Mod.BaseAddress + 0xB16324);
-        return (uint)(hintTextBaseAddress + 0xBA);
-    }
-    
-    private static unsafe uint GetMessagePTRValue()
-    {
-        uint* messageBaseAddress = *(uint**)(Mod.BaseAddress + 0xc58388);
-        return (uint)((byte*)messageBaseAddress + 0xFFC);
-    }
+
+    private static unsafe byte* HintTextBaseAddress => *(byte**)(Mod.BaseAddress + 0xB16324);
+    private static unsafe uint HintTextAddress => (uint)(HintTextBaseAddress + 0xBA);
+    private static unsafe uint MessagePTRValue => (uint)(((byte*)*(uint**)(Mod.BaseAddress + 0xC58388)) + 0xFFC);
 
     private static unsafe bool IsScreenEmpty()
     {
@@ -87,8 +79,8 @@ public class HintSystem
                     
                     if (message != null)
                     {
-                        uint messagePTRValue = GetMessagePTRValue();
-                        uint hintTextPTRAddress = GetHintTextAddress();
+                        uint messagePTRValue = MessagePTRValue;
+                        uint hintTextPTRAddress = HintTextAddress;
                         
                         // Mod.Logger!.WriteLineAsync($"Message PTR Value: 0x{messagePTRValue:X}");
                         // Mod.Logger!.WriteLineAsync($"Hint Text PTR Address: 0x{hintTextPTRAddress:X}");
@@ -114,7 +106,7 @@ public class HintSystem
             return;
         }
 
-        uint hintTextPTRAddress = GetHintTextAddress();
+        uint hintTextPTRAddress = HintTextAddress;
         string currentMessage = new((sbyte*)hintTextPTRAddress);
         
         if (!string.IsNullOrEmpty(currentMessage))
