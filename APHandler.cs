@@ -4,6 +4,7 @@ using Archipelago.MultiClient.Net.Enums;
 using Archipelago.MultiClient.Net.Helpers;
 using Archipelago.MultiClient.Net.MessageLog.Messages;
 using System.Diagnostics.CodeAnalysis;
+using Archipelago.MultiClient.Net.Models;
 
 namespace LHP2_Archi_Mod;
 
@@ -91,6 +92,7 @@ public class ArchipelagoHandler
             Mod.InitOnMenu();
             _session.DataStorage[Scope.Slot, "map"] = 402;
             new Thread(RunCheckLocationsFromList).Start();
+            new Thread(HintSystem.HandleMessages).Start();
             new Thread(HandleQueuedItems).Start();
             //resync here
             return true;
@@ -110,7 +112,16 @@ public class ArchipelagoHandler
         {
             var item = helper.DequeueItem();
             int gameID = (int)item.ItemId - gameOffset;
-            if(Mod.GameInstance != null && Mod.GameInstance.PrevInShop && gameID != 699)
+            bool prevInShop = false, prevInLevelSelect = false;
+            if (Mod.GameInstance != null)
+            {
+                lock (Mod.GameInstance.StateLock)
+                {
+                    prevInShop = Mod.GameInstance.PrevInShop;
+                    prevInLevelSelect = Mod.GameInstance.PrevInLevelSelect;
+                }
+            }
+            if (Mod.GameInstance != null && prevInShop && gameID != 699)
             {
                 // Token or red brick purchasable
                 if((gameID >= 900 && gameID <= 935) || (gameID >= 213 && gameID <= 425))
@@ -119,7 +130,7 @@ public class ArchipelagoHandler
                 }
                 return;
             }
-            if(Mod.GameInstance != null && Mod.GameInstance.PrevInLevelSelect && gameID != 699)
+            if (Mod.GameInstance != null && prevInLevelSelect && gameID != 699)
             {
                 Game.ManageItem(gameID);
                 return;
@@ -266,6 +277,7 @@ public class ArchipelagoHandler
     static void OnMessageReceived(LogMessage message)
     {
         Mod.Logger!.WriteLineAsync(message.ToString() ?? string.Empty);
+        HintSystem.EnqueueMessage(message.ToString());
     }
 
     public void SendMapID(int MapID)
