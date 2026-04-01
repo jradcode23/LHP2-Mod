@@ -4,13 +4,21 @@ using Reloaded.Hooks.Definitions;
 using Reloaded.Hooks.Definitions.Enums;
 using Reloaded.Hooks.Definitions.X86;
 using System.Numerics;
-using Archipelago.MultiClient.Net.Models;
 
 namespace LHP2_Archi_Mod;
 
 public class Game
 {
-    public readonly object StateLock = new object();
+    /*
+    Main class that handles all of the game hooks that we implement, variables we watch, & send/receive items.
+    Current implementation of the LHP2 Archipelago has the player syncs up to the received items and/or checked
+    locations based on what the player is doing (i.e. in a shop, in the hub, in a level, etc.). Most of this is
+    managed with game hooks. Generally we only sync up on state changes (i.e. map update, menu opened, shop opened, etc.) 
+    unless it is a priority item like spells.
+    */
+
+    // This lock is used for PrevInShop, PrevInLevelSelect, PrevInMenu because of the Hint System
+    public readonly object StateLock = new();
     public int PrevLevelID { get; private set; } = -1;
     public int LevelID { get; private set; } = -1;
     public int PrevMapID { get; private set; } = -1;
@@ -35,11 +43,12 @@ public class Game
     public const int SpellPurchOffset = 975;
     public const int MaxItemID = 1030;
 
-    public static void CheckGameLoaded()
+    // Used to check if the game menu is loaded before connecting and trying to set up hooks
+    public static void IsGameLoaded()
     {
         Mod.Logger!.WriteLineAsync("Checking to see if game is loaded");
         int rewriteNumber = 0;
-        while(!MenuLoaded())
+        while(!IsMenuLoaded())
         {
             if (rewriteNumber % 10 == 0)
                 Mod.Logger!.WriteLineAsync("Waiting for menu to load");
@@ -49,21 +58,9 @@ public class Game
         }
     }
 
-    // public static void CheckSaveFileLoaded()
-    // {
-    //     int rewriteNumber = 0;
-
-    //     while(!PlayerControllable())
-    //     {
-    //         if (rewriteNumber % 10 == 0)
-    //             Mod.Logger!.WriteLineAsync("Waiting for game to be loaded");
-    //         rewriteNumber++;
-    //         System.Threading.Thread.Sleep(500);
-    //     }
-    //     Mod.Logger!.WriteLineAsync("Save File Loaded");
-    // }
-
-    public static unsafe bool MenuLoaded()
+    // Helper Function to check if menu is loaded 
+    // TODO: Currently broken out cause we previously checked to see if save file was loaded as part of setup
+    public static unsafe bool IsMenuLoaded()
     {
         try
         {
@@ -86,7 +83,7 @@ public class Game
         }
     }
 
-    public static unsafe bool PlayerControllable()
+    public static unsafe bool IsPlayerControllable()
     {
         try
         {
@@ -107,62 +104,68 @@ public class Game
         }
     }
 
-    public static void WriteN0CUT5Flag()
-    {
-        unsafe
-        {
-            int* cutsceneBaseAddress = (int*)(Mod.BaseAddress + 0xB06F2C);
-            nuint ptr = (nuint)(*cutsceneBaseAddress + 0xA4);
-
-            // Write N0CUT5 flag to game
-            Memory.Instance.Write(ptr, (byte) 0x01 );
-        }
-    }
+    // After Connecting, this function reads initial game variables and NOPs code that we don't want running
     public static void ModifyInstructions()
     {
-        unsafe
-        {
-            Mod.GameInstance!.LevelID = Memory.Instance.Read<int>(Mod.BaseAddress + 0xADDB7C);
-            Mod.GameInstance!.MapID = Memory.Instance.Read<int>(Mod.BaseAddress + 0xC5B374);
-            Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
-            Mod.GameInstance!.PrevMapID = Mod.GameInstance!.MapID;
-            Mod.Logger!.WriteLineAsync($"Initial Level ID: {Mod.GameInstance!.LevelID}, Map ID: {Mod.GameInstance!.MapID}");
-            WriteN0CUT5Flag();
+        // Read initial game values upon connecting
+        Mod.GameInstance!.LevelID = Memory.Instance.Read<int>(Mod.BaseAddress + 0xADDB7C);
+        Mod.GameInstance!.MapID = Memory.Instance.Read<int>(Mod.BaseAddress + 0xC5B374);
+        Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
+        Mod.GameInstance!.PrevMapID = Mod.GameInstance!.MapID;
+        Mod.Logger!.WriteLineAsync($"Initial Level ID: {Mod.GameInstance!.LevelID}, Map ID: {Mod.GameInstance!.MapID}");
 
-            // NOP GB Corrector #1
-            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x332694, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
-            // NOP GB Corrector #2
-            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x42EB8B, [0x90, 0x90, 0x90]);
-            //// NOP GB Corrector #3
-            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x42EB90, [0x90, 0x90, 0x90]);
+        WriteN0CUT5Flag();
 
-            // Removes the check for Freeplay mode and allows for always checking individual level completion to enable save and exit
-            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x40A264, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
-            
-            // // Unlock Current Level Story
-            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B817E, [0x90, 0x90, 0x90, 0x90, 0x90]);
-            // // Unlock Current Level Freeplay
-            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B8165, [0x90, 0x90, 0x90, 0x90, 0x90]);
-            //NOP Unlock Next Story Level
-            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B809C, [0x90, 0x90, 0x90, 0x90, 0x90]);
+        // NOP Gold Brick Amount Corrector #1
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x332694, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
+        // NOP Gold Brick Amount Corrector #2
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x42EB8B, [0x90, 0x90, 0x90]);
+        // NOP Gold Brick Amount Corrector #3 (Only runs when 200+)
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x42EB90, [0x90, 0x90, 0x90]);
 
-            // NOP Hint System
-            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3C733D, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
-            // NOP Call to Hint System that doesn't clear old value
-            Memory.Instance.SafeWrite(Mod.BaseAddress + 0x43D212, [0x90, 0x90, 0x90, 0x90, 0x90]);
-        }
+        // Removes the games check to see if player is in Freeplay mode and forces the game to 
+        // always checking individual level completion to enable save and exit
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x40A264, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
+        
+        // Unlock Current Level Story
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B817E, [0x90, 0x90, 0x90, 0x90, 0x90]);
+        // // Unlock Current Level Freeplay
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B8165, [0x90, 0x90, 0x90, 0x90, 0x90]);
+        //NOP Unlock Next Story Level
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B809C, [0x90, 0x90, 0x90, 0x90, 0x90]);
+
+        // NOP Hint System
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3C733D, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
+        // NOP Call to Hint System that doesn't clear old value
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x43D212, [0x90, 0x90, 0x90, 0x90, 0x90]);
     }
 
+    // This function turns on the N0CUT5 Cheat Code so cutscenes don't show
+    public static unsafe void WriteN0CUT5Flag()
+    {
+        int* cutsceneBaseAddress = (int*)(Mod.BaseAddress + 0xB06F2C);
+        nuint ptr = (nuint)(*cutsceneBaseAddress + 0xA4);
+
+        // Write N0CUT5 flag to game
+        Memory.Instance.Write(ptr, (byte) 0x01);
+    }
+
+    /* 
+    This function blocks the code that checks if lesson has been completed while in the lesson
+    thus allowing the player to return to diagon. Also prevents the game from showing that you completed the lesson
+    Currently only used to prevent the game from constantly showing you unlocked apparition
+    WARNING: DADA, Specs, Agua, & Reducto Lessons softlock if this is enabled during those lessons
+    */
     public static void LessonReturnToHubNOP()
     {
-        // All of these need to be off for Reducto/Agua/Specs?
         // Allows Return to Diagon Alley in Abilities Lessons (Thestral Forest) 
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x161D1, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x40F42, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
-        // Allows Return to Diagon Alley in Spell Lessons (Diffindo and Agua)
+        // Allows Return to Diagon Alley in Spell Lessons (Diffindo)
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x33355A, [0x90, 0x90]);
     }
 
+    // Restores the code effects from the function above to original behavior.
     public static void LessonRestoreReturnToHub()
     {
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x161D1, [0x0F, 0x84, 0x2D, 0xFF, 0xFF, 0xFF]); // harry2.exe+161D1 - 0F84 2DFFFFFF
@@ -170,69 +173,66 @@ public class Game
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x33355A, [0x74, 0x03]); //harry2.exe+33355A - 74 03                
     }
 
+    // Main function that handles updating the game state to match items or locations.
     public static void ManageItem(int ItemID)
     {
-    
-        //// implement logic for in shop or not controllable
-        //if (!PlayerControllable())
-        //    return;
 
         LevelHandler.LevelData level;
 
         switch(ItemID)
         {
-                case < 213:
+                case < 213: // Handle Character
                     CharacterHandler.UnlockCharacter(ItemID);
                     break;
-                case < 426:
+                case < 426: // Handle Token
                     int token = ItemID - tokenOffset;
                     CharacterHandler.UnlockToken(token);
                     break;
-                case < 450: // Horcrux
+                case < 450: // Handle Horcrux
                     break;
-                case < 475:
+                case < 475: // Handle Level Unlock
                     level = LevelHandler.ConvertIDToLeveData(ItemID - levelOffset);
                     LevelHandler.UnlockLevel(level);
                     break;
-                case < 499:
+                case < 499: // Handle In Level Student in Peril
                     level = LevelHandler.ConvertIDToLeveData(ItemID - SIPOffset);
                     LevelHandler.UnlockStudentInPeril(level);
                     break;
-                case < 550:
+                case < 550: // Handle Hub SIP
                     HubHandler.UnlockHubSIP(ItemID - HubSIPOffset);
                     break;
-                case < 574:
+                case < 574: // Handle Gryffindor Crests
                     level = LevelHandler.ConvertIDToLeveData(ItemID - GryfCrestOffset);
                     LevelHandler.UnlockGryffindorCrest(level);
                     break;
-                case < 598:
+                case < 598: // Handle Slytherin Crests
                     level = LevelHandler.ConvertIDToLeveData(ItemID - SlythCrestOffset);
                     LevelHandler.UnlockSlytherinCrest(level);
                     break;
-                case < 622:
+                case < 622: // Handle Ravenclaw Crests
                     level = LevelHandler.ConvertIDToLeveData(ItemID - RavenCrestOffset);
                     LevelHandler.UnlockRavenclawCrest(level);
                     break;
-                case < 646:
+                case < 646: // Handle Hufflepuff Crests
                     level = LevelHandler.ConvertIDToLeveData(ItemID - HuffleCrestOffset);
                     LevelHandler.UnlockHufflepuffCrest(level);
                     break;
-                case < 699:
+                case < 699: // Handle True Wizards
                     level = LevelHandler.ConvertIDToLeveData(ItemID - TrueWizardOffset);
                     LevelHandler.UnlockTrueWizard(level);
                     break;
-                case < 700: // Purple Stud
+                case < 700: // Purple Stud - see APHandler ItemReceived for implementation
                     break;
-                case < 900:
+                case < 900: // Handle Gold Brick
                     HubHandler.ReceivedGoldBrick(ItemID);
                     break;
-                case < 935:
+                case < 935: // Handle Red Brick Collected/Purchasable
                     HubHandler.UnlockHubRB(ItemID - RedBrickCollectOffset);
                     break;
-                case < 975:
+                case < 975: // Handle Red Brick Purchase
                     HubHandler.ReceivedRedBrickUnlock(ItemID - RedBrickPurchOffset);
                     break;
-                case < 1027:
+                case < 1027: // Handle Spells
                     SpellHandler.UnlockSpell(ItemID - SpellPurchOffset, Mod.GameInstance!.CurrentCharID);
                     break;
                 default:
@@ -241,6 +241,11 @@ public class Game
         }
     }
 
+    /* 
+    Dark Times is level 0, Hub is levels 1-4. This is a helper function to conver level ID to AP ID.
+    upon check completion. The final status screens are considered part of leaky cauldron map ID so 
+    if Map ID is 1-4, we evaluate the previous level ID instead of the current one.
+    */ 
     public static int? GetApID(int level, int prevLevel)
     {
         return level switch
@@ -253,6 +258,7 @@ public class Game
         };
     }
 
+    // Reverse wrappers for our hooks
     public static List<IAsmHook> _asmHooks = [];
     private static IReverseWrapper<LevelComplete> _reverseWrapOnLevelComplete = default!;
     private static IReverseWrapper<LevelSIPComplete> _reverseWrapOnLevelSIP = default!;
@@ -277,10 +283,11 @@ public class Game
     private static IReverseWrapper<OpenPolyjuicePot> _reverseWrapOnOpenPolyjuicePot = default!;
     private static IReverseWrapper<ClosePolyjuicePot> _reverseWrapOnClosePolyjuicePot = default!;
     private static IReverseWrapper<ChangeCharacters> _reverseWrapOnChangeCharacters = default!;
-    // private static IReverseWrapper<MakeSpellVisible> _reverseWrapOnMakeSpellVisible = default!;
     private static IReverseWrapper<ChangeYears> _reverseWrapChangeYears = default!;
     private static IReverseWrapper<HandleInterruptedMessage> _reverseWrapOnHandleInterruptedMessage = default!;
 
+    // Modifying the associated assembly of our game to call our functions
+    // TODO: Future proof this from game updates by implementing signature scanning
     public void SetupHooks(IReloadedHooks hooks)
     {
         string[] completeLevelHook =
@@ -328,7 +335,7 @@ public class Game
         };
         _asmHooks.Add(hooks.CreateAsmHook(completeHogwartsCrestHook, (int)(Mod.BaseAddress + 0x16C0A), AsmHookBehaviour.ExecuteFirst).Activate());
 
-        string[] purchaseRedBrick =
+        string[] purchaseRedBrickHook =
         {
             "use32",
             "pushfd",
@@ -337,9 +344,9 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(purchaseRedBrick, (int)(Mod.BaseAddress + 0x8928), AsmHookBehaviour.ExecuteAfter).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(purchaseRedBrickHook, (int)(Mod.BaseAddress + 0x8928), AsmHookBehaviour.ExecuteAfter).Activate());
         
-        string[] purchaseGoldBrick =
+        string[] purchaseGoldBrickHook =
         {
             "use32",
             "pushfd",
@@ -348,9 +355,9 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(purchaseGoldBrick, (int)(Mod.BaseAddress + 0x9039), AsmHookBehaviour.ExecuteFirst).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(purchaseGoldBrickHook, (int)(Mod.BaseAddress + 0x9039), AsmHookBehaviour.ExecuteFirst).Activate());
 
-        string[] spellUnlock =
+        string[] spellUnlockHook =
         {
             "use32",
             "pushfd",
@@ -359,7 +366,7 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(spellUnlock, (int)(Mod.BaseAddress + 0x33358B), AsmHookBehaviour.ExecuteFirst).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(spellUnlockHook, (int)(Mod.BaseAddress + 0x33358B), AsmHookBehaviour.ExecuteFirst).Activate());
 
         string[] hubCharacterCollectedHook =
         {
@@ -394,7 +401,7 @@ public class Game
         };
         _asmHooks.Add(hooks.CreateAsmHook(characterPurchasedHook, (int)(Mod.BaseAddress + 0x418968), AsmHookBehaviour.ExecuteFirst).Activate());
 
-        string[] hubSIPHook =
+        string[] rescueHubSIPHook =
         {
             "use32",
             "pushfd",
@@ -403,9 +410,9 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(hubSIPHook, (int)(Mod.BaseAddress + 0x313BF1), AsmHookBehaviour.ExecuteFirst).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(rescueHubSIPHook, (int)(Mod.BaseAddress + 0x313BF1), AsmHookBehaviour.ExecuteFirst).Activate());
 
-        string[] hubGBHook =
+        string[] collectHubGBHook =
         {
             "use32",
             "pushfd",
@@ -414,9 +421,9 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(hubGBHook, (int)(Mod.BaseAddress + 0x3137EF), AsmHookBehaviour.ExecuteFirst).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(collectHubGBHook, (int)(Mod.BaseAddress + 0x3137EF), AsmHookBehaviour.ExecuteFirst).Activate());
 
-        string[] hubRBHook =
+        string[] collectHubRBHook =
         {
             "use32",
             "pushfd",
@@ -425,9 +432,9 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(hubRBHook, (int)(Mod.BaseAddress + 0x71E92), AsmHookBehaviour.ExecuteFirst).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(collectHubRBHook, (int)(Mod.BaseAddress + 0x71E92), AsmHookBehaviour.ExecuteFirst).Activate());
 
-        string[] hubGhostPathHook =
+        string[] handleHubGhostPathUpdatesHook =
         {
             "use32",
             "pushfd",
@@ -436,7 +443,7 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(hubGhostPathHook, (int)(Mod.BaseAddress + 0x37CE63), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(handleHubGhostPathUpdatesHook, (int)(Mod.BaseAddress + 0x37CE63), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
 
         string[] updateLevelHook =
         {
@@ -471,7 +478,7 @@ public class Game
         };
         _asmHooks.Add(hooks.CreateAsmHook(openCloseShopHook, (int)(Mod.BaseAddress + 0x417074), AsmHookBehaviour.ExecuteFirst).Activate());
 
-        string[] OpenMenuHook =
+        string[] openMenuHook =
         {
             "use32",
             "pushfd",
@@ -480,9 +487,11 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(OpenMenuHook, (int)(Mod.BaseAddress + 0x212145), AsmHookBehaviour.ExecuteFirst).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(openMenuHook, (int)(Mod.BaseAddress + 0x212145), AsmHookBehaviour.ExecuteFirst).Activate());
 
-        string[] CharacterCmp =
+        // The game's vanilla behavior is to check if the character is purchased before allowing the player to switch to them in freeplay.
+        // This hook adjusts that behavior so it doesn't check in levels, but does check in hub.
+        string[] characterCmpHook =
         {
             "use32",
             "pushfd",
@@ -512,9 +521,9 @@ public class Game
             "bail:",
             hooks.Utilities.GetAbsoluteJumpMnemonics((nint)Mod.BaseAddress + 0x41891A, false),
         };
-        _asmHooks.Add(hooks.CreateAsmHook(CharacterCmp, (int)(Mod.BaseAddress + 0x41890C), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(characterCmpHook, (int)(Mod.BaseAddress + 0x41890C), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
 
-        string[] CloseMenuHook =
+        string[] closeMenuHook =
         {
             "use32",
             "pushfd",
@@ -523,9 +532,9 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(CloseMenuHook, (int)(Mod.BaseAddress + 0x218347), AsmHookBehaviour.ExecuteAfter).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(closeMenuHook, (int)(Mod.BaseAddress + 0x218347), AsmHookBehaviour.ExecuteAfter).Activate());
 
-        string[] OpenPolyjuicePotHook =
+        string[] openPolyjuicePotHook =
         {
             "use32",
             "pushfd",
@@ -534,9 +543,9 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(OpenPolyjuicePotHook, (int)(Mod.BaseAddress + 0x3C69A0), AsmHookBehaviour.ExecuteFirst).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(openPolyjuicePotHook, (int)(Mod.BaseAddress + 0x3C69A0), AsmHookBehaviour.ExecuteFirst).Activate());
 
-        string[] ClosePolyjuicePotHook =
+        string[] closePolyjuicePotHook =
         {
             "use32",
             "pushfd",
@@ -545,9 +554,10 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(ClosePolyjuicePotHook, (int)(Mod.BaseAddress + 0x3C69B0), AsmHookBehaviour.ExecuteFirst).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(closePolyjuicePotHook, (int)(Mod.BaseAddress + 0x3C69B0), AsmHookBehaviour.ExecuteFirst).Activate());
 
-        string[] ChangeCharactersHook =
+        // Handles Spell logic when you change charactesr
+        string[] changeCharactersHook =
         {
             "use32",
             "push edx",
@@ -559,19 +569,9 @@ public class Game
             "popfd",
             "pop edx",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(ChangeCharactersHook, (int)(Mod.BaseAddress + 0x5440EC), AsmHookBehaviour.ExecuteFirst).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(changeCharactersHook, (int)(Mod.BaseAddress + 0x5440EC), AsmHookBehaviour.ExecuteFirst).Activate());
 
-        // string [] MakeSpellVisibleHook =
-        // {
-        //     "use32",
-        //     "push edi",
-        //     "mov edi, esi",
-        //     $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnMakeSpellVisible, out _reverseWrapOnMakeSpellVisible)}",
-        //     "pop edi",
-        // };
-        // _asmHooks.Add(hooks.CreateAsmHook(MakeSpellVisibleHook, (int)(Mod.BaseAddress + 0x184EF), AsmHookBehaviour.ExecuteFirst).Activate());
-
-        string[] ChangeYearsHook =
+        string[] changeYearsHook =
         {
             "use32",
             "pushfd",
@@ -580,9 +580,9 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(ChangeYearsHook, (int)(Mod.BaseAddress + 0x3A584B), AsmHookBehaviour.ExecuteAfter).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(changeYearsHook, (int)(Mod.BaseAddress + 0x3A584B), AsmHookBehaviour.ExecuteAfter).Activate());
 
-        string[] HandleInterruptedMessageHook =
+        string[] handleInterruptedMessageHook =
         {
             "use32",
             "pushfd",
@@ -592,9 +592,9 @@ public class Game
             "popfd",
         };
         // Normal Zero Out Hint Game Code
-        _asmHooks.Add(hooks.CreateAsmHook(HandleInterruptedMessageHook, (int)(Mod.BaseAddress + 0x3C77E7), AsmHookBehaviour.ExecuteFirst).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(handleInterruptedMessageHook, (int)(Mod.BaseAddress + 0x3C77E7), AsmHookBehaviour.ExecuteFirst).Activate());
         // Walking through Loading Zone Zero Out Hint Game Code
-        _asmHooks.Add(hooks.CreateAsmHook(HandleInterruptedMessageHook, (int)(Mod.BaseAddress + 0x3C727B), AsmHookBehaviour.ExecuteFirst).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(handleInterruptedMessageHook, (int)(Mod.BaseAddress + 0x3C727B), AsmHookBehaviour.ExecuteFirst).Activate());
 
     }
 
@@ -891,45 +891,6 @@ public class Game
             SpellHandler.HandleSpellVisibility();
         }
     }
-
-    // [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.edi],
-    // FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
-
-    // public delegate byte MakeSpellVisible(int eax, int edi);
-
-    // public static byte OnMakeSpellVisible(int eax, int edi)
-    // {
-    //     Mod.Logger!.WriteLineAsync($"Make Spell Visible called with EAX: {eax:X} and EDI: {edi:X}");
-    //     byte alValue = (byte)(eax & 0xFF);
-
-    //     if (alValue != 1)
-    //         return alValue;
-
-    //     switch (edi)
-    //     {
-    //         case 0:
-    //             break;
-    //         case 0x10:
-    //             alValue = SpellHandler.HandleSpellVisibility(23); // Check for Diffindo
-    //             break;
-    //         case 0x20:
-    //             alValue = SpellHandler.HandleSpellVisibility(27); // Check for Agua
-    //             break;
-    //         case 0x28:
-    //             alValue = SpellHandler.HandleSpellVisibility(28); // Check for Focus
-    //             break;
-    //         case 0x30:
-    //             alValue = SpellHandler.HandleSpellVisibility(29); // Check for Expecto
-    //             break;
-    //         case 0x38:
-    //             alValue = SpellHandler.HandleSpellVisibility(30); // Check for Reducto
-    //             break;
-    //         default:
-    //             break;
-    //     }
-    //     Mod.Logger!.WriteLineAsync($"Returning AL value of {alValue} for EDI: {edi:X}");
-    //     return alValue;
-    // }
 
     [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.esp], 
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]

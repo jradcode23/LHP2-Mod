@@ -66,7 +66,7 @@ public class ArchipelagoHandler
 
         try
         {
-            Game.CheckGameLoaded();
+            Game.IsGameLoaded();
             Seed = _session.ConnectAsync()?.Result?.SeedName;
             Mod.Logger!.WriteLineAsync(Seed + Slot);
 
@@ -135,7 +135,7 @@ public class ArchipelagoHandler
                 Game.ManageItem(gameID);
                 return;
             }
-            if(Mod.GameInstance != null && Game.PlayerControllable())
+            if(Mod.GameInstance != null && Game.IsPlayerControllable())
             {
                 if(gameID >= 998)
                 {
@@ -148,7 +148,8 @@ public class ArchipelagoHandler
                     return;
                 }
             }
-            if(Mod.GameInstance != null && !Game.PlayerControllable() && gameID == 699)
+            // Handle Purple Stud
+            if(Mod.GameInstance != null && !Game.IsPlayerControllable() && gameID == 699)
             {
                 // Console.WriteLine($"Queuing Purple Stud for later handling with game ID {gameID}");
                 _queuedItems.Enqueue(gameID);
@@ -192,7 +193,7 @@ public class ArchipelagoHandler
         {
             if (_queuedItems.TryPeek(out var itemId))
             {
-                if (Mod.GameInstance != null && Game.PlayerControllable())
+                if (Mod.GameInstance != null && Game.IsPlayerControllable())
                 {
                     if (_queuedItems.TryDequeue(out itemId))
                     {

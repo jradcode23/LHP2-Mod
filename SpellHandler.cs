@@ -487,6 +487,28 @@ public class SpellHandler
         *ptr |= (byte)(1 << bitOffset);
     }
 
+    // public static unsafe void LockActiveSpell(int id)
+    // {
+    //     int byteOffset = id / 8;
+    //     int bitOffset = id % 8;
+
+    //     byte* activeSpellBaseAddress = *(byte**)(Mod.BaseAddress + 0x00C53930);
+    //     byte* activeFirstPointer = *(byte**)(activeSpellBaseAddress + 0x1C);
+    //     byte* activeSecondPointer = *(byte**)(activeFirstPointer + 0xBF4);
+
+    //     activeSecondPointer += 0x58;
+
+    //     byte* ptr = activeSecondPointer + byteOffset;
+
+    //     if (ptr == null)
+    //     {
+    //         Mod.Logger!.WriteLineAsync("SpellBaseAddress: null pointer");
+    //         return;
+    //     }
+
+    //     *ptr &= unchecked((byte)~(byte)(1 << bitOffset));
+    // }
+
     public static unsafe void LockPassiveSpell(int id)
     {
         int byteOffset = id / 8;
@@ -545,21 +567,26 @@ public class SpellHandler
         *ptr = 1;
     }
 
-    public static unsafe void UnlockActiveSpell(int byteoffset, int bitOffset)
+    private static unsafe byte* GetActiveSpellPointer()
     {
         byte* activeSpellBaseAddress = *(byte**)(Mod.BaseAddress + 0x00C53930);
-
+        
         if (activeSpellBaseAddress == null)
-        {
-            // Mod.Logger!.WriteLineAsync("ActiveSpellBaseAddress: null pointer");
-            return;
-        }
-
+            return null;
+        
         byte* activeFirstPointer = *(byte**)(activeSpellBaseAddress + 0x1C);
         byte* activeSecondPointer = *(byte**)(activeFirstPointer + 0xBF4);
-        activeSecondPointer += 0x58;
+        return activeSecondPointer + 0x58;
+    }
 
-        byte* ptr = activeSecondPointer + byteoffset;
+    public static unsafe void UnlockActiveSpell(int byteoffset, int bitOffset)
+    {
+        byte* ptr = GetActiveSpellPointer();
+        
+        if (ptr == null)
+            return;
+        
+        ptr += byteoffset;
         *ptr |= (byte)(1 << bitOffset);
     }
 
@@ -567,14 +594,14 @@ public class SpellHandler
     {
         try
         {
-        // Reset Passive Spells
-        for(int i = 0; i < 7; i++)
-        {
-            byte* passivePTR = spellBaseAddress + i;
-            *passivePTR = 0;
-        }
-        ResetActiveSpells();
-        MakeSpellsInvisible();
+            // Reset Passive Spells
+            for(int i = 0; i < 7; i++)
+            {
+                byte* passivePTR = spellBaseAddress + i;
+                *passivePTR = 0;
+            }
+            ResetActiveSpells();
+            MakeSpellsInvisible();
         }
         catch (Exception e)
         {
@@ -582,58 +609,18 @@ public class SpellHandler
         }
 
         // Set the Default Spells
-        UnlockSpell(0, Mod.GameInstance!.CurrentCharID); // Wingardium Leviosa
-        // 1 Slugulus Eructo
-        // 2 Rictusempra
-        // 3 Entomorphis
-        // 4 Tarantallegra
-        // 5 Locomotor Mortis
-        // 6 Redactum Skullus
-        // 7 Colovaria
-        // 8 Calvorio
-        // 9 Anteoculatia
-        // 10 Herbifors
-        // 11 Glacius
-        // 12 Incarcerous
-        // 13 Expelliarmus
-        // 14 Flipendo
-        // 15 Trip Jinx
-        // 16 Stupefy
-        // 17 Transfiguration
-        // 18 Engorgio Skullus
-        // 19 Immobulus
-        UnlockSpell(20, Mod.GameInstance!.CurrentCharID); // Pets
-        UnlockSpell(21, Mod.GameInstance!.CurrentCharID); // Invisibility Cloak
-        UnlockSpell(22, Mod.GameInstance!.CurrentCharID); // Avada
-        // UnlockSpell(23, Mod.GameInstance!.CurrentCharID); // Diffindo
-        UnlockSpell(24, Mod.GameInstance!.CurrentCharID); // Lumos Part 1
-        UnlockSpell(25, Mod.GameInstance!.CurrentCharID); // Lumos Part 2
-        // UnlockSpell(26, Mod.GameInstance!.CurrentCharID); // Deluminator & Polyjuice
-        // UnlockSpell(27, Mod.GameInstance!.CurrentCharID); // Aguamenti
-        // UnlockSpell(28, Mod.GameInstance!.CurrentCharID); // Focus
-        // UnlockSpell(29, Mod.GameInstance!.CurrentCharID); // Expecto Patronum
-        // UnlockSpell(30, Mod.GameInstance!.CurrentCharID); // Reducto
-        UnlockSpell(31, Mod.GameInstance!.CurrentCharID); // Unknown Spell
-        // 32 - 39 Unknown spell though 33 is Key but doesn't do anything
-        UnlockSpell(40, Mod.GameInstance!.CurrentCharID); // Unknown Spell
-        UnlockSpell(41, Mod.GameInstance!.CurrentCharID); // Unknown Spell
-        UnlockSpell(42, Mod.GameInstance!.CurrentCharID); // Draught of Living Death
-        UnlockSpell(43, Mod.GameInstance!.CurrentCharID); // Thestral Riding
-        UnlockSpell(44, Mod.GameInstance!.CurrentCharID); // Dueling
-        // 45 Apparition
-        if (Mod.LHP2_Archipelago!.IsLocationChecked(1007))
+        int[] defaultSpells = { 0, 20, 21, 22, 24, 25, 31, 40, 41, 42, 43, 44, 46, 47, 48, 52, 53, 54, 55 };
+        foreach (int spellId in defaultSpells)
+        {
+            UnlockSpell(spellId, Mod.GameInstance!.CurrentCharID);
+        }
+
+        // Special handling for DADA
+        byte* y5GhostPtr = HubHandler.GhostPathBaseAddress + 0x20;
+        if (Mod.LHP2_Archipelago!.IsLocationChecked(1007) || (*y5GhostPtr & (1 << 2)) != 0)
         {
             UnlockSpell(46, Mod.GameInstance!.CurrentCharID); // DADA
         }
-        UnlockSpell(47, Mod.GameInstance!.CurrentCharID); // Grawp Befriended
-        UnlockSpell(48, Mod.GameInstance!.CurrentCharID); // Slughorn Vial
-        // 49 WWW Boxes
-        // 50 Specs
-        // 51 Herm Bag
-        UnlockSpell(52, Mod.GameInstance!.CurrentCharID); // Unknown Spell
-        UnlockSpell(53, Mod.GameInstance!.CurrentCharID); // Unknown Spell - Likely rune book but doesn't do anything
-        UnlockSpell(54, Mod.GameInstance!.CurrentCharID); // Unknown Spell
-        UnlockSpell(55, Mod.GameInstance!.CurrentCharID); // Unknown Spell
 
         byte* darkMagic = HubHandler.HubBaseAddress + 0x19B * 4 + 2;
         *darkMagic |= 1 << 0;
@@ -644,17 +631,9 @@ public class SpellHandler
 
     public static unsafe void ResetActiveSpells()
     {
-        byte* activeSpellBaseAddress = *(byte**)(Mod.BaseAddress + 0x00C53930);
-
-        if (activeSpellBaseAddress == null)
-        {
-            // Mod.Logger!.WriteLineAsync("ActiveSpellBaseAddress: null pointer");
+        byte* activeSecondPointer = GetActiveSpellPointer();
+        if (activeSecondPointer == null)
             return;
-        }
-
-        byte* activeFirstPointer = *(byte**)(activeSpellBaseAddress + 0x1C);
-        byte* activeSecondPointer = *(byte**)(activeFirstPointer + 0xBF4);
-        activeSecondPointer += 0x58;
 
         for(int i = 0; i < 7; i++)
         {
@@ -671,6 +650,7 @@ public class SpellHandler
             Mod.Logger!.WriteLineAsync("SpellVisibilityBaseAddress: null pointer");
             return;
         }
+        
         byte* ptr = spellVisibilityBaseAddress + 8;
 
         for (int i = 0; i < 7; i++)

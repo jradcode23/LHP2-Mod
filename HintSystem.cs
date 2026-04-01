@@ -45,7 +45,7 @@ public class HintSystem
     {
         while (true)
         {
-            bool playerControllable = Game.PlayerControllable();
+            bool playerControllable = Game.IsPlayerControllable();
             bool notInShop;
             bool notInLevelSelect;
             bool notInMenu;
