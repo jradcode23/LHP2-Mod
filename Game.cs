@@ -890,13 +890,15 @@ public class Game
             SpellHandler.SpellMapLogic(Mod.GameInstance!.MapID);
 
             byte* spellSelectedAddress = SpellHandler.SpellSelectedBaseAddress + 0x18;
-            Mod.Logger!.WriteLineAsync($"Selected Spell Address: {(nuint)spellSelectedAddress:X}");
+            // Mod.Logger!.WriteLineAsync($"Selected Spell Address: {(nuint)spellSelectedAddress:X}");
             *spellSelectedAddress = 0; // Set selected spell to 0 so that if the character change gives you a spell you don't have equipped, it won't be selected.
             spellSelectedAddress += 0x50;
             *spellSelectedAddress = 0; // Sets the spell that you would switch to based on spell 0
             byte* activeShootingSpell = SpellHandler.ActiveShootingSpellBaseAddress + 0xED3;
-            Mod.Logger!.WriteLineAsync($"Active Shooting Spell Address: {(nuint)activeShootingSpell:X}");
+            // Mod.Logger!.WriteLineAsync($"Active Shooting Spell Address: {(nuint)activeShootingSpell:X}");
             *activeShootingSpell = 0; // Sets active shooting spell to 0
+            byte* spellImage = activeShootingSpell + 0x1;
+            *spellImage = 0; 
 
         }
     }
