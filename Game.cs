@@ -350,7 +350,7 @@ public class Game
         };
         _asmHooks.Add(hooks.CreateAsmHook(purchaseGoldBrick, (int)(Mod.BaseAddress + 0x9039), AsmHookBehaviour.ExecuteFirst).Activate());
 
-        string[] purchaseJokeSpell =
+        string[] spellUnlock =
         {
             "use32",
             "pushfd",
@@ -359,7 +359,7 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(purchaseJokeSpell, (int)(Mod.BaseAddress + 0x33358B), AsmHookBehaviour.ExecuteFirst).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(spellUnlock, (int)(Mod.BaseAddress + 0x33358B), AsmHookBehaviour.ExecuteFirst).Activate());
 
         string[] hubCharacterCollectedHook =
         {
@@ -888,18 +888,7 @@ public class Game
             SpellHandler.ResetSpells();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
             SpellHandler.SpellMapLogic(Mod.GameInstance!.MapID);
-
-            byte* spellSelectedAddress = SpellHandler.SpellSelectedBaseAddress + 0x18;
-            // Mod.Logger!.WriteLineAsync($"Selected Spell Address: {(nuint)spellSelectedAddress:X}");
-            *spellSelectedAddress = 0; // Set selected spell to 0 so that if the character change gives you a spell you don't have equipped, it won't be selected.
-            spellSelectedAddress += 0x50;
-            *spellSelectedAddress = 0; // Sets the spell that you would switch to based on spell 0
-            byte* activeShootingSpell = SpellHandler.ActiveShootingSpellBaseAddress + 0xED3;
-            // Mod.Logger!.WriteLineAsync($"Active Shooting Spell Address: {(nuint)activeShootingSpell:X}");
-            *activeShootingSpell = 0; // Sets active shooting spell to 0
-            byte* spellImage = activeShootingSpell + 0x1;
-            *spellImage = 0; 
-
+            SpellHandler.HandleSpellVisibility();
         }
     }
 
