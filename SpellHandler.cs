@@ -609,7 +609,7 @@ public class SpellHandler
         }
 
         // Set the Default Spells
-        int[] defaultSpells = { 0, 20, 21, 22, 24, 25, 31, 40, 41, 42, 43, 44, 46, 47, 48, 52, 53, 54, 55 };
+        int[] defaultSpells = { 0, 20, 21, 22, 24, 25, 31, 40, 41, 42, 43, 44, 47, 48, 52, 53, 54, 55 };
         foreach (int spellId in defaultSpells)
         {
             UnlockSpell(spellId, Mod.GameInstance!.CurrentCharID);
@@ -617,7 +617,7 @@ public class SpellHandler
 
         // Special handling for DADA
         byte* y5GhostPtr = HubHandler.GhostPathBaseAddress + 0x20;
-        if (Mod.LHP2_Archipelago!.IsLocationChecked(1007) || (*y5GhostPtr & (1 << 2)) != 0)
+        if (Mod.LHP2_Archipelago!.IsLocationChecked(1007) && (*y5GhostPtr & (1 << 2)) != 0)
         {
             UnlockSpell(46, Mod.GameInstance!.CurrentCharID); // DADA
         }

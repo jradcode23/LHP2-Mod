@@ -22,6 +22,16 @@ public class SlotData
         SlotDataDictionary.TryGetValue("NumHorcruxRequired", out var value)
             ? Convert.ToInt32(value)
             : -1;
+    
+    public int ShuffleJokeSpells =>
+        SlotDataDictionary.TryGetValue("ShuffleJokeSpells", out var value)
+            ? Convert.ToInt32(value)
+            : -1;
+
+    public int ShuffleGoldBrickPurchases =>
+        SlotDataDictionary.TryGetValue("ShuffleGoldBrickPurchases", out var value)
+            ? Convert.ToInt32(value)
+            : -1;
 
     /// <summary>
     /// Gets the collectibles required as a Dictionary mapping collectible names to required counts.
@@ -51,10 +61,12 @@ public class SlotData
         Mod.Logger!.WriteLineAsync("=== Slot Data ===");
         Mod.Logger!.WriteLineAsync($"EndGoal: {EndGoal}");
         Mod.Logger!.WriteLineAsync($"Required Horcruxes: {NumberOfRequiredHorcruxes}");
+        Mod.Logger!.WriteLineAsync($"Shuffle Joke Spells: {ShuffleJokeSpells}");
+        Mod.Logger!.WriteLineAsync($"Shuffle Gold Brick Purchases: {ShuffleGoldBrickPurchases}");
         
-        if (EndGoal == -1 || NumberOfRequiredHorcruxes == -1)
+        if (EndGoal == -1 || NumberOfRequiredHorcruxes == -1 || ShuffleJokeSpells == -1 || ShuffleGoldBrickPurchases == -1)
         {
-            Mod.Logger!.WriteLineAsync("EndGoal or Horcrux value not found or invalid. Please report to the devs.");
+            Mod.Logger!.WriteLineAsync("One or more values not found or invalid. Please report to the devs.");
         }
 
         // if (EndGoal == 1)

@@ -686,6 +686,11 @@ public class Game
     public delegate void GoldBrickPurchase(int ebx);
     private static void OnGoldBrickPurchase(int ebx)
     {
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleGoldBrickPurchases < 1)
+        {
+            Mod.Logger!.WriteLineAsync("Gold Brick Purchase detected but gold brick purchases aren't shuffled, ignoring.");
+            return; // Ignore if gold bricks aren't shuffled
+        }
         int itemId = BitOperations.TrailingZeroCount(ebx);
         CheckAndReportLocation(itemId + GoldBrickPurchOffset);
 
@@ -699,7 +704,7 @@ public class Game
         if (Mod.GameInstance!.MapID == 369 || Mod.GameInstance!.MapID == 375
             || Mod.GameInstance!.MapID == 383 || Mod.GameInstance!.MapID == 387 || Mod.GameInstance!.MapID == 166)
         {
-            Console.WriteLine($"EDX is {edx} and EAX is {eax}");
+            Mod.Logger!.WriteLineAsync($"Spell Unlock Function Ran: EDX is 0x{edx:X} and EAX is 0x{eax:X}");
             if (edx == 0x80000)
             {
                 CheckAndReportLocation(1025);
@@ -709,8 +714,12 @@ public class Game
             itemId += SpellPurchOffset;
             if (itemId <= 975 || (itemId > 994 && itemId != 1001))
             {
-                Console.WriteLine($"ItemID is {itemId}, returning");
                 return; // Ignore non purchased spells that are unlocked
+            }
+            if (itemId < 995 && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleJokeSpells < 1)
+            {
+                Mod.Logger!.WriteLineAsync("Joke Spells Not Shuffled, Ignoring Spell Unlock");
+                return; // Ignore joke spells if they aren't shuffled
             }
             CheckAndReportLocation(itemId);
         }
