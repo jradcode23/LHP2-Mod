@@ -21,6 +21,7 @@ public class HubHandler
     private static unsafe byte* quadAddress = null;
     private static unsafe byte* hogsStatAddress = null;
     private static unsafe byte* classLobbyAddress = null;
+    private static unsafe byte* kingsCrossAddress = null;
 
     [Flags]
     public enum BitMask
@@ -557,6 +558,7 @@ public class HubHandler
         quadAddress = GetHubMapAddress("Quad", 0); // Quad
         hogsStatAddress = GetHubMapAddress("HogsStation", 0); //HogsStation
         classLobbyAddress = GetHubMapAddress("ClassLobby", 0x1318); // Class Lobby
+        kingsCrossAddress = GetHubMapAddress("KingsCross", 0x7B); // King's Cross
         byte* y6GhostPtr = HubHandler.GhostPathBaseAddress + 0x34;
         byte* y6GhostPtr2 = HubHandler.GhostPathBaseAddress + 0x35;
 
@@ -575,6 +577,10 @@ public class HubHandler
         if (year != 6 && (!Mod.LHP2_Archipelago!.IsLocationChecked(1021) || (*y6GhostPtr2 & (1 << 0)) == 0))
         {
             AdjustClassLobby();
+        }
+        if (year != 7)
+        {
+            AdjustKingsCross();
         }
     }
 
@@ -656,12 +662,12 @@ public class HubHandler
     {
         if (hogsStatAddress == MapFlagsBaseAddress + 0x40)
         {
-            Mod.Logger!.WriteLineAsync("Quad Save info hasn't been written yet.");
+            Mod.Logger!.WriteLineAsync("Hogs Station Save info hasn't been written yet.");
             return;            
         }
-        Mod.Logger!.WriteLineAsync($"Updating Hogs Station Flags. Address is 0x{(nuint)hogsStatAddress}");
+        Mod.Logger!.WriteLineAsync($"Updating Hogs Station Flags. Address is 0x{(nuint)hogsStatAddress:X}");
         hogsStatAddress += 0xA3;
-        Mod.Logger!.WriteLineAsync($"First Hogs Station Flag Address is 0x{(nuint)hogsStatAddress}");
+        Mod.Logger!.WriteLineAsync($"First Hogs Station Flag Address is 0x{(nuint)hogsStatAddress:X}");
         *hogsStatAddress = 82; // Block 1
         hogsStatAddress += 7;
         *hogsStatAddress = 82; // Block 2
@@ -688,6 +694,24 @@ public class HubHandler
         }
 
         *classLobbyAddress &= unchecked((byte)~(1 << 6)); // Clear out being forced into reducto lesson
+    }
+
+    private static unsafe void AdjustKingsCross()
+    {
+        if (kingsCrossAddress == MapFlagsBaseAddress + 0x40)
+        {
+            Mod.Logger!.WriteLineAsync("Kings Cross Save info hasn't been written yet.");
+            return;
+        }
+        Mod.Logger!.WriteLineAsync($"Updating Kings Cross Flags. Address is 0x{(nuint)kingsCrossAddress:X}");
+
+        for (int i = 0; i < 7; i++)
+        {
+            *kingsCrossAddress |= 1 << 6; // Bit 6 makes the compartment visible
+            kingsCrossAddress += 0x7; // Adjust the address to each train compartment
+        }
+        kingsCrossAddress += 0x72B;
+        *kingsCrossAddress = 255; // Make the train appear in all years but 7
     }
 
     private static unsafe byte* GetHubMapAddress(string mapName, int offset)
