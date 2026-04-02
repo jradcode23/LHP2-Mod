@@ -433,7 +433,7 @@ public class SpellHandler
         *spellSelectedAddress = 0; // Sets the spell that you would switch to based on spell 0
 
         *activeShootingSpell = 0; // Sets active shooting spell to 0
-        *spellImage = 0; 
+        *spellImage = 0;
     }
 
     private static unsafe readonly byte* spellBaseAddress = (byte*)(Mod.BaseAddress + 0xB06AB0);
@@ -463,11 +463,11 @@ public class SpellHandler
             {
                 MakeSpellVisible(spellId);
             }
-        } 
+        }
         else if (spellId == 26)
         {
             // Deluminator and polyjuice are tied together so making polyjuice usable by another other than ron
-            UnlockPassiveSpell(byteOffset, bitOffset); 
+            UnlockPassiveSpell(byteOffset, bitOffset);
         }
         // else 
         // {
@@ -523,7 +523,7 @@ public class SpellHandler
         }
         *ptr &= unchecked((byte)~(byte)(1 << bitOffset));
     }
-    
+
     public static unsafe void MakeSpellVisible(int spellId)
     {
         if (spellVisibilityBaseAddress == null)
@@ -570,10 +570,10 @@ public class SpellHandler
     private static unsafe byte* GetActiveSpellPointer()
     {
         byte* activeSpellBaseAddress = *(byte**)(Mod.BaseAddress + 0x00C53930);
-        
+
         if (activeSpellBaseAddress == null)
             return null;
-        
+
         byte* activeFirstPointer = *(byte**)(activeSpellBaseAddress + 0x1C);
         byte* activeSecondPointer = *(byte**)(activeFirstPointer + 0xBF4);
         return activeSecondPointer + 0x58;
@@ -582,10 +582,10 @@ public class SpellHandler
     public static unsafe void UnlockActiveSpell(int byteoffset, int bitOffset)
     {
         byte* ptr = GetActiveSpellPointer();
-        
+
         if (ptr == null)
             return;
-        
+
         ptr += byteoffset;
         *ptr |= (byte)(1 << bitOffset);
     }
@@ -595,7 +595,7 @@ public class SpellHandler
         try
         {
             // Reset Passive Spells
-            for(int i = 0; i < 7; i++)
+            for (int i = 0; i < 7; i++)
             {
                 byte* passivePTR = spellBaseAddress + i;
                 *passivePTR = 0;
@@ -635,7 +635,7 @@ public class SpellHandler
         if (activeSecondPointer == null)
             return;
 
-        for(int i = 0; i < 7; i++)
+        for (int i = 0; i < 7; i++)
         {
             byte* activePTR = activeSecondPointer + i;
             *activePTR = 0;
@@ -650,7 +650,7 @@ public class SpellHandler
             Mod.Logger!.WriteLineAsync("SpellVisibilityBaseAddress: null pointer");
             return;
         }
-        
+
         byte* ptr = spellVisibilityBaseAddress + 8;
 
         for (int i = 0; i < 7; i++)
@@ -662,9 +662,9 @@ public class SpellHandler
 
     public static unsafe void UnlockAllPassiveSpells()
     {
-        for(int i = 0; i < 7; i++)
+        for (int i = 0; i < 7; i++)
         {
-            if (i ==4)
+            if (i == 4)
             {
                 continue; // Skip Unknown Spells
             }
@@ -688,39 +688,35 @@ public class SpellHandler
             case 301 when !Mod.LHP2_Archipelago!.IsLocationChecked(1007) || (*y5GhostPtr & (1 << 2)) == 0:
                 SpellHandler.LockPassiveSpell(26); // Lock Polyjuice cause game acts weird if you use it
                 SpellHandler.LockPassiveSpell(46); // Ensure lesson can be beaten since game doesn't like when you already have it
-                Game.LessonRestoreReturnToHub();
                 break;
             // Thestral Flying
             case 295 when !Mod.LHP2_Archipelago!.IsLocationChecked(1008) || (*y5GhostPtr & (1 << 3)) == 0:
                 SpellHandler.LockPassiveSpell(43); // Flying the thestral during the lesson can cause issues
-                Game.LessonRestoreReturnToHub();
                 break;
             // Aguamenti Lesson
             case 195 when !Mod.LHP2_Archipelago!.IsLocationChecked(1020) || (*y6GhostPtr & (1 << 7)) == 0:
                 SpellHandler.LockPassiveSpell(27); // Ensure lesson can be beaten since game doesn't like when you already have it
-                Game.LessonRestoreReturnToHub();
                 break;
             // Reducto Lesson
             case 196 when !Mod.LHP2_Archipelago!.IsLocationChecked(1021) || (*y6GhostPtr2 & (1 << 1)) == 0:
                 SpellHandler.LockPassiveSpell(30); // Ensure lesson can be beaten since game doesn't like when you already have it
-                Game.LessonRestoreReturnToHub();
                 break;
             // Specs Lesson
             case 179 when !Mod.LHP2_Archipelago!.IsLocationChecked(1016) || (*y6GhostPtr & (1 << 2)) == 0:
                 SpellHandler.LockPassiveSpell(50); // Ensure lesson can be beaten since game doesn't like when you already have it
-                Game.LessonRestoreReturnToHub();
                 break;
             // London when Apparition is supposed to be unlocked
             case 103 when !Mod.LHP2_Archipelago!.IsLocationChecked(1027) || (*y7GhostPtr & (1 << 2)) == 0:
                 Game.LessonReturnToHubNOP();
                 break;
             // Delum & Herm Bag
+            // TODO: if I find a way to lock herm bag in its lesson, we will need to update this approach
             case 166:
-                if (!Mod.LHP2_Archipelago!.IsLocationChecked(1001))
+                if (!Mod.LHP2_Archipelago!.IsLocationChecked(1001)) // Delum
                 {
                     SpellHandler.LockPassiveSpell(26);
                 }
-                if (!Mod.LHP2_Archipelago!.IsLocationChecked(1025))
+                if (!Mod.LHP2_Archipelago!.IsLocationChecked(1025)) // Herm Bag
                 {
                     SpellHandler.LockPassiveSpell(51);
                 }

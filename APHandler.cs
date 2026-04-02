@@ -124,7 +124,7 @@ public class ArchipelagoHandler
             if (Mod.GameInstance != null && prevInShop && gameID != 699)
             {
                 // Token or red brick purchasable
-                if((gameID >= 900 && gameID <= 935) || (gameID >= 213 && gameID <= 425))
+                if ((gameID >= 900 && gameID <= 935) || (gameID >= 213 && gameID <= 425))
                 {
                     Game.ManageItem(gameID);
                 }
@@ -135,21 +135,21 @@ public class ArchipelagoHandler
                 Game.ManageItem(gameID);
                 return;
             }
-            if(Mod.GameInstance != null && Game.IsPlayerControllable())
+            if (Mod.GameInstance != null && Game.IsPlayerControllable())
             {
-                if(gameID >= 998)
+                if (gameID >= 998)
                 {
                     Game.ManageItem(gameID);
                     return;
                 }
-                if(gameID == 699)
+                if (gameID == 699)
                 {
                     HubHandler.HandlePurpleStud();
                     return;
                 }
             }
             // Handle Purple Stud
-            if(Mod.GameInstance != null && !Game.IsPlayerControllable() && gameID == 699)
+            if (Mod.GameInstance != null && !Game.IsPlayerControllable() && gameID == 699)
             {
                 // Console.WriteLine($"Queuing Purple Stud for later handling with game ID {gameID}");
                 _queuedItems.Enqueue(gameID);
@@ -283,7 +283,7 @@ public class ArchipelagoHandler
 
     public void SendMapID(int MapID)
     {
-        _session.DataStorage[Scope.Slot,"map"] = MapID;
+        _session.DataStorage[Scope.Slot, "map"] = MapID;
     }
 
 }

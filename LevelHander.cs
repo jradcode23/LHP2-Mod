@@ -91,60 +91,60 @@ public class LevelHandler
     public static unsafe void UnlockLevel(LevelData level)
     {
         byte* ptr = LevelBaseAddress + (ushort)level;
-        if (ptr == null || LevelBaseAddress == null) 
+        if (ptr == null || LevelBaseAddress == null)
         {
             Mod.Logger!.WriteLineAsync($"Can't Unlock Level, null pointer at 0x{(nuint)ptr:X}");
-        } 
+        }
         *ptr |= (byte)(BitMask.StoryUnlocked | BitMask.FreeplayUnlocked);
     }
 
     public static unsafe void UnlockGryffindorCrest(LevelData level)
     {
         byte* ptr = LevelBaseAddress + (ushort)level;
-        if (ptr == null || LevelBaseAddress == null) 
+        if (ptr == null || LevelBaseAddress == null)
         {
             Mod.Logger!.WriteLineAsync($"Can't Unlock GC, null pointer at 0x{(nuint)ptr:X}");
-        } 
+        }
         *ptr |= (byte)BitMask.GryfCrest;
     }
 
     public static unsafe void UnlockSlytherinCrest(LevelData level)
     {
         byte* ptr = LevelBaseAddress + (ushort)level;
-        if (ptr == null || LevelBaseAddress == null) 
+        if (ptr == null || LevelBaseAddress == null)
         {
             Mod.Logger!.WriteLineAsync($"Can't Unlock SC, null pointer at 0x{(nuint)ptr:X}");
-        } 
+        }
         *ptr |= (byte)BitMask.SlythCrest;
     }
 
     public static unsafe void UnlockRavenclawCrest(LevelData level)
     {
         byte* ptr = LevelBaseAddress + (ushort)level;
-        if (ptr == null || LevelBaseAddress == null) 
+        if (ptr == null || LevelBaseAddress == null)
         {
             Mod.Logger!.WriteLineAsync($"Can't Unlock RC, null pointer at 0x{(nuint)ptr:X}");
-        } 
+        }
         *ptr |= (byte)BitMask.RavenCrest;
     }
 
     public static unsafe void UnlockHufflepuffCrest(LevelData level)
     {
         byte* ptr = LevelBaseAddress + (ushort)level;
-        if (ptr == null || LevelBaseAddress == null) 
+        if (ptr == null || LevelBaseAddress == null)
         {
             Mod.Logger!.WriteLineAsync($"Can't Unlock HC, null pointer at 0x{(nuint)ptr:X}");
-        } 
+        }
         *ptr |= (byte)BitMask.HuffleCrest;
     }
 
     public static unsafe void UnlockStudentInPeril(LevelData level)
     {
         byte* ptr = LevelBaseAddress + (ushort)level;
-        if (ptr == null || LevelBaseAddress == null) 
+        if (ptr == null || LevelBaseAddress == null)
         {
             Mod.Logger!.WriteLineAsync($"Can't Unlock SIP, null pointer at 0x{(nuint)ptr:X}");
-        } 
+        }
         *ptr |= (byte)BitMask.StudentInPeril;
     }
 
@@ -152,17 +152,17 @@ public class LevelHandler
     {
         byte* story = LevelBaseAddress + (ushort)level - 6;
         byte* freeplay = story + 1;
-        if (story == null || freeplay == null || LevelBaseAddress == null) 
+        if (story == null || freeplay == null || LevelBaseAddress == null)
         {
             Mod.Logger!.WriteLineAsync($"Can't Unlock TW, null pointer at 0x{(nuint)story:X}");
-        } 
+        }
         *story = 1;
         *freeplay = 1;
     }
-    
+
     public static unsafe void ResetLevels()
     {
-        for(int i = 0; i < LevelUnlockOrder.Length; i++)
+        for (int i = 0; i < LevelUnlockOrder.Length; i++)
         {
             byte* level = LevelBaseAddress + (ushort)LevelUnlockOrder[i];
             byte* story = level - 6;
@@ -175,7 +175,7 @@ public class LevelHandler
 
     public static void MakeAllBoardsVisible()
     {
-        UnlockLevel(LevelData.DarkTimes); 
+        UnlockLevel(LevelData.DarkTimes);
         UnlockLevel(LevelData.OutOfRetirement);
         UnlockLevel(LevelData.TheSevenHarrys);
         UnlockLevel(LevelData.TheThiefsDownfall);

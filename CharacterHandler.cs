@@ -241,20 +241,20 @@ public class CharacterHandler
         int bitOffset = GetCharacterBitOffset(id);
 
         byte* ptr = characterBaseAddress + byteOffset + TokenOffset;
-        if (ptr == null || characterBaseAddress == null) 
+        if (ptr == null || characterBaseAddress == null)
         {
             Mod.Logger!.WriteLineAsync($"Can't Unlock Character Purchase, null pointer at 0x{(nuint)ptr:X}");
             Mod.Logger!.WriteLineAsync($"Character Base address is: 0x{(nuint)characterBaseAddress:X}");
             Mod.Logger!.WriteLineAsync($"byteOffset is: {byteOffset}");
             Mod.Logger!.WriteLineAsync($"bitOffset is: {bitOffset}");
             return;
-        } 
+        }
         *ptr |= (byte)(1 << bitOffset);
     }
 
     public static unsafe void ResetTokens()
     {
-    foreach (var kvp in characterMap)
+        foreach (var kvp in characterMap)
         {
             int bitIndex = kvp.Value;
 
@@ -262,14 +262,14 @@ public class CharacterHandler
             int bitOffset = bitIndex % 8;
 
             byte* ptr = characterBaseAddress + byteOffset + TokenOffset;
-            if (ptr == null || characterBaseAddress == null) 
-                {
-                    Mod.Logger!.WriteLineAsync($"Can't Reset Character Purchase, null pointer at 0x{(nuint)ptr:X}");
-                    Mod.Logger!.WriteLineAsync($"Character Base address is: 0x{(nuint)characterBaseAddress:X}");
-                    Mod.Logger!.WriteLineAsync($"byteOffset is: {byteOffset}");
-                    Mod.Logger!.WriteLineAsync($"bitOffset is: {bitOffset}");
-                    return;
-                } 
+            if (ptr == null || characterBaseAddress == null)
+            {
+                Mod.Logger!.WriteLineAsync($"Can't Reset Character Purchase, null pointer at 0x{(nuint)ptr:X}");
+                Mod.Logger!.WriteLineAsync($"Character Base address is: 0x{(nuint)characterBaseAddress:X}");
+                Mod.Logger!.WriteLineAsync($"byteOffset is: {byteOffset}");
+                Mod.Logger!.WriteLineAsync($"bitOffset is: {bitOffset}");
+                return;
+            }
             *ptr &= (byte)~(1 << bitOffset);
         }
     }
@@ -279,33 +279,33 @@ public class CharacterHandler
         int byteOffset = GetCharacterByteOffset(id);
 
         byte* ptr = characterBaseAddress + byteOffset + unlockOffset;
-        if (ptr == null || characterBaseAddress == null) 
+        if (ptr == null || characterBaseAddress == null)
         {
             Mod.Logger!.WriteLineAsync($"Can't Unlock Character, null pointer at 0x{(nuint)ptr:X}");
             Mod.Logger!.WriteLineAsync($"Character Base address is: 0x{(nuint)characterBaseAddress:X}");
             Mod.Logger!.WriteLineAsync($"byteOffset is: {byteOffset}");
             return;
-        } 
+        }
         *ptr = 1;
     }
 
     public static unsafe void ResetUnlocks()
     {
-    foreach (var kvp in characterMap)
+        foreach (var kvp in characterMap)
         {
             int bitIndex = kvp.Value;
 
             int byteOffset = bitIndex;
 
             byte* ptr = characterBaseAddress + byteOffset + unlockOffset;
-            if (ptr == null || characterBaseAddress == null) 
-                {
-                    Mod.Logger!.WriteLineAsync($"Can't Unlock Character, null pointer at 0x{(nuint)ptr:X}");
-                    Mod.Logger!.WriteLineAsync($"Character Base address is: 0x{(nuint)characterBaseAddress:X}");
-                    Mod.Logger!.WriteLineAsync($"byteOffset is: {byteOffset}");
+            if (ptr == null || characterBaseAddress == null)
+            {
+                Mod.Logger!.WriteLineAsync($"Can't Unlock Character, null pointer at 0x{(nuint)ptr:X}");
+                Mod.Logger!.WriteLineAsync($"Character Base address is: 0x{(nuint)characterBaseAddress:X}");
+                Mod.Logger!.WriteLineAsync($"byteOffset is: {byteOffset}");
 
-                    return;
-                } 
+                return;
+            }
             *ptr = 0;
         }
     }
@@ -313,16 +313,16 @@ public class CharacterHandler
     public static unsafe int GetHubTokenItemID(IntPtr address, int offset)
     {
         int bitIndex = BitOperations.TrailingZeroCount(offset);
-        long byteIndex = address - (IntPtr)(characterBaseAddress + TokenOffset); 
-        if (byteIndex < 0) 
+        long byteIndex = address - (IntPtr)(characterBaseAddress + TokenOffset);
+        if (byteIndex < 0)
         {
             return -1;
         }
 
-        int value = (int)(byteIndex * 8 + bitIndex );
+        int value = (int)(byteIndex * 8 + bitIndex);
         Mod.Logger!.WriteLineAsync($"Hub Token Value is: {value:X}");
         var kvp = characterMap.FirstOrDefault(k => k.Value == value);
-        return kvp.Equals(default(KeyValuePair<int,int>)) ? -1 : kvp.Key;
+        return kvp.Equals(default(KeyValuePair<int, int>)) ? -1 : kvp.Key;
     }
 
     public static int GetLevelTokenItemID(int ID)
@@ -331,19 +331,19 @@ public class CharacterHandler
         bx -= 0x70; // There is a base 0x70 offset
         Mod.Logger!.WriteLineAsync($"Level Token bx is: {bx}");
         var kvp = characterMap.FirstOrDefault(k => k.Value == bx);
-        return kvp.Equals(default(KeyValuePair<int,int>)) ? -1 : kvp.Key;
+        return kvp.Equals(default(KeyValuePair<int, int>)) ? -1 : kvp.Key;
     }
 
     public static unsafe int GetPurchaseCharacterID(IntPtr address, int offset)
     {
-        long byteIndex = address + offset + 0x74 - (IntPtr)(characterBaseAddress + unlockOffset); 
-        if (byteIndex < 0) 
+        long byteIndex = address + offset + 0x74 - (IntPtr)(characterBaseAddress + unlockOffset);
+        if (byteIndex < 0)
         {
             return -1;
         }
 
         int value = (int)byteIndex;
         var kvp = characterMap.FirstOrDefault(k => k.Value == value);
-        return kvp.Equals(default(KeyValuePair<int,int>)) ? -1 : kvp.Key;
+        return kvp.Equals(default(KeyValuePair<int, int>)) ? -1 : kvp.Key;
     }
 }

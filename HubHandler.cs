@@ -212,7 +212,7 @@ public class HubHandler
         }
         byte* ptr = HubBaseAddress + (nuint)kvp.Key;
         // Mod.Logger!.WriteLineAsync($"Unlocking Hub RB at 0x{(nuint)ptr:X} using ID 0x{ID}");
-        if (ptr == null || HubBaseAddress == null) 
+        if (ptr == null || HubBaseAddress == null)
         {
             Mod.Logger!.WriteLineAsync($"[Hub] Can't Unlock Hub RB, null pointer at 0x{(nuint)ptr:X}");
         }
@@ -227,8 +227,8 @@ public class HubHandler
             Mod.Logger!.WriteLineAsync($"[Hub] Could not find Hub SIP offset for ID {ID}");
             return;
         }
-        byte* ptr = HubBaseAddress + (nuint)kvp.Key;;
-        if (ptr == null || HubBaseAddress == null) 
+        byte* ptr = HubBaseAddress + (nuint)kvp.Key; ;
+        if (ptr == null || HubBaseAddress == null)
         {
             Mod.Logger!.WriteLineAsync($"[Hub] Can't Unlock Hub SIP, null pointer at 0x{(nuint)ptr:X}");
         }
@@ -257,18 +257,18 @@ public class HubHandler
         int bitOffset = id % 8;
 
         byte* ptr = RedBrickPurchBaseAddress + byteOffset;
-        if (ptr == null || RedBrickPurchBaseAddress == null) 
+        if (ptr == null || RedBrickPurchBaseAddress == null)
         {
             Mod.Logger!.WriteLineAsync($"Can't Unlock Red Brick, null pointer at 0x{(nuint)ptr:X}");
             return;
-        } 
+        }
         // Mod.Logger!.WriteLineAsync($"Unlocking Red Brick ID {id} at byte offset {byteOffset}, bit offset {bitOffset}");
         *ptr |= (byte)(1 << bitOffset);
     }
 
     public static unsafe void ResetRedBrickUnlock()
     {
-        for(int i = 0; i < 3; i++)
+        for (int i = 0; i < 3; i++)
         {
             byte* ptr = RedBrickPurchBaseAddress + i;
             *ptr = 0;
@@ -285,7 +285,7 @@ public class HubHandler
         {
             return;
         }
-        if (StudTotalBaseAddress == null || PurpleCountAddress == null)        
+        if (StudTotalBaseAddress == null || PurpleCountAddress == null)
         {
             Mod.Logger!.WriteLineAsync($"Can't Update Stud Total, null pointer at 0x{(nuint)StudTotalBaseAddress:X}");
             return;
@@ -299,15 +299,15 @@ public class HubHandler
         }
 
     }
-    
+
     //TODO: Consider making Gold Bricks not static
     public static byte goldBrickCount { get; private set; } = 0;
 
-    public static void ReceivedGoldBrick (int id)
+    public static void ReceivedGoldBrick(int id)
     {
         if (id == 700)
         {
-            goldBrickCount ++;
+            goldBrickCount++;
         }
         else if (id == 701)
         {
@@ -315,17 +315,17 @@ public class HubHandler
         }
     }
 
-    public static unsafe void GetGoldBrickCount ()
+    public static unsafe void GetGoldBrickCount()
     {
         byte* ptr = GoldBrickBaseAddress + 0x01A7A;
-        if (ptr == null || GoldBrickBaseAddress == null) 
+        if (ptr == null || GoldBrickBaseAddress == null)
         {
             Mod.Logger!.WriteLineAsync($"Can't Show Gold Bricks, null pointer at 0x{(nuint)ptr:X}");
             return;
-        } 
+        }
         *ptr = goldBrickCount;
     }
-    
+
     public static void ResetGoldBrickCount()
     {
         goldBrickCount = 0;
@@ -338,7 +338,7 @@ public class HubHandler
         {
             byte* ptr = entrancePTR + i;
             *ptr = 0;
-        }        
+        }
     }
 
     public static unsafe void VerifyCharCustMaps()
@@ -483,7 +483,7 @@ public class HubHandler
                     Mod.Logger!.WriteLineAsync($"Y5 Level Beaten, doing nothing: 0x{dx:X}");
                     break;
             }
-        } 
+        }
         else if (eax == (int)y6GhostPtr)
         {
             switch (dx)
@@ -528,7 +528,7 @@ public class HubHandler
                     Mod.Logger!.WriteLineAsync($"Y6 Level Beaten, doing nothing: 0x{dx:X}");
                     break;
             }
-        } 
+        }
         else if (eax == (int)y7GhostPtr)
         {
             if (dx == 4) // Cafe Fight Complete
@@ -536,14 +536,14 @@ public class HubHandler
                 Game.CheckAndReportLocation(1027);
                 *y7GhostPtr = 254; // Mark all Y7 Ghost Paths as Complete
                 Game.LessonRestoreReturnToHub();
-            } 
-            else 
+            }
+            else
             {
                 Mod.Logger!.WriteLineAsync($"Y7 Level Beaten, doing nothing with eax: 0x{eax:X} and dx: 0x{dx:X}");
             }
-            
-        } 
-        else 
+
+        }
+        else
         {
             Mod.Logger!.WriteLineAsync($"Y8 Level Beaten, doing nothing with eax: 0x{eax:X} and dx: 0x{dx:X}");
         }
@@ -629,7 +629,7 @@ public class HubHandler
         byte* invisibleWallFlag = wildernessAddress + 0x2905;
         Mod.Logger!.WriteLineAsync($"Address of Wilderness Invisible Wall Flag is 0x{(nuint)invisibleWallFlag:X}");
         *invisibleWallFlag &= unchecked((byte)~(1 << 2)); // Turn off the invisible wall by the rock pile
-        invisibleWallFlag += 0x03; 
+        invisibleWallFlag += 0x03;
         *invisibleWallFlag &= unchecked((byte)~(1 << 6)); // Turn off the invisible wall by the snowman
         invisibleWallFlag += 0x16;
         *invisibleWallFlag &= unchecked((byte)~(1 << 2)); // Turn off the invisible wall by the wrecking ball  
@@ -663,7 +663,7 @@ public class HubHandler
         if (hogsStatAddress == MapFlagsBaseAddress + 0x40)
         {
             Mod.Logger!.WriteLineAsync("Hogs Station Save info hasn't been written yet.");
-            return;            
+            return;
         }
         Mod.Logger!.WriteLineAsync($"Updating Hogs Station Flags. Address is 0x{(nuint)hogsStatAddress:X}");
         hogsStatAddress += 0xA3;
@@ -679,7 +679,7 @@ public class HubHandler
         *hogsStatAddress = 64; // Invisible wall 2 (front wall)
         hogsStatAddress += 114;
         *hogsStatAddress &= unchecked((byte)~(1 << 2)); // Block 4
-        hogsStatAddress += 3; 
+        hogsStatAddress += 3;
         *hogsStatAddress &= unchecked((byte)~(1 << 6)); // Block 5
         hogsStatAddress += 2;
         *hogsStatAddress &= unchecked((byte)~(1 << 2)); // Block 6

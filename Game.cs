@@ -48,7 +48,7 @@ public class Game
     {
         Mod.Logger!.WriteLineAsync("Checking to see if game is loaded");
         int rewriteNumber = 0;
-        while(!IsMenuLoaded())
+        while (!IsMenuLoaded())
         {
             if (rewriteNumber % 10 == 0)
                 Mod.Logger!.WriteLineAsync("Waiting for menu to load");
@@ -126,7 +126,7 @@ public class Game
         // Removes the games check to see if player is in Freeplay mode and forces the game to 
         // always checking individual level completion to enable save and exit
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x40A264, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
-        
+
         // Unlock Current Level Story
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4B817E, [0x90, 0x90, 0x90, 0x90, 0x90]);
         // // Unlock Current Level Freeplay
@@ -147,7 +147,7 @@ public class Game
         nuint ptr = (nuint)(*cutsceneBaseAddress + 0xA4);
 
         // Write N0CUT5 flag to game
-        Memory.Instance.Write(ptr, (byte) 0x01);
+        Memory.Instance.Write(ptr, (byte)0x01);
     }
 
     /* 
@@ -179,65 +179,65 @@ public class Game
 
         LevelHandler.LevelData level;
 
-        switch(ItemID)
+        switch (ItemID)
         {
-                case < 213: // Handle Character
-                    CharacterHandler.UnlockCharacter(ItemID);
-                    break;
-                case < 426: // Handle Token
-                    int token = ItemID - tokenOffset;
-                    CharacterHandler.UnlockToken(token);
-                    break;
-                case < 450: // Handle Horcrux
-                    break;
-                case < 475: // Handle Level Unlock
-                    level = LevelHandler.ConvertIDToLeveData(ItemID - levelOffset);
-                    LevelHandler.UnlockLevel(level);
-                    break;
-                case < 499: // Handle In Level Student in Peril
-                    level = LevelHandler.ConvertIDToLeveData(ItemID - SIPOffset);
-                    LevelHandler.UnlockStudentInPeril(level);
-                    break;
-                case < 550: // Handle Hub SIP
-                    HubHandler.UnlockHubSIP(ItemID - HubSIPOffset);
-                    break;
-                case < 574: // Handle Gryffindor Crests
-                    level = LevelHandler.ConvertIDToLeveData(ItemID - GryfCrestOffset);
-                    LevelHandler.UnlockGryffindorCrest(level);
-                    break;
-                case < 598: // Handle Slytherin Crests
-                    level = LevelHandler.ConvertIDToLeveData(ItemID - SlythCrestOffset);
-                    LevelHandler.UnlockSlytherinCrest(level);
-                    break;
-                case < 622: // Handle Ravenclaw Crests
-                    level = LevelHandler.ConvertIDToLeveData(ItemID - RavenCrestOffset);
-                    LevelHandler.UnlockRavenclawCrest(level);
-                    break;
-                case < 646: // Handle Hufflepuff Crests
-                    level = LevelHandler.ConvertIDToLeveData(ItemID - HuffleCrestOffset);
-                    LevelHandler.UnlockHufflepuffCrest(level);
-                    break;
-                case < 699: // Handle True Wizards
-                    level = LevelHandler.ConvertIDToLeveData(ItemID - TrueWizardOffset);
-                    LevelHandler.UnlockTrueWizard(level);
-                    break;
-                case < 700: // Purple Stud - see APHandler ItemReceived for implementation
-                    break;
-                case < 900: // Handle Gold Brick
-                    HubHandler.ReceivedGoldBrick(ItemID);
-                    break;
-                case < 935: // Handle Red Brick Collected/Purchasable
-                    HubHandler.UnlockHubRB(ItemID - RedBrickCollectOffset);
-                    break;
-                case < 975: // Handle Red Brick Purchase
-                    HubHandler.ReceivedRedBrickUnlock(ItemID - RedBrickPurchOffset);
-                    break;
-                case < 1027: // Handle Spells
-                    SpellHandler.UnlockSpell(ItemID - SpellPurchOffset, Mod.GameInstance!.CurrentCharID);
-                    break;
-                default:
-                    Mod.Logger!.WriteLineAsync($"Unknown item received: {ItemID}");
-                    break;
+            case < 213: // Handle Character
+                CharacterHandler.UnlockCharacter(ItemID);
+                break;
+            case < 426: // Handle Token
+                int token = ItemID - tokenOffset;
+                CharacterHandler.UnlockToken(token);
+                break;
+            case < 450: // Handle Horcrux
+                break;
+            case < 475: // Handle Level Unlock
+                level = LevelHandler.ConvertIDToLeveData(ItemID - levelOffset);
+                LevelHandler.UnlockLevel(level);
+                break;
+            case < 499: // Handle In Level Student in Peril
+                level = LevelHandler.ConvertIDToLeveData(ItemID - SIPOffset);
+                LevelHandler.UnlockStudentInPeril(level);
+                break;
+            case < 550: // Handle Hub SIP
+                HubHandler.UnlockHubSIP(ItemID - HubSIPOffset);
+                break;
+            case < 574: // Handle Gryffindor Crests
+                level = LevelHandler.ConvertIDToLeveData(ItemID - GryfCrestOffset);
+                LevelHandler.UnlockGryffindorCrest(level);
+                break;
+            case < 598: // Handle Slytherin Crests
+                level = LevelHandler.ConvertIDToLeveData(ItemID - SlythCrestOffset);
+                LevelHandler.UnlockSlytherinCrest(level);
+                break;
+            case < 622: // Handle Ravenclaw Crests
+                level = LevelHandler.ConvertIDToLeveData(ItemID - RavenCrestOffset);
+                LevelHandler.UnlockRavenclawCrest(level);
+                break;
+            case < 646: // Handle Hufflepuff Crests
+                level = LevelHandler.ConvertIDToLeveData(ItemID - HuffleCrestOffset);
+                LevelHandler.UnlockHufflepuffCrest(level);
+                break;
+            case < 699: // Handle True Wizards
+                level = LevelHandler.ConvertIDToLeveData(ItemID - TrueWizardOffset);
+                LevelHandler.UnlockTrueWizard(level);
+                break;
+            case < 700: // Purple Stud - see APHandler ItemReceived for implementation
+                break;
+            case < 900: // Handle Gold Brick
+                HubHandler.ReceivedGoldBrick(ItemID);
+                break;
+            case < 935: // Handle Red Brick Collected/Purchasable
+                HubHandler.UnlockHubRB(ItemID - RedBrickCollectOffset);
+                break;
+            case < 975: // Handle Red Brick Purchase
+                HubHandler.ReceivedRedBrickUnlock(ItemID - RedBrickPurchOffset);
+                break;
+            case < 1027: // Handle Spells
+                SpellHandler.UnlockSpell(ItemID - SpellPurchOffset, Mod.GameInstance!.CurrentCharID);
+                break;
+            default:
+                Mod.Logger!.WriteLineAsync($"Unknown item received: {ItemID}");
+                break;
         }
     }
 
@@ -245,7 +245,7 @@ public class Game
     Dark Times is level 0, Hub is levels 1-4. This is a helper function to conver level ID to AP ID.
     upon check completion. The final status screens are considered part of leaky cauldron map ID so 
     if Map ID is 1-4, we evaluate the previous level ID instead of the current one.
-    */ 
+    */
     public static int? GetApID(int level, int prevLevel)
     {
         return level switch
@@ -313,7 +313,7 @@ public class Game
         };
         _asmHooks.Add(hooks.CreateAsmHook(completeLevelSIPHook, (int)(Mod.BaseAddress + 0x313967), AsmHookBehaviour.ExecuteAfter).Activate());
 
-        string [] completeTrueWizardHook =
+        string[] completeTrueWizardHook =
         {
             "use32",
             "pushfd",
@@ -322,7 +322,7 @@ public class Game
             "popad",
             "popfd",
         };
-         _asmHooks.Add(hooks.CreateAsmHook(completeTrueWizardHook, (int)(Mod.BaseAddress + 0x5B2A83), AsmHookBehaviour.ExecuteAfter).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(completeTrueWizardHook, (int)(Mod.BaseAddress + 0x5B2A83), AsmHookBehaviour.ExecuteAfter).Activate());
 
         string[] completeHogwartsCrestHook =
         {
@@ -345,7 +345,7 @@ public class Game
             "popfd",
         };
         _asmHooks.Add(hooks.CreateAsmHook(purchaseRedBrickHook, (int)(Mod.BaseAddress + 0x8928), AsmHookBehaviour.ExecuteAfter).Activate());
-        
+
         string[] purchaseGoldBrickHook =
         {
             "use32",
@@ -379,7 +379,7 @@ public class Game
         };
         _asmHooks.Add(hooks.CreateAsmHook(hubCharacterCollectedHook, (int)(Mod.BaseAddress + 0x42F6E), AsmHookBehaviour.ExecuteFirst).Activate());
 
-        string [] levelCharacterCollectedHook =
+        string[] levelCharacterCollectedHook =
         {
             "use32",
             "pushfd",
@@ -561,7 +561,7 @@ public class Game
         {
             "use32",
             "push edx",
-            "mov edx, ebp", 
+            "mov edx, ebp",
             "pushfd",
             "pushad",
             $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnChangeCharacters, out _reverseWrapOnChangeCharacters)}",
@@ -612,9 +612,9 @@ public class Game
             CheckAndReportLocation(id + levelOffset);
             if (id == 12)
             {
-                CheckAndReportLocation(1026);
+                CheckAndReportLocation(1026); // Apparition is unlocked at the end of 7 Harrys
             }
-            if (id == 23)
+            if (id == 23) // The Flaw in the Plan - Check win con
             {
                 CheckWinCon();
             }
@@ -643,7 +643,7 @@ public class Game
             CheckAndReportLocation(id + TrueWizardOffset);
     }
 
-    [Function([FunctionAttribute.Register.eax], 
+    [Function([FunctionAttribute.Register.eax],
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void CrestsComplete(int value);
     private static void OnHouseCrest(int value)
@@ -673,7 +673,7 @@ public class Game
         }
     }
 
-    [Function([FunctionAttribute.Register.ecx], 
+    [Function([FunctionAttribute.Register.ecx],
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void RedBrickPurchase(int ecx);
     private static void OnRedBrickPurchase(int ecx)
@@ -681,7 +681,7 @@ public class Game
         CheckAndReportLocation(ecx + RedBrickPurchOffset);
     }
 
-    [Function([FunctionAttribute.Register.ebx], 
+    [Function([FunctionAttribute.Register.ebx],
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void GoldBrickPurchase(int ebx);
     private static void OnGoldBrickPurchase(int ebx)
@@ -689,43 +689,48 @@ public class Game
         if (Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleGoldBrickPurchases < 1)
         {
             Mod.Logger!.WriteLineAsync("Gold Brick Purchase detected but gold brick purchases aren't shuffled, ignoring.");
-            return; // Ignore if gold bricks aren't shuffled
+            return;
         }
         int itemId = BitOperations.TrailingZeroCount(ebx);
         CheckAndReportLocation(itemId + GoldBrickPurchOffset);
 
     }
 
-    [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.edx], 
+    [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.edx],
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void SpellUnlock(int eax, int edx);
     private static void OnSpellUnlock(int eax, int edx)
     {
+        // Only run if in Joke Shop or in 7 Harrys Delum/Bag lesson
         if (Mod.GameInstance!.MapID == 369 || Mod.GameInstance!.MapID == 375
             || Mod.GameInstance!.MapID == 383 || Mod.GameInstance!.MapID == 387 || Mod.GameInstance!.MapID == 166)
         {
             Mod.Logger!.WriteLineAsync($"Spell Unlock Function Ran: EDX is 0x{edx:X} and EAX is 0x{eax:X}");
-            if (edx == 0x80000)
+
+            if (edx == 0x80000) // Handles Herm Bag Unlock
             {
                 CheckAndReportLocation(1025);
                 return;
             }
+
             int itemId = BitOperations.TrailingZeroCount(eax);
             itemId += SpellPurchOffset;
-            if (itemId <= 975 || (itemId > 994 && itemId != 1001))
+
+            if (itemId <= 975 || (itemId > 994 && itemId != 1001)) // 1001 is to handle Delum Lesson, rest are joke spells
             {
                 return; // Ignore non purchased spells that are unlocked
             }
+
             if (itemId < 995 && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleJokeSpells < 1)
             {
-                Mod.Logger!.WriteLineAsync("Joke Spells Not Shuffled, Ignoring Spell Unlock");
                 return; // Ignore joke spells if they aren't shuffled
             }
+
             CheckAndReportLocation(itemId);
         }
     }
 
-    [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.edx], 
+    [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.edx],
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void HubCharacterCollected(IntPtr eax, int edx);
     private static void OnHubCharacterCollected(IntPtr eax, int edx)
@@ -742,7 +747,7 @@ public class Game
         CheckAndReportLocation(itemID + tokenOffset);
     }
 
-    [Function([FunctionAttribute.Register.ebx], 
+    [Function([FunctionAttribute.Register.ebx],
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void LevelCharacterCollected(int ebx);
     private static void OnLevelCharacterCollected(int ebx)
@@ -758,7 +763,7 @@ public class Game
         CheckAndReportLocation(itemID + tokenOffset);
     }
 
-    [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.ecx], 
+    [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.ecx],
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void CharacterPurchased(IntPtr ecx, int eax);
     private static void OnCharacterPurchased(IntPtr ecx, int eax)
@@ -768,8 +773,8 @@ public class Game
         {
             prevInShop = Mod.GameInstance!.PrevInShop;
         }
-        if ((Mod.GameInstance!.MapID == 366 || Mod.GameInstance!.MapID == 372 
-            || Mod.GameInstance!.MapID == 378 || Mod.GameInstance!.MapID == 382) && prevInShop == true) //Make sure Player is in shop
+        if ((Mod.GameInstance!.MapID == 366 || Mod.GameInstance!.MapID == 372
+            || Mod.GameInstance!.MapID == 378 || Mod.GameInstance!.MapID == 382) && prevInShop == true) //Make sure Player is in Robe Shop
         {
             int itemID = CharacterHandler.GetPurchaseCharacterID(ecx, eax);
             if (itemID == -1)
@@ -784,12 +789,11 @@ public class Game
         }
     }
 
-    [Function([FunctionAttribute.Register.edx], 
+    [Function([FunctionAttribute.Register.edx],
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void HubSIP(int edx);
     private static void OnHubSIP(int edx)
     {
-
         int itemID = HubHandler.GetHubID(edx);
         if (itemID == -1)
         {
@@ -804,12 +808,11 @@ public class Game
 
     }
 
-    [Function([FunctionAttribute.Register.eax], 
+    [Function([FunctionAttribute.Register.eax],
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void HubGB(int eax);
     private static void OnHubGB(int eax)
     {
-
         int itemID = HubHandler.GetHubID(eax);
         if (itemID == -1)
         {
@@ -824,12 +827,11 @@ public class Game
 
     }
 
-    [Function([FunctionAttribute.Register.eax], 
+    [Function([FunctionAttribute.Register.eax],
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void HubRB(int eax);
     private static void OnHubRB(int eax)
     {
-
         int itemID = HubHandler.GetHubID(eax);
         if (itemID == -1)
         {
@@ -844,8 +846,7 @@ public class Game
 
     }
 
-    
-    [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.edx], 
+    [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.edx],
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void HubGhostPath(int eax, int edx);
     private static void OnHubGhostPath(int eax, int edx)
@@ -853,7 +854,7 @@ public class Game
         HubHandler.HandleGhostPaths(eax, edx);
     }
 
-    [Function([FunctionAttribute.Register.eax], 
+    [Function([FunctionAttribute.Register.eax],
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void UpdateLevel(int value);
     private static void OnLevelChange(int value)
@@ -863,17 +864,20 @@ public class Game
         Mod.Logger!.WriteLineAsync($"Level ID updated to {value}.");
     }
 
-    [Function([FunctionAttribute.Register.ecx], 
+    [Function([FunctionAttribute.Register.ecx],
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void UpdateMap(int value);
     private static void OnMapChange(int value)
     {
         Mod.GameInstance!.PrevMapID = Mod.GameInstance!.MapID;
         Mod.GameInstance!.MapID = value;
-        if (Mod.GameInstance!.PrevMapID == 196 && !Mod.LHP2_Archipelago!.IsLocationChecked(1021) && Mod.LHP2_Archipelago.IsLocationChecked(1020))
+
+        // When leaving Y7 London, ensure that Code is running as normal (disabled in Y7 London cause of apparition)
+        if (Mod.GameInstance!.PrevMapID == 104 && !Mod.LHP2_Archipelago!.IsLocationChecked(1027))
         {
             LessonRestoreReturnToHub();
         }
+
         Mod.Logger!.WriteLineAsync($"Map ID updated to {value}.");
         Mod.LHP2_Archipelago!.SendMapID(value);
         ResetItems();
@@ -892,7 +896,6 @@ public class Game
         if (*initialValue == 0xFFFF)
         {
             Mod.Logger!.WriteLineAsync($"Character Changed, Spell Function ran, EDX: {edx:X}");
-            // Mod.Logger!.WriteLineAsync("Active Character Changed, updating spells");
             Mod.GameInstance!.CurrentCharID = edx;
             SpellHandler.ResetSpells();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
@@ -901,14 +904,13 @@ public class Game
         }
     }
 
-    [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.esp], 
+    [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.esp],
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void OpenCloseShop(int eax, int esp);
     private static void OnShopChange(int eax, int esp)
     {
         bool eaxBit0Set = (eax & 1) != 0;
         int lastNibble = esp & 0xF;
-        // Mod.Logger!.WriteLineAsync($"Last Nibble: {lastNibble}");
 
         if (eaxBit0Set && lastNibble == 0x08)
         {
@@ -920,6 +922,7 @@ public class Game
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, MaxItemID);
         }
+
         if (eaxBit0Set && lastNibble == 0x0C)
         {
             lock (Mod.GameInstance!.StateLock)
@@ -930,7 +933,6 @@ public class Game
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(tokenOffset, levelOffset - 25);
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(0, tokenOffset - 1);
-
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(RedBrickCollectOffset, RedBrickPurchOffset - 17);
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(RedBrickPurchOffset, 1026);
         }
@@ -942,7 +944,7 @@ public class Game
                 prevInLevelSelect = Mod.GameInstance!.PrevInLevelSelect;
                 prevInShop = Mod.GameInstance!.PrevInShop;
             }
-            
+
             if (!eaxBit0Set && prevInLevelSelect)
             {
                 lock (Mod.GameInstance!.StateLock)
@@ -951,7 +953,7 @@ public class Game
                 }
                 Mod.Logger!.WriteLineAsync("Level Selector Closed");
 
-                // Game enters a level before thinking you are out of shop, so if we stay in hub, resetting levels here
+                // Game enters a level before thinking you are out of shop, so if we stay in hub, resetting items/locations here
                 if (Mod.GameInstance!.LevelID >= 1 && Mod.GameInstance!.LevelID <= 4)
                 {
                     ResetItems();
@@ -979,8 +981,8 @@ public class Game
         }
     }
 
-    // Picking up a collectable in hub triggers menu? edi was always 2 when pausing and EBP was always 6 when pausing.
-    [Function([FunctionAttribute.Register.edi], 
+    // Picking up a collectable in hub triggers menu code too. edi was always 2 when pausing and EBP was always 6 when pausing.
+    [Function([FunctionAttribute.Register.edi],
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void OpenMenu(int edi);
     private static unsafe void OnOpenMenu(int edi)
@@ -989,25 +991,29 @@ public class Game
         {
             return;
         }
+
         // Take into account that menu opens when selecting freeplay/story.
         bool prevInShop;
         lock (Mod.GameInstance!.StateLock)
         {
             prevInShop = Mod.GameInstance!.PrevInShop;
         }
+
         if (prevInShop == true)
         {
             return;
-        } 
+        }
 
+        // Quality of life update so that players can more quickly change years
         byte* menuCheatAddress = (byte*)(Mod.BaseAddress + 0xC575E0);
         byte[] bytes = [24, 4, 0, 17, 26, 26];
         for (int i = 0; i < 6; i++)
         {
             Memory.Instance.Write<byte>((nuint)(menuCheatAddress + i), bytes[i]);
         }
-        
-        if (Mod.GameInstance!.LevelID < 1 || Mod.GameInstance!.LevelID > 4) // If in level, want to sync to locations except for Red bricks & Spells
+
+        // If in level, want to sync to locations except for Red bricks & Spells
+        if (Mod.GameInstance!.LevelID < 1 || Mod.GameInstance!.LevelID > 4)
         {
             Mod.Logger!.WriteLineAsync("Menu Opened");
             lock (Mod.GameInstance!.StateLock)
@@ -1047,7 +1053,6 @@ public class Game
         return true;   // skip CMP everywhere else
     }
 
-
     [Function(CallingConventions.Fastcall)]
     public delegate void CloseMenu();
     private static void OnCloseMenu()
@@ -1058,10 +1063,12 @@ public class Game
         {
             prevInMenu = Mod.GameInstance!.PrevInMenu;
         }
+
         if (!prevInMenu)
         {
             return;
         }
+
         lock (Mod.GameInstance!.StateLock)
         {
             Mod.GameInstance!.PrevInMenu = false;
@@ -1080,7 +1087,6 @@ public class Game
     {
         byte* cauldronBaseAddress = (byte*)*(int*)(Mod.BaseAddress + 0xC54290);
         nuint cauldronItem = Memory.Instance.Read<nuint>((nuint)(cauldronBaseAddress + 0x68));
-        // Mod.Logger!.WriteLineAsync($"Cauldron Item ID: {cauldronItem}");
         bool prevInLevelSelect;
         lock (Mod.GameInstance!.StateLock)
         {
@@ -1113,7 +1119,7 @@ public class Game
             return;
         }
         Mod.Logger!.WriteLineAsync("Polyjuice Pot Closed");
-        Memory.Instance.Write<byte>((nuint)(cauldronBaseAddress + 0x68), 0); // Reset cauldron item to 0
+        Memory.Instance.Write<byte>((nuint)(cauldronBaseAddress + 0x68), 0); // Reset cauldron item selected to 0
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
@@ -1125,7 +1131,8 @@ public class Game
     public delegate void ChangeYears();
     private static unsafe void OnChangeYears()
     {
-        if (Mod.GameInstance!.MapID == 365 || Mod.GameInstance!.MapID == 371 
+        // Only run in the Character Customization Room
+        if (Mod.GameInstance!.MapID == 365 || Mod.GameInstance!.MapID == 371
             || Mod.GameInstance!.MapID == 377 || Mod.GameInstance!.MapID == 381)
         {
             byte* menuCheatAddress = (byte*)(Mod.BaseAddress + 0xC575E0);
@@ -1147,8 +1154,9 @@ public class Game
                     chars[i] = '_'; // Unknown character
                 }
             }
-            string yearString = new string(chars);
+            string yearString = new(chars);
             Mod.Logger!.WriteLineAsync($"Year Requested is: {yearString}");
+
             switch (yearString)
             {
                 case "YEAR05" when Mod.GameInstance!.LevelID != 1:
@@ -1170,9 +1178,9 @@ public class Game
                 default:
                     break;
             }
-        } 
-        else 
-        {   
+        }
+        else
+        {
             Mod.Logger!.WriteLineAsync("Please move to the Character Customization Room to change years.");
             return;
         }

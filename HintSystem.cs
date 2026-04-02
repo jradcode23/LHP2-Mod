@@ -28,11 +28,11 @@ public class HintSystem
         byte* hubCutSceneAddress = (byte*)(Mod.BaseAddress + 0xC5B224);
         return *hubCutSceneAddress == 0; // 48 means that the player is in a hub cutscene, 0 means they are not
     }
-    
+
     private static readonly ConcurrentQueue<string> MessageQueue = new();
     private static readonly LinkedList<string> InterruptedMessageQueue = new();
     private static readonly object queueLock = new();
-    
+
     public static void EnqueueMessage(string message)
     {
         if (!string.IsNullOrEmpty(message))
@@ -40,7 +40,7 @@ public class HintSystem
             MessageQueue.Enqueue(message);
         }
     }
-    
+
     public static unsafe void HandleMessages()
     {
         while (true)
@@ -76,12 +76,12 @@ public class HintSystem
                     {
                         MessageQueue.TryDequeue(out message);
                     }
-                    
+
                     if (message != null)
                     {
                         uint messagePTRValue = MessagePTRValue;
                         uint hintTextPTRAddress = HintTextAddress;
-                        
+
                         // Mod.Logger!.WriteLineAsync($"Message PTR Value: 0x{messagePTRValue:X}");
                         // Mod.Logger!.WriteLineAsync($"Hint Text PTR Address: 0x{hintTextPTRAddress:X}");
                         SetMessageText(message, hintTextPTRAddress);
@@ -102,13 +102,13 @@ public class HintSystem
     {
         if (*hintTimerBaseAddress > 4.5f || *hintPTRBaseAddress == 0) // If timer is greater than 3 seconds or if there is nothing on screen, we can return
         {
-            *hintPTRBaseAddress = 0; 
+            *hintPTRBaseAddress = 0;
             return;
         }
 
         uint hintTextPTRAddress = HintTextAddress;
         string currentMessage = new((sbyte*)hintTextPTRAddress);
-        
+
         if (!string.IsNullOrEmpty(currentMessage))
         {
             lock (queueLock)
@@ -121,7 +121,7 @@ public class HintSystem
             }
         }
     }
-    
+
     private static void SetMessageText(string newText, uint hintTextPTRAddress)
     {
 
