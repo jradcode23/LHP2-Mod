@@ -41,7 +41,7 @@ public class Mod : ModBase // <= Do not Remove.
             return;
         LHP2_Archipelago = new ArchipelagoHandler(Configuration.ArchipelagoOptions.Server, Configuration.ArchipelagoOptions.Port, Configuration.ArchipelagoOptions.Slot, Configuration.ArchipelagoOptions.Password);
         Logger.WriteLineAsync($"[{_modConfig.ModId}] Mod Initialized with Server: {Configuration.ArchipelagoOptions.Server}, Port: {Configuration.ArchipelagoOptions.Port}, Slot: {Configuration.ArchipelagoOptions.Slot}");
-        Logger.WriteLineAsync($"[{_modConfig.ModId}] Mod Version: {_modConfig.ModId} Prelease v1.1 source");
+        Logger.WriteLineAsync($"[{_modConfig.ModId}] Mod Version: {_modConfig.ModId} Prelease v1.3");
 
         var thread1 = new Thread(start: () =>
         {
