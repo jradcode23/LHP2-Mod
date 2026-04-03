@@ -300,19 +300,26 @@ public class HubHandler
 
     }
 
-    //TODO: Consider making Gold Bricks not static
-    public static byte goldBrickCount { get; private set; } = 0;
+    //TODO: Consider making Gold Bricks & Horcruxes not static
+    public static byte GoldBrickCount { get; private set; } = 0;
+    public static byte HorcruxCount { get; private set; } = 0;
 
     public static void ReceivedGoldBrick(int id)
     {
         if (id == 700)
         {
-            goldBrickCount++;
+            GoldBrickCount++;
         }
         else if (id == 701)
         {
-            goldBrickCount += 5;
+            GoldBrickCount += 5;
         }
+    }
+
+    public static void UpdateHorcruxCount()
+    {
+        HorcruxCount = (byte)Mod.LHP2_Archipelago!.CountItemsCheckedInRange(440, 446);
+        HintSystem.DisplayHorcruxCount(HorcruxCount);
     }
 
     public static unsafe void GetGoldBrickCount()
@@ -323,12 +330,12 @@ public class HubHandler
             Mod.Logger!.WriteLineAsync($"Can't Show Gold Bricks, null pointer at 0x{(nuint)ptr:X}");
             return;
         }
-        *ptr = goldBrickCount;
+        *ptr = GoldBrickCount;
     }
 
     public static void ResetGoldBrickCount()
     {
-        goldBrickCount = 0;
+        GoldBrickCount = 0;
     }
 
     public static unsafe void ClearReturnToHogwartsLocation()

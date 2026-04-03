@@ -883,6 +883,7 @@ public class Game
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
+        HubHandler.UpdateHorcruxCount();
         LevelHandler.ImplementMapLogic(value);
     }
 
@@ -921,6 +922,7 @@ public class Game
             Mod.Logger!.WriteLineAsync("Level Selector Opened");
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, MaxItemID);
+            HubHandler.UpdateHorcruxCount();
         }
 
         if (eaxBit0Set && lastNibble == 0x0C)
@@ -935,6 +937,7 @@ public class Game
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(0, tokenOffset - 1);
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(RedBrickCollectOffset, RedBrickPurchOffset - 17);
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(RedBrickPurchOffset, 1026);
+            HubHandler.UpdateHorcruxCount();
         }
         else
         {
@@ -959,6 +962,7 @@ public class Game
                     ResetItems();
                     Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
                     Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
+                    HubHandler.UpdateHorcruxCount();
                 }
             }
             else if (!eaxBit0Set && prevInShop)
@@ -976,6 +980,7 @@ public class Game
                     SpellHandler.ResetSpells();
                     Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
                     Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
+                    HubHandler.UpdateHorcruxCount();
                 }
             }
         }
@@ -1009,7 +1014,7 @@ public class Game
         byte[] bytes = [24, 4, 0, 17, 26, 26];
         for (int i = 0; i < 6; i++)
         {
-            Memory.Instance.Write<byte>((nuint)(menuCheatAddress + i), bytes[i]);
+            Memory.Instance.Write((nuint)(menuCheatAddress + i), bytes[i]);
         }
 
         // If in level, want to sync to locations except for Red bricks & Spells
@@ -1023,6 +1028,7 @@ public class Game
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(0, RedBrickPurchOffset - 1);
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(RedBrickPurchOffset, MaxItemID);
+            HubHandler.UpdateHorcruxCount();
         }
         else // In Hub, want to show all items
         {
@@ -1034,6 +1040,7 @@ public class Game
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, MaxItemID);
             HubHandler.GetGoldBrickCount();
+            HubHandler.UpdateHorcruxCount();
             SpellHandler.UnlockAllPassiveSpells();
         }
     }
@@ -1077,6 +1084,7 @@ public class Game
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
+        HubHandler.UpdateHorcruxCount();
         LevelHandler.ImplementMapLogic(Mod.GameInstance!.MapID);
         SpellHandler.SpellMapLogic(Mod.GameInstance!.MapID);
     }

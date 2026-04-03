@@ -16,6 +16,8 @@ public class HintSystem
     private static unsafe byte* HintTextBaseAddress => *(byte**)(Mod.BaseAddress + 0xB16324);
     private static unsafe uint HintTextAddress => (uint)(HintTextBaseAddress + 0xBA);
     private static unsafe uint MessagePTRValue => (uint)(((byte*)*(uint**)(Mod.BaseAddress + 0xC58388)) + 0xFFC);
+    private static unsafe byte* PressButtonToStartTextBaseAddress => *(byte**)(Mod.BaseAddress + 0xC4EBFC);
+    private static unsafe uint PressButtonToStartTextAddress => (uint)PressButtonToStartTextBaseAddress;
 
     private static unsafe bool IsScreenEmpty()
     {
@@ -138,5 +140,11 @@ public class HintSystem
         }
 
         Memory.Instance.WriteRaw(hintTextPTRAddress, bytes);
+    }
+
+    public static void DisplayHorcruxCount(byte count)
+    {
+        string message = $"Horcruxes Collected: {count}";
+        SetMessageText(message, PressButtonToStartTextAddress);
     }
 }

@@ -147,6 +147,11 @@ public class ArchipelagoHandler
                     HubHandler.HandlePurpleStud();
                     return;
                 }
+                if (gameID >= 440 && gameID <= 446)
+                {
+                    HubHandler.UpdateHorcruxCount();
+                    return;
+                }
             }
             // Handle Purple Stud
             if (Mod.GameInstance != null && !Game.IsPlayerControllable() && gameID == 699)
