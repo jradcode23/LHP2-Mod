@@ -9,6 +9,8 @@ public class HubHandler
     private static unsafe byte* RedBrickPurchBaseAddress => *(byte**)(Mod.BaseAddress + 0xC575F4);
     private static unsafe long* StudTotalBaseAddress => *(long**)(Mod.BaseAddress + 0xC5B600);
     private static unsafe byte* PurpleCountAddress => (byte*)StudTotalBaseAddress + 0x30;
+    private static unsafe byte* RedBrickSaveFileAddress => PurpleCountAddress + 0x04;
+    private static unsafe byte* RedBrickEnabledAddress => (byte*)(Mod.BaseAddress + 0x94CEF3);
     private static unsafe byte* FirstLevelMapPointer => *(byte**)(Mod.BaseAddress + 0x00B06A5C);
     private static unsafe byte* SecondLevelMapPointer => *(byte**)(FirstLevelMapPointer + 0x44);
     public static unsafe byte* GhostPathBaseAddress => *(byte**)(Mod.BaseAddress + 0xC55F2C);
@@ -294,10 +296,44 @@ public class HubHandler
         {
             *PurpleCountAddress += 1;
             *StudTotalBaseAddress += 10000;
-            // Mod.Logger!.WriteLineAsync($"Updating Stud Total at 0x{(nuint)studTotalBaseAddress:X}");
-            // Mod.Logger!.WriteLineAsync($"Purple Studs received: {purpleStudCount}, Purple Studs counted: {*purpleCountAddress}");
         }
+    }
 
+    public static unsafe void SaveRedBricksEnabled()
+    {
+        byte[] enabledArray = new byte[3];
+        for (int i = 0; i < 24; i++)
+        {
+            byte* ptr = RedBrickEnabledAddress + i * 0x18;
+            bool isEnabled = *ptr != 0;
+            if (isEnabled)
+            {
+                int byteIndex = i / 8;
+                int bitIndex = i % 8;
+                enabledArray[byteIndex] |= (byte)(1 << bitIndex);
+            }
+        }
+        for (int i = 0; i < 3; i++)
+        {
+            *(RedBrickSaveFileAddress + i) = enabledArray[i];
+        }
+    }
+
+    public static unsafe void LoadRedBricksEnabled()
+    {
+        byte[] enabledArray = new byte[3];
+        for (int i = 0; i < 3; i++)
+        {
+            enabledArray[i] = *(RedBrickSaveFileAddress + i);
+        }
+        for (int i = 0; i < 24; i++)
+        {
+            int byteIndex = i / 8;
+            int bitIndex = i % 8;
+            bool isEnabled = (enabledArray[byteIndex] & (1 << bitIndex)) != 0;
+            byte* ptr = RedBrickEnabledAddress + i * 0x18;
+            *ptr = isEnabled ? (byte)1 : (byte)0;
+        }
     }
 
     //TODO: Consider making Gold Bricks & Horcruxes not static

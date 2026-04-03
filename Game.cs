@@ -278,6 +278,7 @@ public class Game
     private static IReverseWrapper<UpdateMap> _reverseWrapOnMapUpdate = default!;
     private static IReverseWrapper<OpenCloseShop> _reverseWrapOnShopUpdate = default!;
     private static IReverseWrapper<OpenMenu> _reverseWrapOnOpenMenu = default!;
+    private static IReverseWrapper<ReduceMenuCount> _reverseWrapOnReduceMenuCount = default!;
     private static IReverseWrapper<CloseMenu> _reverseWrapOnCloseMenu = default!;
     private static IReverseWrapper<CharacterCmp> _reverseWrapOnCharacterCmp = default!;
     private static IReverseWrapper<OpenPolyjuicePot> _reverseWrapOnOpenPolyjuicePot = default!;
@@ -522,6 +523,17 @@ public class Game
             hooks.Utilities.GetAbsoluteJumpMnemonics((nint)Mod.BaseAddress + 0x41891A, false),
         };
         _asmHooks.Add(hooks.CreateAsmHook(characterCmpHook, (int)(Mod.BaseAddress + 0x41890C), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
+
+        string[] reduceMenuCountHook =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnReduceMenuCount, out _reverseWrapOnReduceMenuCount)}",
+            "popad",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(reduceMenuCountHook, (int)(Mod.BaseAddress + 0x212244), AsmHookBehaviour.ExecuteAfter).Activate());
 
         string[] closeMenuHook =
         {
@@ -885,6 +897,12 @@ public class Game
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
         HubHandler.UpdateHorcruxCount();
         LevelHandler.ImplementMapLogic(value);
+
+        // Load Red Bricks Enabled if Previous map was 402 (menu)
+        if (Mod.GameInstance!.PrevMapID == 402)
+        {
+            HubHandler.LoadRedBricksEnabled();
+        }
     }
 
     [Function([FunctionAttribute.Register.edx],
@@ -1060,6 +1078,26 @@ public class Game
         return true;   // skip CMP everywhere else
     }
 
+    [Function([FunctionAttribute.Register.edi],
+    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void ReduceMenuCount(int edi);
+    private static void OnReduceMenuCount(int edi)
+    {
+        bool prevInMenu;
+        int prevMapID;
+        lock (Mod.GameInstance!.StateLock)
+        {
+            prevInMenu = Mod.GameInstance!.PrevInMenu;
+            prevMapID = Mod.GameInstance!.MapID;
+        }
+        Console.WriteLine($"Reduce Menu Count Triggered. PrevInMenu: {prevInMenu}, PrevMapID: {prevMapID}, EDI: {edi}");
+        if (!prevInMenu || prevMapID == 402 || edi != 1) // Only trigger when in menu, not on main menu, and when menu level goes back to 1
+        {
+            return;
+        }
+        HubHandler.SaveRedBricksEnabled();
+    }
+
     [Function(CallingConventions.Fastcall)]
     public delegate void CloseMenu();
     private static void OnCloseMenu()
@@ -1087,6 +1125,7 @@ public class Game
         HubHandler.UpdateHorcruxCount();
         LevelHandler.ImplementMapLogic(Mod.GameInstance!.MapID);
         SpellHandler.SpellMapLogic(Mod.GameInstance!.MapID);
+        HubHandler.SaveRedBricksEnabled();
     }
 
     [Function(CallingConventions.Fastcall)]
