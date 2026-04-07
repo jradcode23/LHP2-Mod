@@ -711,6 +711,10 @@ public class SpellHandler
             case 103 when !Mod.LHP2_Archipelago!.IsLocationChecked(1027) || (*y7GhostPtr & (1 << 2)) == 0:
                 Game.LessonReturnToHubNOP();
                 break;
+            case 165:
+                // Game doesn't like something to do with our spell handling (herm bag specifically), so manually changing the return to leaky address
+                HubHandler.FixReturnToLeakyCauldron();
+                break;
             // Delum & Herm Bag
             // TODO: if I find a way to lock herm bag in its lesson, we will need to update this approach
             case 166:

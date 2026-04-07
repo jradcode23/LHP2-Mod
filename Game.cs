@@ -889,7 +889,6 @@ public class Game
         {
             LessonRestoreReturnToHub();
         }
-
         Mod.Logger!.WriteLineAsync($"Map ID updated to {value}.");
         Mod.LHP2_Archipelago!.SendMapID(value);
         ResetItems();

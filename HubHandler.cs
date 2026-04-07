@@ -384,6 +384,20 @@ public class HubHandler
         }
     }
 
+    public static unsafe void FixReturnToLeakyCauldron()
+    {
+        byte* returnToLeakyPTR = SecondPointerWarp + 0x2FC;
+        byte year = (byte)(Mod.GameInstance!.PrevLevelID + 0x4);
+        if (year < 5 || year > 8)
+        {
+            Mod.Logger!.WriteLineAsync($"Could not get the proper year to return to. Year: {year}");
+            return;
+        }
+        string hubName = $"{year}HubLeakyCauldron";
+        Mod.Logger!.WriteLineAsync($"Return to Leaky address: 0x{(uint)returnToLeakyPTR:X}, year: {year}");
+        HintSystem.SetMessageText(hubName, (uint)returnToLeakyPTR);
+    }
+
     public static unsafe void VerifyCharCustMaps()
     {
         // 5, 6, 7, 8 in hex are 0x35, 0x36, 0x37, 0x38

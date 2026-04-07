@@ -124,18 +124,18 @@ public class HintSystem
         }
     }
 
-    private static void SetMessageText(string newText, uint hintTextPTRAddress)
+    public static void SetMessageText(string newText, uint hintTextPTRAddress)
     {
 
         // ASCII encode and null-terminate
-        var normalized = newText.Length >= HintData.MaxLength ? newText[..(HintData.MaxLength - 1)] : newText;
+        var normalized = newText;
         var bytes = System.Text.Encoding.ASCII.GetBytes(normalized + '\0');
 
         // Ensure buffer is fixed size to avoid wide leftover values.
-        if (bytes.Length < HintData.MaxLength)
+        if (bytes.Length > HintData.MaxLength)
         {
             var full = new byte[HintData.MaxLength];
-            Array.Copy(bytes, full, bytes.Length);
+            Array.Copy(bytes, full, HintData.MaxLength);
             bytes = full;
         }
 
@@ -147,4 +147,5 @@ public class HintSystem
         string message = $"Horcruxes Collected: {count}";
         SetMessageText(message, PressButtonToStartTextAddress);
     }
+
 }
