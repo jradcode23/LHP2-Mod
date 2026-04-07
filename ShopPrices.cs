@@ -22,7 +22,7 @@ public class ShopPrices
         // Set Red Brick Shop prices
         for (int i = 0; i < 24; i++)
         {
-            *(RedBrickShopBaseAddress + i * 0x6) /= multiplier; // Set price to 0
+            *(RedBrickShopBaseAddress + i * 0x6) /= multiplier;
         }
 
         int* singleSlotPricePtr = (int*)(SingleSlotCharacterBaseAddress + 0x4);
@@ -34,22 +34,31 @@ public class ShopPrices
         // Set Single Slot Character prices
         for (int i = 0; i < 0x72; i++)
         {
-            *(singleSlotPricePtr + i * 0x8) /= multiplier; // Set price to 0
+            *(singleSlotPricePtr + i * 0x8) /= multiplier;
         }
 
         // Set Multi Slot Character prices
         for (int i = 0; i < 0xD2; i++)
         {
-            *(multiSlotPricePtr + i * 0x8) /= multiplier; // Set price to 0
+            *(multiSlotPricePtr + i * 0x8) /= multiplier;
         }
     }
 
-    public static unsafe void SetJokeShopPrices()
+    public static unsafe void SetJokeShopPrices(int multiplier)
     {
         // Set Joke Shop prices
         for (int i = 0; i < 19; i++)
         {
-            *(JokeShopBaseAddress + i * 0xB) = 0; // Set price to 0
+            *(JokeShopBaseAddress + i * 0xB) /= multiplier;
+        }
+    }
+
+    public static unsafe void ReverseJokeShopPriceChanges(int multiplier)
+    {
+        // Reverse Joke Shop prices
+        for (int i = 0; i < 19; i++)
+        {
+            *(JokeShopBaseAddress + i * 0xB) *= multiplier;
         }
     }
 }

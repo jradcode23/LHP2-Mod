@@ -957,6 +957,12 @@ public class Game
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(RedBrickCollectOffset, RedBrickPurchOffset - 17);
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(RedBrickPurchOffset, 1026);
             HubHandler.UpdateHorcruxCount();
+
+            // Joke Shop prices are set when save is loaded. So we handle that by changing it upon opening and closing that shop
+            if (Mod.GameInstance!.MapID == 369 || Mod.GameInstance!.MapID == 375 || Mod.GameInstance!.MapID == 383 || Mod.GameInstance!.MapID == 387)
+            {
+                ShopPrices.SetJokeShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
+            }
         }
         else
         {
@@ -1000,6 +1006,12 @@ public class Game
                     Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
                     Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
                     HubHandler.UpdateHorcruxCount();
+                }
+
+                // Joke Shop prices are set when save is loaded. So we handle that by changing it upon opening and closing that shop
+                if (Mod.GameInstance!.MapID == 369 || Mod.GameInstance!.MapID == 375 || Mod.GameInstance!.MapID == 383 || Mod.GameInstance!.MapID == 387)
+                {
+                    ShopPrices.ReverseJokeShopPriceChanges(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
                 }
             }
         }
