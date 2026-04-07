@@ -188,22 +188,6 @@ public class HubHandler
         return hubOffsets.TryGetValue(offset, out int sipID) ? sipID : -1;
     }
 
-    // public static unsafe void UnlockHubGB(int ID)
-    // {
-    //     var kvp = hubOffsets.FirstOrDefault(k => k.Value == ID);
-    //     if (kvp.Key == 0 && kvp.Value == 0)
-    //     {
-    //         Mod.Logger!.WriteLineAsync($"[Hub] Could not find Hub RB offset for ID {ID}");
-    //         return;
-    //     }
-    //     byte* ptr = HubBaseAddress + (nuint)kvp.Key;;
-    //     if (ptr == null || HubBaseAddress == null) 
-    //     {
-    //         Mod.Logger!.WriteLineAsync($"[Hub] Can't Unlock Hub RB, null pointer at 0x{(nuint)ptr:X}");
-    //     }
-    //     *ptr |= (byte)BitMask.GoldBrick;
-    // }
-
     public static unsafe void UnlockHubRB(int ID)
     {
         var kvp = hubOffsets.FirstOrDefault(k => k.Value == ID);

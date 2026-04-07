@@ -33,6 +33,11 @@ public class SlotData
             ? Convert.ToInt32(value)
             : -1;
 
+    public int CheaperShops =>
+        SlotDataDictionary.TryGetValue("CheaperShops", out var value)
+            ? Convert.ToInt32(value)
+            : -1;
+
     /// <summary>
     /// Gets the collectibles required as a Dictionary mapping collectible names to required counts.
     /// Returns an empty dictionary if not found.
@@ -63,8 +68,9 @@ public class SlotData
         Mod.Logger!.WriteLineAsync($"Required Horcruxes: {NumberOfRequiredHorcruxes}");
         Mod.Logger!.WriteLineAsync($"Shuffle Joke Spells: {ShuffleJokeSpells}");
         Mod.Logger!.WriteLineAsync($"Shuffle Gold Brick Purchases: {ShuffleGoldBrickPurchases}");
+        Mod.Logger!.WriteLineAsync($"Cheaper Shops Multiplier: {CheaperShops}");
 
-        if (EndGoal == -1 || NumberOfRequiredHorcruxes == -1 || ShuffleJokeSpells == -1 || ShuffleGoldBrickPurchases == -1)
+        if (EndGoal == -1 || NumberOfRequiredHorcruxes == -1 || ShuffleJokeSpells == -1 || ShuffleGoldBrickPurchases == -1 || CheaperShops == -1)
         {
             Mod.Logger!.WriteLineAsync("One or more values not found or invalid. Please report to the devs.");
         }

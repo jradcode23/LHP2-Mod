@@ -138,6 +138,8 @@ public class Game
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3C733D, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
         // NOP Call to Hint System that doesn't clear old value
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x43D212, [0x90, 0x90, 0x90, 0x90, 0x90]);
+
+        ShopPrices.SetShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
     }
 
     // This function turns on the N0CUT5 Cheat Code so cutscenes don't show
