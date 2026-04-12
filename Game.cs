@@ -42,6 +42,7 @@ public class Game
     public const int RedBrickPurchOffset = 950;
     public const int SpellPurchOffset = 975;
     public const int MaxItemID = 1030;
+    public string PlayerName = "";
 
     // Used to check if the game menu is loaded before connecting and trying to set up hooks
     public static void IsGameLoaded()

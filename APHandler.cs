@@ -90,6 +90,7 @@ public class ArchipelagoHandler
             SlotDataInstance = new(_loginSuccessful.SlotData);
             SlotDataInstance.PrintData();
             Mod.InitOnMenu();
+            Mod.GameInstance!.PlayerName = Slot;
             _session.DataStorage[Scope.Slot, "map"] = 402;
             new Thread(RunCheckLocationsFromList).Start();
             new Thread(HintSystem.HandleMessages).Start();

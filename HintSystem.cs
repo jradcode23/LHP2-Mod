@@ -37,7 +37,9 @@ public class HintSystem
 
     public static void EnqueueMessage(string message)
     {
-        if (!string.IsNullOrEmpty(message))
+        // Only want to show messages for our player
+        bool forPlayer = message.Contains(Mod.GameInstance!.PlayerName, StringComparison.OrdinalIgnoreCase);
+        if (!string.IsNullOrEmpty(message) && forPlayer)
         {
             MessageQueue.Enqueue(message);
         }
