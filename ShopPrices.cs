@@ -46,6 +46,11 @@ public class ShopPrices
 
     public static unsafe void SetJokeShopPrices(int multiplier)
     {
+        if (multiplier < 0 || multiplier > 10)
+        {
+            Mod.Logger!.WriteLineAsync($"Multiplier Amount is: {multiplier} which is invalid. Changing amount to 1.");
+            multiplier = 1;
+        }
         // Set Joke Shop prices
         for (int i = 0; i < 19; i++)
         {
@@ -55,6 +60,11 @@ public class ShopPrices
 
     public static unsafe void ReverseJokeShopPriceChanges(int multiplier)
     {
+        if (multiplier < 0 || multiplier > 10)
+        {
+            Mod.Logger!.WriteLineAsync($"Multiplier Amount is: {multiplier} which is invalid. Changing amount to 1.");
+            multiplier = 1;
+        }
         // Reverse Joke Shop prices
         for (int i = 0; i < 19; i++)
         {
