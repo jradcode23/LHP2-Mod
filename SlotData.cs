@@ -63,27 +63,27 @@ public class SlotData
     /// </summary>
     public void PrintData()
     {
-        Mod.Logger!.WriteLineAsync("=== Slot Data ===");
-        Mod.Logger!.WriteLineAsync($"EndGoal: {EndGoal}");
-        Mod.Logger!.WriteLineAsync($"Required Horcruxes: {NumberOfRequiredHorcruxes}");
-        Mod.Logger!.WriteLineAsync($"Shuffle Joke Spells: {ShuffleJokeSpells}");
-        Mod.Logger!.WriteLineAsync($"Shuffle Gold Brick Purchases: {ShuffleGoldBrickPurchases}");
-        Mod.Logger!.WriteLineAsync($"Cheaper Shops Multiplier: {CheaperShops}");
+        Game.PrintToLog("=== Slot Data ===");
+        Game.PrintToLog($"EndGoal: {EndGoal}");
+        Game.PrintToLog($"Required Horcruxes: {NumberOfRequiredHorcruxes}");
+        Game.PrintToLog($"Shuffle Joke Spells: {ShuffleJokeSpells}");
+        Game.PrintToLog($"Shuffle Gold Brick Purchases: {ShuffleGoldBrickPurchases}");
+        Game.PrintToLog($"Cheaper Shops Multiplier: {CheaperShops}");
 
         if (EndGoal == -1 || NumberOfRequiredHorcruxes == -1 || ShuffleJokeSpells == -1 || ShuffleGoldBrickPurchases == -1 || CheaperShops == -1)
         {
-            Mod.Logger!.WriteLineAsync("One or more values not found or invalid. Please report to the devs.");
+            Game.PrintToLog("One or more values not found or invalid. Please report to the devs.");
         }
 
         // if (EndGoal == 1)
         // {
-        //     Mod.Logger!.WriteLineAsync("CollectiblesRequired:");
-        //     Mod.Logger!.WriteLineAsync("=================");
+        //     Game.PrintToLog("CollectiblesRequired:");
+        //     Game.PrintToLog("=================");
         //     foreach (var kvp in CollectiblesRequired)
         //     {
-        //         Mod.Logger!.WriteLineAsync($"  {kvp.Key}: {kvp.Value}");
+        //         Game.PrintToLog($"  {kvp.Key}: {kvp.Value}");
         //     }
-        //     Mod.Logger!.WriteLineAsync("=================");
+        //     Game.PrintToLog("=================");
         // }
     }
 }

@@ -406,7 +406,7 @@ public class SpellHandler
     {
         if (!characterAbilities.TryGetValue(charID, out var abilities))
         {
-            Mod.Logger!.WriteLineAsync($"Could Not find Character ID 0x{charID:X}. Leaving all spells locked");
+            Game.PrintToLog($"Could Not find Character ID 0x{charID:X}. Leaving all spells locked");
             return false;
         }
         if (byteOffset < 0 || byteOffset >= abilities.Length)
@@ -426,7 +426,7 @@ public class SpellHandler
 
         if (spellSelectedAddress == null || activeShootingSpell == null || spellImage == null)
         {
-            Mod.Logger!.WriteLineAsync("One or more spell-related addresses are null. Cannot handle spell visibility.");
+            Game.PrintToLog("One or more spell-related addresses are null. Cannot handle spell visibility.");
             return;
         }
 
@@ -456,7 +456,7 @@ public class SpellHandler
 
         if (hasAbility)
         {
-            // Mod.Logger!.WriteLineAsync($"Character ID 0x{charID:X} has Spell ID {spellId}");
+            // Game.PrintToLog($"Character ID 0x{charID:X} has Spell ID {spellId}");
             UnlockPassiveSpell(byteOffset, bitOffset);
             UnlockActiveSpell(byteOffset, bitOffset);
 
@@ -473,7 +473,7 @@ public class SpellHandler
         }
         // else 
         // {
-        //     Mod.Logger!.WriteLineAsync($"Character ID 0x{charID:X} does not have spell {spellId}");
+        //     Game.PrintToLog($"Character ID 0x{charID:X} does not have spell {spellId}");
         // }
     }
 
@@ -483,7 +483,7 @@ public class SpellHandler
 
         if (ptr == null)
         {
-            Mod.Logger!.WriteLineAsync("SpellBaseAddress: null pointer");
+            Game.PrintToLog("SpellBaseAddress: null pointer");
             return;
         }
         *ptr |= (byte)(1 << bitOffset);
@@ -504,7 +504,7 @@ public class SpellHandler
 
     //     if (ptr == null)
     //     {
-    //         Mod.Logger!.WriteLineAsync("SpellBaseAddress: null pointer");
+    //         Game.PrintToLog("SpellBaseAddress: null pointer");
     //         return;
     //     }
 
@@ -520,7 +520,7 @@ public class SpellHandler
 
         if (ptr == null)
         {
-            Mod.Logger!.WriteLineAsync("SpellBaseAddress: null pointer");
+            Game.PrintToLog("SpellBaseAddress: null pointer");
             return;
         }
         *ptr &= unchecked((byte)~(byte)(1 << bitOffset));
@@ -530,7 +530,7 @@ public class SpellHandler
     {
         if (spellVisibilityBaseAddress == null)
         {
-            Mod.Logger!.WriteLineAsync("SpellVisibilityBaseAddress: null pointer");
+            Game.PrintToLog("SpellVisibilityBaseAddress: null pointer");
             return;
         }
 
@@ -565,7 +565,7 @@ public class SpellHandler
         }
 
         byte* ptr = spellVisibilityBaseAddress + offset * slot;
-        // Mod.Logger!.WriteLineAsync($"Making Spell ID {spellId} visible at offset {offset * slot}");
+        // Game.PrintToLog($"Making Spell ID {spellId} visible at offset {offset * slot}");
         *ptr = 1;
     }
 
@@ -649,7 +649,7 @@ public class SpellHandler
 
         if (spellVisibilityBaseAddress == null)
         {
-            Mod.Logger!.WriteLineAsync("SpellVisibilityBaseAddress: null pointer");
+            Game.PrintToLog("SpellVisibilityBaseAddress: null pointer");
             return;
         }
 

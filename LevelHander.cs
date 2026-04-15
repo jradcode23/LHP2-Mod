@@ -93,7 +93,7 @@ public class LevelHandler
         byte* ptr = LevelBaseAddress + (ushort)level;
         if (ptr == null || LevelBaseAddress == null)
         {
-            Mod.Logger!.WriteLineAsync($"Can't Unlock Level, null pointer at 0x{(nuint)ptr:X}");
+            Game.PrintToLog($"Can't Unlock Level, null pointer at 0x{(nuint)ptr:X}");
         }
         *ptr |= (byte)(BitMask.StoryUnlocked | BitMask.FreeplayUnlocked);
     }
@@ -103,7 +103,7 @@ public class LevelHandler
         byte* ptr = LevelBaseAddress + (ushort)level;
         if (ptr == null || LevelBaseAddress == null)
         {
-            Mod.Logger!.WriteLineAsync($"Can't Unlock GC, null pointer at 0x{(nuint)ptr:X}");
+            Game.PrintToLog($"Can't Unlock GC, null pointer at 0x{(nuint)ptr:X}");
         }
         *ptr |= (byte)BitMask.GryfCrest;
     }
@@ -113,7 +113,7 @@ public class LevelHandler
         byte* ptr = LevelBaseAddress + (ushort)level;
         if (ptr == null || LevelBaseAddress == null)
         {
-            Mod.Logger!.WriteLineAsync($"Can't Unlock SC, null pointer at 0x{(nuint)ptr:X}");
+            Game.PrintToLog($"Can't Unlock SC, null pointer at 0x{(nuint)ptr:X}");
         }
         *ptr |= (byte)BitMask.SlythCrest;
     }
@@ -123,7 +123,7 @@ public class LevelHandler
         byte* ptr = LevelBaseAddress + (ushort)level;
         if (ptr == null || LevelBaseAddress == null)
         {
-            Mod.Logger!.WriteLineAsync($"Can't Unlock RC, null pointer at 0x{(nuint)ptr:X}");
+            Game.PrintToLog($"Can't Unlock RC, null pointer at 0x{(nuint)ptr:X}");
         }
         *ptr |= (byte)BitMask.RavenCrest;
     }
@@ -133,7 +133,7 @@ public class LevelHandler
         byte* ptr = LevelBaseAddress + (ushort)level;
         if (ptr == null || LevelBaseAddress == null)
         {
-            Mod.Logger!.WriteLineAsync($"Can't Unlock HC, null pointer at 0x{(nuint)ptr:X}");
+            Game.PrintToLog($"Can't Unlock HC, null pointer at 0x{(nuint)ptr:X}");
         }
         *ptr |= (byte)BitMask.HuffleCrest;
     }
@@ -143,7 +143,7 @@ public class LevelHandler
         byte* ptr = LevelBaseAddress + (ushort)level;
         if (ptr == null || LevelBaseAddress == null)
         {
-            Mod.Logger!.WriteLineAsync($"Can't Unlock SIP, null pointer at 0x{(nuint)ptr:X}");
+            Game.PrintToLog($"Can't Unlock SIP, null pointer at 0x{(nuint)ptr:X}");
         }
         *ptr |= (byte)BitMask.StudentInPeril;
     }
@@ -154,7 +154,7 @@ public class LevelHandler
         byte* freeplay = story + 1;
         if (story == null || freeplay == null || LevelBaseAddress == null)
         {
-            Mod.Logger!.WriteLineAsync($"Can't Unlock TW, null pointer at 0x{(nuint)story:X}");
+            Game.PrintToLog($"Can't Unlock TW, null pointer at 0x{(nuint)story:X}");
         }
         *story = 1;
         *freeplay = 1;
@@ -188,7 +188,7 @@ public class LevelHandler
         bool locationChecked = Mod.LHP2_Archipelago!.IsLocationChecked(1014);
         bool bitSet1 = (*y5GhostPtr2 & (1 << 4)) != 0;
         bool bitSet2 = (*y5GhostPtr2 & (1 << 5)) == 0;
-        // Mod.Logger!.WriteLineAsync($"Location 1014 checked: {locationChecked}, Bit 4 set: {bitSet}, Bit value: {*y5GhostPtr2}");
+        // Game.PrintToLog($"Location 1014 checked: {locationChecked}, Bit 4 set: {bitSet}, Bit value: {*y5GhostPtr2}");
         if (locationChecked && bitSet1 && bitSet2 && Mod.GameInstance!.MapID != 293)
         {
             *y5GhostPtr2 |= 1 << 5; // Mark A Giant Viruoso Story Complete
@@ -215,7 +215,7 @@ public class LevelHandler
                 MakeAllBoardsVisible();
                 if (!HubHandler.CheckIfLeaky7Entered())
                 {
-                    Mod.Logger!.WriteLineAsync("Player has not entered Leaky2London Y7, clearing boards and setting PTR for Leaky2London Y7.");
+                    Game.PrintToLog("Player has not entered Leaky2London Y7, clearing boards and setting PTR for Leaky2London Y7.");
                     new Thread(HubHandler.CheckLeaky2LondonY7PTR).Start();
                 }
                 break;
