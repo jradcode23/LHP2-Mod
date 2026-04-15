@@ -197,11 +197,6 @@ public class LevelHandler
 
         switch (map)
         {
-            // Leaky in Y7 specifically has a weird loading zone thing
-            case 374 when !Mod.LHP2_Archipelago!.IsLocationChecked(1027):
-                MakeAllBoardsVisible();
-                // HubHandler.ClearLeaky2LondonY7();
-                break;
             // Diagon Alley
             case 370:
             case 376:
@@ -211,10 +206,18 @@ public class LevelHandler
                 break;
             // Leaky Cauldron
             case 368:
-            case 374:
             case 380:
             case 386:
                 MakeAllBoardsVisible();
+                break;
+            // Leaky Cauldron in Y7 Special Case
+            case 374:
+                MakeAllBoardsVisible();
+                if (!HubHandler.CheckIfLeaky7Entered())
+                {
+                    Mod.Logger!.WriteLineAsync("Player has not entered Leaky2London Y7, clearing boards and setting PTR for Leaky2London Y7.");
+                    new Thread(HubHandler.CheckLeaky2LondonY7PTR).Start();
+                }
                 break;
             // Menu & MM
             case 366:

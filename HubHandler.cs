@@ -181,6 +181,13 @@ public class HubHandler
         {0x1232, 39}, // Y5 Diagon Alley
     };
 
+    public static unsafe bool CheckIfLeaky7Entered()
+    {
+        byte* ptr = HubBaseAddress + 0x118A;
+        Mod.Logger!.WriteLineAsync($"Checking if Leaky Cauldron Y7 entered at address 0x{(nuint)ptr:X}, value: {*ptr}");
+        return (*ptr & (byte)BitMask.Entered) != 0;
+    }
+
     public static int GetHubID(int offset)
     {
         offset *= 4;
@@ -787,7 +794,44 @@ public class HubHandler
 
     }
 
-    public static unsafe void ClearLeaky2LondonY7()
+    public static unsafe void CheckLeaky2LondonY7PTR()
+    {
+        bool hasPTRUpdated = false;
+        byte* activeLoadingZoneBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55E1C);
+        byte* loadingZoneName = activeLoadingZoneBaseAddress + 0xB14;
+        int attempts = 0;
+        while (!hasPTRUpdated)
+        {
+            string currentLoadingZone = new((sbyte*)loadingZoneName);
+            if (currentLoadingZone == "7LEAKY27LONDON")
+            {
+                Mod.Logger!.WriteLineAsync("PTR has updated to 7LEAKY27LONDON.");
+                hasPTRUpdated = true;
+            }
+            else if (currentLoadingZone == "5LONDON25HUBLEAKY")
+            {
+                Mod.Logger!.WriteLineAsync("PTR has updated to 5LONDON25HUBLEAKY.");
+                hasPTRUpdated = true;
+            }
+            else
+            {
+                Mod.Logger!.WriteLineAsync($"Current PTR Loading Zone: {currentLoadingZone}, waiting for PTR to update to Leaky2London Y7.");
+                attempts++;
+                if (attempts > 5) // Timeout after 5 attempts
+                {
+                    Mod.Logger!.WriteLineAsync("Timeout reached, PTR did not update to Leaky2London Y7.");
+                    return;
+                }
+                Thread.Sleep(1000);
+
+            }
+        }
+
+        ClearLeaky2LondonY7();
+        Mod.Logger!.WriteLineAsync("Y7 Leaky PTR Loop has finished.");
+    }
+
+    public static unsafe void ClearLeaky2LondonY7(int version = 1)
     {
         byte* ActiveLoadingZoneBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55E1C);
 
@@ -803,7 +847,11 @@ public class HubHandler
             return;
         }
         ptr += 0x7A; // Second Pointer
+        if (version == 1)
+        {
+            ptr -= 0xB10; // Loading Zone was pointing to Leaky2London Y5 instead of Y7 (going to london not level) so adjusting back to point to the correct flag
+        }
         Mod.Logger!.WriteLineAsync($"Clearing Leaky2London Y7 Flag at address 0x{(nuint)ptr:X}");
-        // *ptr = 1; // Remove the Loading Zone Flag to bring to level
+        *ptr = 1; // Remove the Loading Zone Flag to bring to level
     }
 }
