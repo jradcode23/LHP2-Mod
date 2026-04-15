@@ -72,7 +72,7 @@ public class HintSystem
                     {
                         if (InterruptedMessageQueue.Count > 0)
                         {
-                            // Mod.Logger!.WriteLineAsync($"There are {InterruptedMessageQueue.Count} messages in the interrupted queue.");
+                            // Game.PrintToLog($"There are {InterruptedMessageQueue.Count} messages in the interrupted queue.");
                             message = InterruptedMessageQueue.First!.Value;
                             InterruptedMessageQueue.RemoveFirst();
                         }
@@ -88,8 +88,8 @@ public class HintSystem
                         uint messagePTRValue = MessagePTRValue;
                         uint hintTextPTRAddress = HintTextAddress;
 
-                        // Mod.Logger!.WriteLineAsync($"Message PTR Value: 0x{messagePTRValue:X}");
-                        // Mod.Logger!.WriteLineAsync($"Hint Text PTR Address: 0x{hintTextPTRAddress:X}");
+                        // Game.PrintToLog($"Message PTR Value: 0x{messagePTRValue:X}");
+                        // Game.PrintToLog($"Hint Text PTR Address: 0x{hintTextPTRAddress:X}");
                         SetMessageText(message.Text, hintTextPTRAddress);
                         *hintPTRBaseAddress = messagePTRValue; // Set hint system pointer to our message
                         *hintColor = message.MessageType; // Set Color based on item progression
@@ -123,7 +123,7 @@ public class HintSystem
             {
                 if (!InterruptedMessageQueue.Any(m => m.Text == currentMessage))
                 {
-                    // Mod.Logger!.WriteLineAsync("Adding Message to Interrupted Queue");
+                    // Game.PrintToLog("Adding Message to Interrupted Queue");
                     InterruptedMessageQueue.AddFirst(new HintMessage(currentMessage, currentMessageType));
                 }
             }

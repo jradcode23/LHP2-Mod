@@ -12,7 +12,7 @@ public class ShopPrices
     {
         if (multiplier < 0 || multiplier > 10)
         {
-            Mod.Logger!.WriteLineAsync($"Multiplier Amount is: {multiplier} which is invalid. Changing amount to 1.");
+            Game.PrintToLog($"Multiplier Amount is: {multiplier} which is invalid. Changing amount to 1.");
             multiplier = 1;
         }
 
@@ -28,8 +28,8 @@ public class ShopPrices
         int* singleSlotPricePtr = (int*)(SingleSlotCharacterBaseAddress + 0x4);
         int* multiSlotPricePtr = (int*)(MultiSlotCharacterBaseAddress + 0x64);
 
-        Mod.Logger!.WriteLineAsync($"Single Slot Character Price Address: 0x{(nuint)singleSlotPricePtr:X}");
-        Mod.Logger!.WriteLineAsync($"Multi Slot Character Price Address: 0x{(nuint)multiSlotPricePtr:X}");
+        Game.PrintToLog($"Single Slot Character Price Address: 0x{(nuint)singleSlotPricePtr:X}");
+        Game.PrintToLog($"Multi Slot Character Price Address: 0x{(nuint)multiSlotPricePtr:X}");
 
         // Set Single Slot Character prices
         for (int i = 0; i < 0x72; i++)
@@ -48,7 +48,7 @@ public class ShopPrices
     {
         if (multiplier < 0 || multiplier > 10)
         {
-            Mod.Logger!.WriteLineAsync($"Multiplier Amount is: {multiplier} which is invalid. Changing amount to 1.");
+            Game.PrintToLog($"Multiplier Amount is: {multiplier} which is invalid. Changing amount to 1.");
             multiplier = 1;
         }
         // Set Joke Shop prices
@@ -62,7 +62,7 @@ public class ShopPrices
     {
         if (multiplier < 0 || multiplier > 10)
         {
-            Mod.Logger!.WriteLineAsync($"Multiplier Amount is: {multiplier} which is invalid. Changing amount to 1.");
+            Game.PrintToLog($"Multiplier Amount is: {multiplier} which is invalid. Changing amount to 1.");
             multiplier = 1;
         }
         // Reverse Joke Shop prices

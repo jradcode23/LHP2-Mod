@@ -56,7 +56,7 @@ public class ArchipelagoHandler
 
     private void OnSocketClosed(string reason)
     {
-        Mod.Logger!.WriteLineAsync($"Connection closed ({reason}) Attempting reconnect...");
+        Game.PrintToLog($"Connection closed ({reason}) Attempting reconnect...");
         IsConnected = false;
     }
 
@@ -68,7 +68,7 @@ public class ArchipelagoHandler
         {
             Game.IsGameLoaded();
             Seed = _session.ConnectAsync()?.Result?.SeedName;
-            Mod.Logger!.WriteLineAsync(Seed + Slot);
+            Game.PrintToLog(Seed + Slot);
 
             result = _session.LoginAsync(
                 game: GAME_NAME,
@@ -102,8 +102,8 @@ public class ArchipelagoHandler
         var errorMessage = $"Failed to Connect to {Server}:{Port} as {Slot}";
         errorMessage = failure.Errors.Aggregate(errorMessage, (current, error) => current + $"\n    {error}");
         errorMessage = failure.ErrorCodes.Aggregate(errorMessage, (current, error) => current + $"\n    {error}");
-        Mod.Logger!.WriteLineAsync(errorMessage);
-        Mod.Logger!.WriteLineAsync($"Attempting reconnect...");
+        Game.PrintToLog(errorMessage);
+        Game.PrintToLog($"Attempting reconnect...");
         return false;
     }
 
@@ -294,31 +294,31 @@ public class ArchipelagoHandler
         switch (message)
         {
             case HintItemSendLogMessage hintMessage:
-                Mod.Logger!.WriteLineAsync($"Hint Message Received: {hintMessage.ToString() ?? string.Empty}");
+                Game.PrintToLog($"Hint Message Received: {hintMessage.ToString() ?? string.Empty}");
                 itemFlag = GetItemFlag(hintMessage.Item);
                 string hntmsg = hintMessage.ToString() ?? string.Empty;
 
                 if (!hintMessage.IsRelatedToActivePlayer)
                 {
-                    Mod.Logger!.WriteLineAsync($"Hint not related to active player, skipping: {hntmsg}");
+                    Game.PrintToLog($"Hint not related to active player, skipping: {hntmsg}");
                     return;
                 }
                 HintSystem.EnqueueMessage(hntmsg, itemFlag);
                 break;
             case ItemSendLogMessage itemMessage:
-                Mod.Logger!.WriteLineAsync($"Item Message Received: {itemMessage.ToString() ?? string.Empty}");
+                Game.PrintToLog($"Item Message Received: {itemMessage.ToString() ?? string.Empty}");
                 itemFlag = GetItemFlag(itemMessage.Item);
                 string itmmsg = itemMessage.ToString() ?? string.Empty;
 
                 if (!itemMessage.IsRelatedToActivePlayer)
                 {
-                    Mod.Logger!.WriteLineAsync($"Item not related to active player, skipping: {itmmsg}");
+                    Game.PrintToLog($"Item not related to active player, skipping: {itmmsg}");
                     return;
                 }
                 HintSystem.EnqueueMessage(itmmsg, itemFlag);
                 break;
             default:
-                Mod.Logger!.WriteLineAsync($"{message.GetType().Name} Received: {message.ToString() ?? string.Empty}");
+                Game.PrintToLog($"{message.GetType().Name} Received: {message.ToString() ?? string.Empty}");
                 break;
         }
 
