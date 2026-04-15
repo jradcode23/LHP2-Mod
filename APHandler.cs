@@ -42,7 +42,7 @@ public class ArchipelagoHandler
         _session = ArchipelagoSessionFactory.CreateSession(Server, Port);
         _session.MessageLog.OnMessageReceived += OnMessageReceived;
         _session.Socket.SocketClosed += OnSocketClosed;
-        //_session.Socket.PacketReceived += PacketReceived;
+        // _session.Socket.PacketReceived += OnPacketReceived;
         _session.Items.ItemReceived += ItemReceived;
     }
 
@@ -105,6 +105,13 @@ public class ArchipelagoHandler
         Mod.Logger!.WriteLineAsync(errorMessage);
         Mod.Logger!.WriteLineAsync($"Attempting reconnect...");
         return false;
+    }
+
+    private static long[] BuildLocationIds()
+    {
+        var ids = new List<long>();
+        ids.AddRange(Enumerable.Range(400000, 401030).Select(i => (long)i));
+        return [.. ids];
     }
 
     private void ItemReceived(ReceivedItemsHelper helper)
@@ -281,10 +288,61 @@ public class ArchipelagoHandler
         }
     }
 
-    static void OnMessageReceived(LogMessage message)
+    private static void OnMessageReceived(LogMessage message)
     {
-        Mod.Logger!.WriteLineAsync(message.ToString() ?? string.Empty);
-        HintSystem.EnqueueMessage(message.ToString());
+        byte itemFlag;
+        switch (message)
+        {
+            case HintItemSendLogMessage hintMessage:
+                Mod.Logger!.WriteLineAsync($"Hint Message Received: {hintMessage.ToString() ?? string.Empty}");
+                itemFlag = GetItemFlag(hintMessage.Item);
+                string hntmsg = hintMessage.ToString() ?? string.Empty;
+
+                if (!hintMessage.IsRelatedToActivePlayer)
+                {
+                    Mod.Logger!.WriteLineAsync($"Hint not related to active player, skipping: {hntmsg}");
+                    return;
+                }
+                HintSystem.EnqueueMessage(hntmsg, itemFlag);
+                break;
+            case ItemSendLogMessage itemMessage:
+                Mod.Logger!.WriteLineAsync($"Item Message Received: {itemMessage.ToString() ?? string.Empty}");
+                itemFlag = GetItemFlag(itemMessage.Item);
+                string itmmsg = itemMessage.ToString() ?? string.Empty;
+
+                if (!itemMessage.IsRelatedToActivePlayer)
+                {
+                    Mod.Logger!.WriteLineAsync($"Item not related to active player, skipping: {itmmsg}");
+                    return;
+                }
+                HintSystem.EnqueueMessage(itmmsg, itemFlag);
+                break;
+            default:
+                Mod.Logger!.WriteLineAsync($"{message.GetType().Name} Received: {message.ToString() ?? string.Empty}");
+                break;
+        }
+
+    }
+
+    private static byte GetItemFlag(ItemInfo item)
+    {
+        if ((item.Flags & ItemFlags.Advancement) == ItemFlags.Advancement)
+        {
+            return 3;
+        }
+        if ((item.Flags & ItemFlags.NeverExclude) == ItemFlags.NeverExclude)
+        {
+            return 6;
+        }
+        if ((item.Flags & ItemFlags.None) == ItemFlags.None)
+        {
+            return 2;
+        }
+        if ((item.Flags & ItemFlags.Trap) == ItemFlags.Trap)
+        {
+            return 0;
+        }
+        return 5; // Default flag
     }
 
     public void SendMapID(int MapID)

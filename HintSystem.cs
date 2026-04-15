@@ -8,11 +8,13 @@ public struct HintData
     public const int MaxLength = 255;
 }
 
+public record HintMessage(string Text, byte MessageType);
+
 public class HintSystem
 {
-    private static unsafe readonly float* hintTimerBaseAddress = (float*)(Mod.BaseAddress + 0xC5839C);
-    private static unsafe readonly uint* hintPTRBaseAddress = (uint*)(Mod.BaseAddress + 0xC5838C);
-
+    private static unsafe float* hintTimerBaseAddress => (float*)(Mod.BaseAddress + 0xC5839C);
+    private static unsafe uint* hintPTRBaseAddress => (uint*)(Mod.BaseAddress + 0xC5838C);
+    private static unsafe byte* hintColor => (byte*)(Mod.BaseAddress + 0xC58391);
     private static unsafe byte* HintTextBaseAddress => *(byte**)(Mod.BaseAddress + 0xB16324);
     private static unsafe uint HintTextAddress => (uint)(HintTextBaseAddress + 0xBA);
     private static unsafe uint MessagePTRValue => (uint)(((byte*)*(uint**)(Mod.BaseAddress + 0xC58388)) + 0xFFC);
@@ -31,17 +33,16 @@ public class HintSystem
         return *hubCutSceneAddress == 0; // 48 means that the player is in a hub cutscene, 0 means they are not
     }
 
-    private static readonly ConcurrentQueue<string> MessageQueue = new();
-    private static readonly LinkedList<string> InterruptedMessageQueue = new();
+    private static readonly ConcurrentQueue<HintMessage> MessageQueue = new();
+    private static readonly LinkedList<HintMessage> InterruptedMessageQueue = new();
     private static readonly object queueLock = new();
 
-    public static void EnqueueMessage(string message)
+    public static void EnqueueMessage(string message, byte messageType = 0)
     {
         // Only want to show messages for our player
-        bool forPlayer = message.Contains(Mod.GameInstance!.PlayerName, StringComparison.OrdinalIgnoreCase);
-        if (!string.IsNullOrEmpty(message) && forPlayer)
+        if (!string.IsNullOrEmpty(message))
         {
-            MessageQueue.Enqueue(message);
+            MessageQueue.Enqueue(new HintMessage(message, messageType));
         }
     }
 
@@ -66,7 +67,7 @@ public class HintSystem
             {
                 if (*hintPTRBaseAddress == 0 || *hintTimerBaseAddress >= 5.0f)
                 {
-                    string? message = null;
+                    HintMessage? message = null;
                     lock (queueLock)
                     {
                         if (InterruptedMessageQueue.Count > 0)
@@ -78,7 +79,8 @@ public class HintSystem
                     }
                     if (message == null)
                     {
-                        MessageQueue.TryDequeue(out message);
+                        MessageQueue.TryDequeue(out var dequeuedMessage);
+                        message = dequeuedMessage;
                     }
 
                     if (message != null)
@@ -88,8 +90,9 @@ public class HintSystem
 
                         // Mod.Logger!.WriteLineAsync($"Message PTR Value: 0x{messagePTRValue:X}");
                         // Mod.Logger!.WriteLineAsync($"Hint Text PTR Address: 0x{hintTextPTRAddress:X}");
-                        SetMessageText(message, hintTextPTRAddress);
+                        SetMessageText(message.Text, hintTextPTRAddress);
                         *hintPTRBaseAddress = messagePTRValue; // Set hint system pointer to our message
+                        *hintColor = message.MessageType; // Set Color based on item progression
                         *hintTimerBaseAddress = 0f; // Restart Hint timer, shows for 5 seconds
                     }
                 }
@@ -104,7 +107,7 @@ public class HintSystem
 
     public static unsafe void HandleInterruptedMessage()
     {
-        if (*hintTimerBaseAddress > 4.5f || *hintPTRBaseAddress == 0) // If timer is greater than 3 seconds or if there is nothing on screen, we can return
+        if (*hintTimerBaseAddress > 4f || *hintPTRBaseAddress == 0) // If timer is greater than 4 seconds or if there is nothing on screen, we can return
         {
             *hintPTRBaseAddress = 0;
             return;
@@ -112,15 +115,16 @@ public class HintSystem
 
         uint hintTextPTRAddress = HintTextAddress;
         string currentMessage = new((sbyte*)hintTextPTRAddress);
+        byte currentMessageType = *hintColor;
 
         if (!string.IsNullOrEmpty(currentMessage))
         {
             lock (queueLock)
             {
-                if (!InterruptedMessageQueue.Contains(currentMessage))
+                if (!InterruptedMessageQueue.Any(m => m.Text == currentMessage))
                 {
                     // Mod.Logger!.WriteLineAsync("Adding Message to Interrupted Queue");
-                    InterruptedMessageQueue.AddFirst(currentMessage);
+                    InterruptedMessageQueue.AddFirst(new HintMessage(currentMessage, currentMessageType));
                 }
             }
         }
