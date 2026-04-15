@@ -5,7 +5,6 @@ using Archipelago.MultiClient.Net.Helpers;
 using Archipelago.MultiClient.Net.MessageLog.Messages;
 using System.Diagnostics.CodeAnalysis;
 using Archipelago.MultiClient.Net.Models;
-using Archipelago.MultiClient.Net.Packets;
 
 namespace LHP2_Archi_Mod;
 
@@ -23,7 +22,6 @@ public class ArchipelagoHandler
     private string Slot { get; set; }
     private string? Seed { get; set; }
     private string Password { get; set; }
-    public Dictionary<long, ScoutedItemInfo> ScoutedLocations { get; private set; }
 
     public static bool IsConnected;
     public static bool IsConnecting;
@@ -44,7 +42,7 @@ public class ArchipelagoHandler
         _session = ArchipelagoSessionFactory.CreateSession(Server, Port);
         _session.MessageLog.OnMessageReceived += OnMessageReceived;
         _session.Socket.SocketClosed += OnSocketClosed;
-        _session.Socket.PacketReceived += OnPacketReceived;
+        // _session.Socket.PacketReceived += OnPacketReceived;
         _session.Items.ItemReceived += ItemReceived;
     }
 
@@ -91,16 +89,12 @@ public class ArchipelagoHandler
             _loginSuccessful = (LoginSuccessful)result;
             SlotDataInstance = new(_loginSuccessful.SlotData);
             SlotDataInstance.PrintData();
-            var locationIDs = BuildLocationIds();
-            var scouting = _session.Locations.ScoutLocationsAsync(HintCreationPolicy.None, locationIDs);
             Mod.InitOnMenu();
             Mod.GameInstance!.PlayerName = Slot;
             _session.DataStorage[Scope.Slot, "map"] = 402;
             new Thread(RunCheckLocationsFromList).Start();
             new Thread(HintSystem.HandleMessages).Start();
             new Thread(HandleQueuedItems).Start();
-            scouting.Wait();
-            ScoutedLocations = scouting.Result;
             //resync here
             return true;
         }
@@ -186,7 +180,6 @@ public class ArchipelagoHandler
     public void CheckLocation(Int64 id)
     {
         _locationsToCheck.Enqueue(id + gameOffset);
-        GetLocationText(id + gameOffset);
     }
 
     private ConcurrentQueue<Int64> _locationsToCheck = new();
@@ -295,72 +288,66 @@ public class ArchipelagoHandler
         }
     }
 
-    public static void OnMessageReceived(LogMessage message)
+    private static void OnMessageReceived(LogMessage message)
     {
-        Mod.Logger!.WriteLineAsync(message.ToString() ?? string.Empty);
-        // HintSystem.EnqueueMessage(message.ToString());
+        byte itemFlag;
+        switch (message)
+        {
+            case HintItemSendLogMessage hintMessage:
+                Mod.Logger!.WriteLineAsync($"Hint Message Received: {hintMessage.ToString() ?? string.Empty}");
+                itemFlag = GetItemFlag(hintMessage.Item);
+                string hntmsg = hintMessage.ToString() ?? string.Empty;
+
+                if (!hintMessage.IsRelatedToActivePlayer)
+                {
+                    Mod.Logger!.WriteLineAsync($"Hint not related to active player, skipping: {hntmsg}");
+                    return;
+                }
+                HintSystem.EnqueueMessage(hntmsg, itemFlag);
+                break;
+            case ItemSendLogMessage itemMessage:
+                Mod.Logger!.WriteLineAsync($"Item Message Received: {itemMessage.ToString() ?? string.Empty}");
+                itemFlag = GetItemFlag(itemMessage.Item);
+                string itmmsg = itemMessage.ToString() ?? string.Empty;
+
+                if (!itemMessage.IsRelatedToActivePlayer)
+                {
+                    Mod.Logger!.WriteLineAsync($"Item not related to active player, skipping: {itmmsg}");
+                    return;
+                }
+                HintSystem.EnqueueMessage(itmmsg, itemFlag);
+                break;
+            default:
+                Mod.Logger!.WriteLineAsync($"{message.GetType().Name} Received: {message.ToString() ?? string.Empty}");
+                break;
+        }
+
     }
 
-    public static void GetLocationText(Int64 locationID)
+    private static byte GetItemFlag(ItemInfo item)
     {
-        ScoutedItemInfo item;
-        try
-        {
-            item = Mod.LHP2_Archipelago!.ScoutedLocations[locationID];
-        }
-        catch (Exception ex)
-        {
-
-            Mod.Logger!.WriteLineAsync($"Error retrieving item info for location ID {locationID}: {ex.Message}");
-            return;
-        }
-
-        byte itemFlag = 5;
         if ((item.Flags & ItemFlags.Advancement) == ItemFlags.Advancement)
         {
-            itemFlag = 3;
+            return 3;
         }
-        else if ((item.Flags & ItemFlags.NeverExclude) == ItemFlags.NeverExclude)
+        if ((item.Flags & ItemFlags.NeverExclude) == ItemFlags.NeverExclude)
         {
-            itemFlag = 6;
+            return 6;
         }
-        else if ((item.Flags & ItemFlags.None) == ItemFlags.None)
+        if ((item.Flags & ItemFlags.None) == ItemFlags.None)
         {
-            itemFlag = 2;
+            return 2;
         }
-        else if ((item.Flags & ItemFlags.Trap) == ItemFlags.Trap)
+        if ((item.Flags & ItemFlags.Trap) == ItemFlags.Trap)
         {
-            itemFlag = 0;
+            return 0;
         }
-
-        string itemText = item.ItemDisplayName;
-        string playerName = item.Player.Name;
-        string message;
-        if (playerName == Mod.GameInstance!.PlayerName)
-        {
-            message = $"You found {itemText}";
-            Mod.Logger!.WriteLineAsync($"You found your {itemText}");
-            HintSystem.EnqueueMessage(message, itemFlag);
-        }
-        else
-        {
-            Mod.Logger!.WriteLineAsync($"You sent {itemText} to {playerName}");
-        }
+        return 5; // Default flag
     }
 
     public void SendMapID(int MapID)
     {
         _session.DataStorage[Scope.Slot, "map"] = MapID;
-    }
-
-    private void OnPacketReceived(ArchipelagoPacketBase packet)
-    {
-        switch (packet)
-        {
-            case HintPrintJsonPacket hintPacket:
-                Mod.Logger!.WriteLineAsync($"Hint Packet Received with Hint: {hintPacket.Item.ToString()}");
-                break;
-        }
     }
 
 }
