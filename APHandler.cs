@@ -54,18 +54,21 @@ public class ArchipelagoHandler
         IsConnecting = false;
     }
 
+    // Tells the server what we want done when the connection is closed
     private void OnSocketClosed(string reason)
     {
         Game.PrintToLog($"Connection closed ({reason}) Attempting reconnect...");
         IsConnected = false;
     }
 
+    // Attempts to connect to the server
     private bool Connect()
     {
         LoginResult result;
 
         try
         {
+            // Check to see if Game/Menu is loaded before trying to connect, we do this to mitigate impact of null values and the game changing things later.
             Game.IsGameLoaded();
             Seed = _session.ConnectAsync()?.Result?.SeedName;
             Game.PrintToLog(Seed + Slot);
@@ -87,11 +90,16 @@ public class ArchipelagoHandler
         if (result.Successful)
         {
             _loginSuccessful = (LoginSuccessful)result;
+            // Sets up slot Data
             SlotDataInstance = new(_loginSuccessful.SlotData);
             SlotDataInstance.PrintData();
+            // Modify the game now that we are connected
             Mod.InitOnMenu();
+            // Store our slot name in game to access later
             Mod.GameInstance!.PlayerName = Slot;
+            // Tell DataStorage we are on the menu
             _session.DataStorage[Scope.Slot, "map"] = 402;
+            // Start our threads
             new Thread(RunCheckLocationsFromList).Start();
             new Thread(HintSystem.HandleMessages).Start();
             new Thread(HandleQueuedItems).Start();
@@ -107,13 +115,10 @@ public class ArchipelagoHandler
         return false;
     }
 
-    private static long[] BuildLocationIds()
-    {
-        var ids = new List<long>();
-        ids.AddRange(Enumerable.Range(400000, 401030).Select(i => (long)i));
-        return [.. ids];
-    }
-
+    /* Tells archi want we want to do when an item is received. 
+    Majority of items besides the groupings in this function are given to the player when they sync up with the item/location container. 
+    However, there are a few we want the player to have instantaneously so we handle those instances here.
+    */
     private void ItemReceived(ReceivedItemsHelper helper)
     {
         while (helper.Any())
@@ -121,6 +126,8 @@ public class ArchipelagoHandler
             var item = helper.DequeueItem();
             int gameID = (int)item.ItemId - gameOffset;
             bool prevInShop = false, prevInLevelSelect = false;
+
+            // Verify if the player is in a shop or in the level selector since we give them certain items instantly if they are
             if (Mod.GameInstance != null)
             {
                 lock (Mod.GameInstance.StateLock)
@@ -129,6 +136,7 @@ public class ArchipelagoHandler
                     prevInLevelSelect = Mod.GameInstance.PrevInLevelSelect;
                 }
             }
+
             if (Mod.GameInstance != null && prevInShop && gameID != 699)
             {
                 // Token or red brick purchasable
@@ -138,45 +146,51 @@ public class ArchipelagoHandler
                 }
                 return;
             }
+            // If in level select, we give them any item but purple stud
             if (Mod.GameInstance != null && prevInLevelSelect && gameID != 699)
             {
                 Game.ManageItem(gameID);
                 return;
             }
+            // If the player is controllable, we give them purple studs, any spells/abilities, and Horcruxes
             if (Mod.GameInstance != null && Game.IsPlayerControllable())
             {
+                // Handle Spells/Abilities
                 if (gameID >= 998)
                 {
                     Game.ManageItem(gameID);
                     return;
                 }
+                // Handle Purple Studs
                 if (gameID == 699)
                 {
                     HubHandler.HandlePurpleStud();
                     return;
                 }
+                //Handle Horcruxes
                 if (gameID >= 440 && gameID <= 446)
                 {
                     HubHandler.UpdateHorcruxCount();
                     return;
                 }
             }
-            // Handle Purple Stud
+            // Handle Purple Stud if player isn't controllable (could be in the menu)
             if (Mod.GameInstance != null && !Game.IsPlayerControllable() && gameID == 699)
             {
-                // Console.WriteLine($"Queuing Purple Stud for later handling with game ID {gameID}");
                 _queuedItems.Enqueue(gameID);
                 return;
             }
         }
     }
 
+    // Once Goal is completed, this function is called
     public void Release()
     {
         _session.SetGoalAchieved();
         _session.SetClientState(ArchipelagoClientState.ClientGoal);
     }
 
+    // This is the function we use to send completed locations. Pass the ID to this function and it will be marked complete.
     public void CheckLocation(Int64 id)
     {
         _locationsToCheck.Enqueue(id + gameOffset);
@@ -187,6 +201,7 @@ public class ArchipelagoHandler
     private readonly object _locationsLock = new();
     private readonly object _itemsLock = new();
 
+    // This functions is a separate thread that will tell the server that our player has complete their location checks. Done in a separate thread to keep the game running and not relying on the server.
     public void RunCheckLocationsFromList()
     {
         while (true)
@@ -200,6 +215,7 @@ public class ArchipelagoHandler
         }
     }
 
+    // If there are instantenous items (like purple studs and in the future traps) that we queue up because the player wasn't controllable, this is a separate thread that waits until the player is controllable to pass them the item. 
     public void HandleQueuedItems()
     {
         while (true)
@@ -229,6 +245,7 @@ public class ArchipelagoHandler
         }
     }
 
+    // Helper function to verify if a location has already been completed (includes if it was collected by server)
     public bool IsLocationChecked(Int64 id)
     {
         lock (_locationsLock)
@@ -237,6 +254,12 @@ public class ArchipelagoHandler
         }
     }
 
+    /*
+    This archi is designed to sync the game state to either the items received state, the locations completed state, or a mixture of both.
+    These following functions take the range of archi IDs as parameters and will update the game state to match whether the item has been received or the location checked.
+    */
+
+    // Updates Game state to Items
     public void UpdateBasedOnItems(Int64 minItemId, Int64 maxItemId)
     {
         lock (_itemsLock)
@@ -253,6 +276,7 @@ public class ArchipelagoHandler
         }
     }
 
+    // Updates Game state to locations
     public void UpdateBasedOnLocations(Int64 minLocationId, Int64 maxLocationId)
     {
         lock (_locationsLock)
@@ -269,6 +293,7 @@ public class ArchipelagoHandler
         }
     }
 
+    // Helper Function to count how many items inbetween a certain archi ID range have been received
     public int CountItemsCheckedInRange(Int64 start, Int64 end)
     {
         lock (_itemsLock)
@@ -279,6 +304,7 @@ public class ArchipelagoHandler
         }
     }
 
+    // Helper Function to count how many items with a specific archi ID (i.e. gold brick or purple stud) have been received
     public int CountItemsReceivedWithId(Int64 gameId)
     {
         lock (_itemsLock)
@@ -288,64 +314,75 @@ public class ArchipelagoHandler
         }
     }
 
+    // Helper Function to handle Messages received from the server
     private static void OnMessageReceived(LogMessage message)
     {
         byte itemFlag;
         switch (message)
         {
+            // Implementation for when hint messages are received from the server
             case HintItemSendLogMessage hintMessage:
+                // Currently printing all hint messages in case it breaks something
                 Game.PrintToLog($"Hint Message Received: {hintMessage.ToString() ?? string.Empty}");
                 itemFlag = GetItemFlag(hintMessage.Item);
                 string hntmsg = hintMessage.ToString() ?? string.Empty;
 
                 if (!hintMessage.IsRelatedToActivePlayer)
                 {
-                    Game.PrintToLog($"Hint not related to active player, skipping: {hntmsg}");
+                    Game.PrintToLog("Hint not related to active player, skipping");
                     return;
                 }
+
                 HintSystem.EnqueueMessage(hntmsg, itemFlag);
                 break;
             case ItemSendLogMessage itemMessage:
+                // Currently printing all Item messages in case it breaks something
                 Game.PrintToLog($"Item Message Received: {itemMessage.ToString() ?? string.Empty}");
                 itemFlag = GetItemFlag(itemMessage.Item);
                 string itmmsg = itemMessage.ToString() ?? string.Empty;
 
                 if (!itemMessage.IsRelatedToActivePlayer)
                 {
-                    Game.PrintToLog($"Item not related to active player, skipping: {itmmsg}");
+                    Game.PrintToLog($"Item not related to active player, skipping");
                     return;
                 }
+
                 HintSystem.EnqueueMessage(itmmsg, itemFlag);
                 break;
             default:
+                /* 
+                Printing all messages in case it breaks something, but don't think that will be the case.
+                Prints the message type too in case there is something we want to print in the future
+                */
                 Game.PrintToLog($"{message.GetType().Name} Received: {message.ToString() ?? string.Empty}");
                 break;
         }
-
     }
 
+    // Helper function to help determine what type of item (progression/Trap/Filler) was sent/received. Used to determine the in game text color.
     private static byte GetItemFlag(ItemInfo item)
     {
         Game.PrintToLog($"Item flags are: {item.Flags}");
         if ((item.Flags & ItemFlags.Trap) == ItemFlags.Trap)
         {
-            return 0;
+            return 0; // 0 is Red
         }
         if ((item.Flags & ItemFlags.Advancement) == ItemFlags.Advancement)
         {
-            return 3;
+            return 3; // 3 is Purple
         }
         if ((item.Flags & ItemFlags.NeverExclude) == ItemFlags.NeverExclude)
         {
-            return 6;
+            return 6; // 6 is Dark Blue
         }
         if ((item.Flags & ItemFlags.None) == ItemFlags.None)
         {
-            return 2;
+            return 2; // 2 is Light Blue
         }
-        return 5; // Default flag
+        return 5; // Default flag which is gray
     }
 
+    // We pass the Map ID to data storage for auto tracking purposes
     public void SendMapID(int MapID)
     {
         _session.DataStorage[Scope.Slot, "map"] = MapID;
