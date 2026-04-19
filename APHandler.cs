@@ -326,7 +326,7 @@ public class ArchipelagoHandler
 
     private static byte GetItemFlag(ItemInfo item)
     {
-        Console.WriteLine(item.Flags);
+        Game.PrintToLog($"Item flags are: {item.Flags}");
         if ((item.Flags & ItemFlags.Trap) == ItemFlags.Trap)
         {
             return 0;

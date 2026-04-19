@@ -150,6 +150,8 @@ public class Game
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3C73C4, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
         // NOP Resetting the Hint Color to 2 when walking through a door
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3C73B9, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
+        // NOP Resetting Hint message constantly if the pets are out
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3C732C, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
 
         ShopPrices.SetShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
     }
