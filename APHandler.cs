@@ -326,6 +326,11 @@ public class ArchipelagoHandler
 
     private static byte GetItemFlag(ItemInfo item)
     {
+        Console.WriteLine(item.Flags);
+        if ((item.Flags & ItemFlags.Trap) == ItemFlags.Trap)
+        {
+            return 0;
+        }
         if ((item.Flags & ItemFlags.Advancement) == ItemFlags.Advancement)
         {
             return 3;
@@ -337,10 +342,6 @@ public class ArchipelagoHandler
         if ((item.Flags & ItemFlags.None) == ItemFlags.None)
         {
             return 2;
-        }
-        if ((item.Flags & ItemFlags.Trap) == ItemFlags.Trap)
-        {
-            return 0;
         }
         return 5; // Default flag
     }

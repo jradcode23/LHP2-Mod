@@ -1,10 +1,10 @@
-
 namespace LHP2_Archi_Mod;
 
 public class LevelHandler
 {
     public static unsafe byte* LevelBaseAddress => *(byte**)(Mod.BaseAddress + 0xC55F2C);
 
+    // Bitmask for how the level unlock byte is structed.
     [Flags]
     public enum BitMask
     {
@@ -19,6 +19,7 @@ public class LevelHandler
         StudentInPeril = 1 << 7,
     }
 
+    // Enum representing each level and their offset from the base pointer
     public enum LevelData : ushort
     {
         // Y5
@@ -54,6 +55,7 @@ public class LevelHandler
         TheFlawInThePlan = 0x226,
     }
 
+    // Used to fetch the level number, since in level activity is stored in the same addresses, we use this to make sure the right check is sent
     public static readonly LevelData[] LevelUnlockOrder =
     [
         LevelData.DarkTimes,
@@ -82,12 +84,14 @@ public class LevelHandler
         LevelData.TheFlawInThePlan,
     ];
 
+    // Helper function to look up the applicable level based on the Archi ID
     public static LevelData ConvertIDToLeveData(int id)
     {
         LevelData level = LevelUnlockOrder[id];
         return level;
     }
 
+    // Helper function to unlock a level
     public static unsafe void UnlockLevel(LevelData level)
     {
         byte* ptr = LevelBaseAddress + (ushort)level;
@@ -98,6 +102,7 @@ public class LevelHandler
         *ptr |= (byte)(BitMask.StoryUnlocked | BitMask.FreeplayUnlocked);
     }
 
+    // Helper function to unlock a Gryffindor Crest
     public static unsafe void UnlockGryffindorCrest(LevelData level)
     {
         byte* ptr = LevelBaseAddress + (ushort)level;
@@ -108,6 +113,7 @@ public class LevelHandler
         *ptr |= (byte)BitMask.GryfCrest;
     }
 
+    // Helper function to unlock a Slytherin Crest
     public static unsafe void UnlockSlytherinCrest(LevelData level)
     {
         byte* ptr = LevelBaseAddress + (ushort)level;
@@ -118,6 +124,7 @@ public class LevelHandler
         *ptr |= (byte)BitMask.SlythCrest;
     }
 
+    // Helper function to unlock a Ravenclaw Crest
     public static unsafe void UnlockRavenclawCrest(LevelData level)
     {
         byte* ptr = LevelBaseAddress + (ushort)level;
@@ -128,6 +135,7 @@ public class LevelHandler
         *ptr |= (byte)BitMask.RavenCrest;
     }
 
+    // Helper function to unlock a Hufflepuff Crest
     public static unsafe void UnlockHufflepuffCrest(LevelData level)
     {
         byte* ptr = LevelBaseAddress + (ushort)level;
@@ -138,6 +146,7 @@ public class LevelHandler
         *ptr |= (byte)BitMask.HuffleCrest;
     }
 
+    // Helper function to unlock an In Level SIP
     public static unsafe void UnlockStudentInPeril(LevelData level)
     {
         byte* ptr = LevelBaseAddress + (ushort)level;
@@ -148,8 +157,10 @@ public class LevelHandler
         *ptr |= (byte)BitMask.StudentInPeril;
     }
 
+    // Helper function to unlock a True Wizard
     public static unsafe void UnlockTrueWizard(LevelData level)
     {
+        // Adjusting the address since TW address is before the rest of the in level activity
         byte* story = LevelBaseAddress + (ushort)level - 6;
         byte* freeplay = story + 1;
         if (story == null || freeplay == null || LevelBaseAddress == null)
@@ -160,6 +171,7 @@ public class LevelHandler
         *freeplay = 1;
     }
 
+    // Helper function to reset all In Level Unlocks
     public static unsafe void ResetLevels()
     {
         for (int i = 0; i < LevelUnlockOrder.Length; i++)
@@ -173,6 +185,7 @@ public class LevelHandler
         }
     }
 
+    // If you unlock a level in a later year before having 1 level in all years before, you can't select the any levels on the later level board. This makes sure to temporarily show a level in all years so all level boards are selectable.
     public static void MakeAllBoardsVisible()
     {
         UnlockLevel(LevelData.DarkTimes);
@@ -181,6 +194,7 @@ public class LevelHandler
         UnlockLevel(LevelData.TheThiefsDownfall);
     }
 
+    // Some maps require special logic, this function takes the map ID and applies any special logic.
     public static unsafe void ImplementMapLogic(int map)
     {
         byte* y5GhostPtr2 = HubHandler.GhostPathBaseAddress + 0x21;
@@ -188,7 +202,8 @@ public class LevelHandler
         bool locationChecked = Mod.LHP2_Archipelago!.IsLocationChecked(1014);
         bool bitSet1 = (*y5GhostPtr2 & (1 << 4)) != 0;
         bool bitSet2 = (*y5GhostPtr2 & (1 << 5)) == 0;
-        // Game.PrintToLog($"Location 1014 checked: {locationChecked}, Bit 4 set: {bitSet}, Bit value: {*y5GhostPtr2}");
+
+        // Marks the two levels complete after the next map change (assuming they aren't in great hall lobby)
         if (locationChecked && bitSet1 && bitSet2 && Mod.GameInstance!.MapID != 293)
         {
             *y5GhostPtr2 |= 1 << 5; // Mark A Giant Viruoso Story Complete
@@ -210,7 +225,7 @@ public class LevelHandler
             case 386:
                 MakeAllBoardsVisible();
                 break;
-            // Leaky Cauldron in Y7 Special Case
+            // Leaky Cauldron in Y7 - to handle the special case of first visit (to clear the 7 Harry's Loading Zone on the first visit)
             case 374:
                 MakeAllBoardsVisible();
                 if (!HubHandler.CheckIfLeaky7Entered())

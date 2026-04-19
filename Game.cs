@@ -44,7 +44,7 @@ public class Game
     public const int MaxItemID = 1030;
     public string PlayerName = "";
 
-    // Function to help print to the terminal and log file with a consistent prefix
+    // Helper Function to help print to the terminal and log file with a consistent prefix
     public static void PrintToLog(string message)
     {
         Mod.Logger!.WriteLineAsync("[LHP2.archipelago.mod] " + message);
@@ -65,7 +65,7 @@ public class Game
         }
     }
 
-    // Helper Function to check if menu is loaded 
+    // Helper Function to check if menu is loaded or player is controllable
     // TODO: Currently broken out cause we previously checked to see if save file was loaded as part of setup
     public static unsafe bool IsMenuLoaded()
     {
@@ -144,6 +144,12 @@ public class Game
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3C733D, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
         // NOP Call to Hint System that doesn't clear old value
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x43D212, [0x90, 0x90, 0x90, 0x90, 0x90]);
+        // NOP Resetting the Hint Color to 2 when walking through a door
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3C7274, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
+        // NOP Changing the hint color
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3C73C4, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
+        // NOP Resetting the Hint Color to 2 when walking through a door
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3C73B9, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
 
         ShopPrices.SetShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
     }
