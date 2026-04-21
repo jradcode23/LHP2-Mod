@@ -8,6 +8,7 @@ public class CharacterHandler
     private static readonly byte TokenOffset = 0xE;
     private static readonly byte unlockOffset = 0xE4;
 
+    // Dictionary containing all characters (by their archi ID) and their offset in the character array
     private static readonly Dictionary<int, int> characterMap = new()
     {
         {0, 0x3}, // Hagrid
@@ -225,16 +226,19 @@ public class CharacterHandler
         {212, 0x27F}, // Skeleton
     };
 
+    // Returns the offset when searching the ID
     public static int GetCharacterByteOffset(int id)
     {
         return characterMap[id];
     }
 
+    // Used for the character token array which is bits, takes the offset and gets the remainder
     public static int GetCharacterBitOffset(int id)
     {
         return characterMap[id] % 8;
     }
 
+    // Helper Function to unlock a character token, takes archi ID as a parameter
     public static unsafe void UnlockToken(int id)
     {
         int byteOffset = GetCharacterByteOffset(id) / 8;
@@ -252,6 +256,7 @@ public class CharacterHandler
         *ptr |= (byte)(1 << bitOffset);
     }
 
+    // Helper function to reset all character tokens to locked
     public static unsafe void ResetTokens()
     {
         foreach (var kvp in characterMap)
@@ -274,6 +279,7 @@ public class CharacterHandler
         }
     }
 
+    // Helper function to unlock a playable character based on archi ID, takes archi ID as a parameter
     public static unsafe void UnlockCharacter(int id)
     {
         int byteOffset = GetCharacterByteOffset(id);
@@ -289,6 +295,7 @@ public class CharacterHandler
         *ptr = 1;
     }
 
+    // Resets all playable characters to locked
     public static unsafe void ResetUnlocks()
     {
         foreach (var kvp in characterMap)
@@ -310,6 +317,10 @@ public class CharacterHandler
         }
     }
 
+    /*
+    Helper function that does a reverse lookup of Hub Tokens to the Dictionary above and returns the Archi ID.
+    It takes the address that is being written to (gotten from our hook) and the bit being written.
+    */
     public static unsafe int GetHubTokenItemID(IntPtr address, int offset)
     {
         int bitIndex = BitOperations.TrailingZeroCount(offset);
@@ -325,6 +336,10 @@ public class CharacterHandler
         return kvp.Equals(default(KeyValuePair<int, int>)) ? -1 : kvp.Key;
     }
 
+    /*
+    Tokens unlocked in levels are written to the save file until you save and exit the level.
+    This function here takes the token ID written to the level (before saving and exiting) and converts it to the Archi ID.
+    */
     public static int GetLevelTokenItemID(int ID)
     {
         ushort bx = (ushort)(ID & 0xFFFF);
@@ -334,6 +349,10 @@ public class CharacterHandler
         return kvp.Equals(default(KeyValuePair<int, int>)) ? -1 : kvp.Key;
     }
 
+    /*
+    Helper function that does a reverse lookup of Character Purchases to the Dictionary above and returns the Archi ID.
+    It takes the address that is being written to (gotten from our hook).
+    */
     public static unsafe int GetPurchaseCharacterID(IntPtr address, int offset)
     {
         long byteIndex = address + offset + 0x74 - (IntPtr)(characterBaseAddress + unlockOffset);
