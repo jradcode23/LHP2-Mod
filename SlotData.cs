@@ -1,42 +1,114 @@
 namespace LHP2_Archi_Mod;
 
-public class SlotData
+public class SlotData(Dictionary<string, object> slotData)
 {
-    public SlotData(Dictionary<string, object> slotData)
-    {
-        SlotDataDictionary = slotData;
-    }
-
-    public Dictionary<string, object> SlotDataDictionary { get; set; }
+    public Dictionary<string, object> SlotDataDictionary { get; set; } = slotData ?? new();
 
     /// <summary>
-    /// Gets the end goal requirement as an integer.
-    /// Returns -1 if not found or unable to convert.
+    /// Gets the end goal requirement as an integer. Returns -1 if not found or unable to convert.
     /// </summary>
-    public int EndGoal =>
-        SlotDataDictionary.TryGetValue("EndGoal", out var value)
-            ? Convert.ToInt32(value)
-            : -1;
+    public int EndGoal
+    {
+        get
+        {
+            if (SlotDataDictionary?.TryGetValue("EndGoal", out var value) != true || value == null)
+                return -1;
 
-    public int NumberOfRequiredHorcruxes =>
-        SlotDataDictionary.TryGetValue("NumHorcruxRequired", out var value)
-            ? Convert.ToInt32(value)
-            : -1;
+            if (!int.TryParse(value.ToString(), out int result))
+            {
+                Game.PrintToLog($"[SlotData] Failed to parse EndGoal value '{value}'");
+                return -1;
+            }
 
-    public int ShuffleJokeSpells =>
-        SlotDataDictionary.TryGetValue("ShuffleJokeSpells", out var value)
-            ? Convert.ToInt32(value)
-            : -1;
+            return result;
+        }
+    }
 
-    public int ShuffleGoldBrickPurchases =>
-        SlotDataDictionary.TryGetValue("ShuffleGoldBrickPurchases", out var value)
-            ? Convert.ToInt32(value)
-            : -1;
+    /// <summary>
+    /// Gets the Horcrux requirement as an integer. Returns -1 if not found or unable to convert.
+    /// </summary>
+    public int NumberOfRequiredHorcruxes
+    {
+        get
+        {
+            if (SlotDataDictionary?.TryGetValue("NumHorcruxRequired", out var value) != true || value == null)
+                return -1;
 
-    public int CheaperShops =>
-        SlotDataDictionary.TryGetValue("CheaperShops", out var value)
-            ? Convert.ToInt32(value)
-            : -1;
+            if (!int.TryParse(value.ToString(), out int result))
+            {
+                Game.PrintToLog($"[SlotData] Failed to parse NumberOfRequiredHorcruxes value '{value}'");
+                return -1;
+            }
+
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// Gets whether Joke shop spells are shuffled (0 or 1). Returns -1 if not found or unable to convert.
+    /// </summary>
+    public int ShuffleJokeSpells
+    {
+        get
+        {
+            if (SlotDataDictionary?.TryGetValue("ShuffleJokeSpells", out var value) != true || value == null)
+                return -1;
+
+            if (!int.TryParse(value.ToString(), out int result))
+            {
+                Game.PrintToLog($"[SlotData] Failed to parse ShuffleJokeSpells value '{value}'");
+                return -1;
+            }
+
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// Gets whether Gold Brick Purchases are shuffled (0 or 1). Returns -1 if not found or unable to convert.
+    /// </summary>
+    public int ShuffleGoldBrickPurchases
+    {
+        get
+        {
+            if (SlotDataDictionary?.TryGetValue("ShuffleGoldBrickPurchases", out var value) != true || value == null)
+                return -1;
+
+            if (!int.TryParse(value.ToString(), out int result))
+            {
+                Game.PrintToLog($"[SlotData] Failed to parse ShuffleGoldBrickPurchases value '{value}'");
+                return -1;
+            }
+
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// Gets the Cheaper shops multiplier (1-10). Returns -1 if not found or unable to convert.
+    /// </summary>
+    public int CheaperShops
+    {
+        get
+        {
+            if (SlotDataDictionary?.TryGetValue("CheaperShops", out var value) != true || value == null)
+                return -1;
+
+            if (!int.TryParse(value.ToString(), out int result))
+            {
+                Game.PrintToLog($"[SlotData] Failed to parse CheaperShops value '{value}'");
+                return -1;
+            }
+
+            if (result < 1 || result > 10)
+            {
+                Game.PrintToLog($"[SlotData] CheaperShops value {result} is out of valid range (1-10)");
+                return -1;
+            }
+
+            return result;
+        }
+    }
 
     /// <summary>
     /// Gets the collectibles required as a Dictionary mapping collectible names to required counts.
@@ -58,9 +130,8 @@ public class SlotData
     //     }
     // }
 
-    /// <summary>
-    /// Prints the slot data to console for debugging/verification.
-    /// </summary>
+
+    // Helper Function that prints the slot data to console for debugging/verification.
     public void PrintData()
     {
         Game.PrintToLog("=== Slot Data ===");

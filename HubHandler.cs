@@ -2,6 +2,9 @@ using System.Text;
 
 namespace LHP2_Archi_Mod;
 
+/// <summary>
+/// Handles hub-related game state management, including collectibles, time travel, and map adjustments.
+/// </summary>
 public class HubHandler
 {
     public static unsafe byte* HubBaseAddress => *(byte**)(Mod.BaseAddress + 0xC5B3B4);
@@ -17,6 +20,8 @@ public class HubHandler
     private static unsafe byte* MapFlagsBaseAddress => *(byte**)(Mod.BaseAddress + 0xC5D5F4);
     private static unsafe byte* HogwartWarpEntranceBaseAddress => *(byte**)(Mod.BaseAddress + 0x00C4EE5C);
     private static unsafe byte* SecondPointerWarp => *(byte**)(HogwartWarpEntranceBaseAddress + 0x04);
+
+    // These null addresses don't have a fixed pointer (the saved data is a unordered collection). We handle this by doing a byte search over the collection.
     private static unsafe byte* leaky2LondonAddress = null;
     private static unsafe byte* hogPath2CourtyardAddress = null;
     private static unsafe byte* wildernessAddress = null;
@@ -25,6 +30,7 @@ public class HubHandler
     private static unsafe byte* classLobbyAddress = null;
     private static unsafe byte* kingsCrossAddress = null;
 
+    // These are the bit flags that handle the different collectibles stored in the same memory address.
     [Flags]
     public enum BitMask
     {
@@ -36,6 +42,7 @@ public class HubHandler
         StudentInPeril = 1 << 6,
     }
 
+    // This is a Dictionary that holds all Maps respective memory offset and as well as the Archi ID Offset - from start of the item/location table (i.e. tent will always be Archi ID+0, wilderness will always be Archi ID+1, etc.)
     private static readonly Dictionary<int, int> hubOffsets = new()
     {
         {0x32, 0}, // Y8 Tent
@@ -181,53 +188,62 @@ public class HubHandler
         {0x1232, 39}, // Y5 Diagon Alley
     };
 
-    public static unsafe bool CheckIfLeaky7Entered()
-    {
-        byte* ptr = HubBaseAddress + 0x118A;
-        Game.PrintToLog($"Checking if Leaky Cauldron Y7 entered at address 0x{(nuint)ptr:X}, value: {*ptr}");
-        return (*ptr & (byte)BitMask.Entered) != 0;
-    }
-
+    // Helper function to convert from the address the game is going to write to, to the Archi ID offset
     public static int GetHubID(int offset)
     {
+        // Use the same approach the game does to convert from assembly register to final offset in the container
         offset *= 4;
         offset += 2;
-        return hubOffsets.TryGetValue(offset, out int sipID) ? sipID : -1;
+        return hubOffsets.TryGetValue(offset, out int ID) ? ID : -1;
     }
 
+    // Helper function to Collect a Red Brick. Takes the Archi ID offset and looks up the memory offset
     public static unsafe void UnlockHubRB(int ID)
     {
         var kvp = hubOffsets.FirstOrDefault(k => k.Value == ID);
+
         if (kvp.Key == 0 && kvp.Value == 0)
         {
             Game.PrintToLog($"[Hub] Could not find Hub RB offset for ID {ID}");
             return;
         }
+
         byte* ptr = HubBaseAddress + (nuint)kvp.Key;
-        // Game.PrintToLog($"Unlocking Hub RB at 0x{(nuint)ptr:X} using ID 0x{ID}");
+
         if (ptr == null || HubBaseAddress == null)
         {
             Game.PrintToLog($"[Hub] Can't Unlock Hub RB, null pointer at 0x{(nuint)ptr:X}");
+            return;
         }
+
         *ptr |= (byte)BitMask.RedBrick;
     }
 
+    // Helper function to unlock a Hub SIP. Takes the Archi ID offset and looks up the memory offset
     public static unsafe void UnlockHubSIP(int ID)
     {
         var kvp = hubOffsets.FirstOrDefault(k => k.Value == ID);
+
         if (kvp.Key == 0 && kvp.Value == 0)
         {
             Game.PrintToLog($"[Hub] Could not find Hub SIP offset for ID {ID}");
             return;
         }
-        byte* ptr = HubBaseAddress + (nuint)kvp.Key; ;
+
+        byte* ptr = HubBaseAddress + (nuint)kvp.Key;
+
         if (ptr == null || HubBaseAddress == null)
         {
             Game.PrintToLog($"[Hub] Can't Unlock Hub SIP, null pointer at 0x{(nuint)ptr:X}");
+            return;
         }
+
         *ptr |= (byte)BitMask.StudentInPeril;
     }
 
+    /// <summary>
+    /// Resets hub collectibles (red bricks and students in peril) for game state transitions.
+    /// </summary>
     public static unsafe void ResetHub()
     {
         foreach (var kvp in hubOffsets)
@@ -239,26 +255,36 @@ public class HubHandler
                 Game.PrintToLog($"Hub pointer invalid at offset 0x{kvp.Key:X}");
                 continue;
             }
+
             *ptr &= unchecked((byte)~(byte)BitMask.RedBrick);
             *ptr &= unchecked((byte)~(byte)BitMask.StudentInPeril);
         }
     }
 
+
+    /// <summary>
+    /// Unlocks a purchased red brick by converting the Archi ID to a bit array index.
+    /// </summary>
+    /// <param name="id">The Archi ID of the purchased red brick.</param>
     public static unsafe void ReceivedRedBrickUnlock(int id)
     {
         int byteOffset = id / 8;
         int bitOffset = id % 8;
 
         byte* ptr = RedBrickPurchBaseAddress + byteOffset;
+
         if (ptr == null || RedBrickPurchBaseAddress == null)
         {
             Game.PrintToLog($"Can't Unlock Red Brick, null pointer at 0x{(nuint)ptr:X}");
             return;
         }
-        // Game.PrintToLog($"Unlocking Red Brick ID {id} at byte offset {byteOffset}, bit offset {bitOffset}");
+
         *ptr |= (byte)(1 << bitOffset);
     }
 
+    /// <summary>
+    /// Resets the purchased red brick unlock array for game state transitions.
+    /// </summary>
     public static unsafe void ResetRedBrickUnlock()
     {
         for (int i = 0; i < 3; i++)
@@ -268,48 +294,37 @@ public class HubHandler
         }
     }
 
-    public static unsafe void HandlePurpleStud()
-    {
-        int purpleStudCount = Mod.LHP2_Archipelago!.CountItemsReceivedWithId(699);
-        // Console.WriteLine($"Handling Purple Stud. Count received from Archipelago: {purpleStudCount}");
-        // Console.WriteLine($"Current Purple Stud count: {*PurpleCountAddress}");
-        // Console.WriteLine($"Purple Stud Address: 0x{(nuint)PurpleCountAddress:X}");
-        if (purpleStudCount == 0)
-        {
-            return;
-        }
-        if (StudTotalBaseAddress == null || PurpleCountAddress == null)
-        {
-            Game.PrintToLog($"Can't Update Stud Total, null pointer at 0x{(nuint)StudTotalBaseAddress:X}");
-            return;
-        }
-        if (*PurpleCountAddress < purpleStudCount)
-        {
-            *PurpleCountAddress += 1;
-            *StudTotalBaseAddress += 10000;
-        }
-    }
-
+    /*
+    This is a QOL update that we wrote to automatically enable the same red bricks that the player had enabled prior to reloading the save file since that is only a feature in the Collection edition.
+    We run this save feature after the player leaves the Extras menu.
+    */
     public static unsafe void SaveRedBricksEnabled()
     {
+        // Create a new byte array with 24 bits, 1 for each red brick
         byte[] enabledArray = new byte[3];
         for (int i = 0; i < 24; i++)
         {
+            // Each Red Brick Enabled/Disabled is a byte, 0x18 bytes apart
             byte* ptr = RedBrickEnabledAddress + i * 0x18;
             bool isEnabled = *ptr != 0;
+
             if (isEnabled)
             {
+                // Convert from byte index to bit index
                 int byteIndex = i / 8;
                 int bitIndex = i % 8;
+                // Write to the new array when it is enabled
                 enabledArray[byteIndex] |= (byte)(1 << bitIndex);
             }
         }
+        // Write our new array to the save file address that we determine would be appropriate.
         for (int i = 0; i < 3; i++)
         {
             *(RedBrickSaveFileAddress + i) = enabledArray[i];
         }
     }
 
+    // This helper function is the inverse of the one above. It reads the save file and enables the red bricks as applicable.
     public static unsafe void LoadRedBricksEnabled()
     {
         byte[] enabledArray = new byte[3];
@@ -327,10 +342,42 @@ public class HubHandler
         }
     }
 
-    //TODO: Consider making Gold Bricks & Horcruxes not static
+    // This is a helper function to handle when the player receives a purple stud.
+    public static unsafe void HandlePurpleStud()
+    {
+        // Because we switch between game states, verify how many purple studs the player has received
+        int purpleStudCount = Mod.LHP2_Archipelago!.CountItemsReceivedWithId(699);
+
+        if (purpleStudCount == 0)
+        {
+            return;
+        }
+
+        if (StudTotalBaseAddress == null || PurpleCountAddress == null)
+        {
+            Game.PrintToLog($"Can't Update Stud Total, null pointer at 0x{(nuint)StudTotalBaseAddress:X}");
+            return;
+        }
+
+        /* 
+        In Purple Count Address, I write to the save file how many purple studs we have given the player. 
+        This is so we don't duplicate any or miss giving them any.
+        We then verify here if they are missing any in their stud total and add 10k if so
+        */
+        if (*PurpleCountAddress < purpleStudCount)
+        {
+            *PurpleCountAddress += 1;
+            *StudTotalBaseAddress += 10000;
+        }
+    }
+
     public static byte GoldBrickCount { get; private set; } = 0;
     public static byte HorcruxCount { get; private set; } = 0;
 
+    /* 
+    Instead of writing Gold Bricks to the specific location (i.e. Diagon Alley Gold Brick), we just increase the total and display the updated count.
+    Initially we were going to have only individual GBs, however, since the game them tied to other items/spells, we decided to make it so they were packs of 5.
+    */
     public static void ReceivedGoldBrick(int id)
     {
         if (id == 700)
@@ -343,13 +390,9 @@ public class HubHandler
         }
     }
 
-    public static void UpdateHorcruxCount()
-    {
-        HorcruxCount = (byte)Mod.LHP2_Archipelago!.CountItemsCheckedInRange(440, 446);
-        HintSystem.DisplayHorcruxCount(HorcruxCount);
-    }
-
-    public static unsafe void GetGoldBrickCount()
+    // This helper function runs when pausing the menu to make sure that we display the correct count of GBs
+    // TODO: Update this to use the AP count function rather than a separate variable.
+    public static unsafe void UpdateGoldBrickCount()
     {
         byte* ptr = GoldBrickBaseAddress + 0x01A7A;
         if (ptr == null || GoldBrickBaseAddress == null)
@@ -360,68 +403,42 @@ public class HubHandler
         *ptr = GoldBrickCount;
     }
 
+    // This helper function resets the gold count variable to 0
     public static void ResetGoldBrickCount()
     {
         GoldBrickCount = 0;
     }
 
-    public static unsafe void ClearReturnToHogwartsLocation()
+    // This is a helper function that verifies the count of horcruxes received and updates the on screen text
+    public static void UpdateHorcruxCount()
     {
-        byte* entrancePTR = SecondPointerWarp + 0x31C;
-        for (int i = 0; i < 0x40; i++)
-        {
-            byte* ptr = entrancePTR + i;
-            *ptr = 0;
-        }
+        HorcruxCount = (byte)Mod.LHP2_Archipelago!.CountItemsCheckedInRange(440, 446);
+        HintSystem.DisplayHorcruxCount(HorcruxCount);
     }
 
-    public static unsafe void FixReturnToLeakyCauldron()
-    {
-        byte* returnToLeakyPTR = SecondPointerWarp + 0x2FC;
-        byte year = (byte)(Mod.GameInstance!.PrevLevelID + 0x4);
-        if (year < 5 || year > 8)
-        {
-            Game.PrintToLog($"Could not get the proper year to return to. Year: {year}");
-            return;
-        }
-        string hubName = $"{year}HubLeakyCauldron";
-        Game.PrintToLog($"Return to Leaky address: 0x{(uint)returnToLeakyPTR:X}, year: {year}");
-        HintSystem.SetMessageText(hubName, (uint)returnToLeakyPTR);
-    }
-
-    public static unsafe void VerifyCharCustMaps()
-    {
-        // 5, 6, 7, 8 in hex are 0x35, 0x36, 0x37, 0x38
-        byte* y5MapPtr = SecondLevelMapPointer + 0xF02;
-        byte* y6MapPtr = SecondLevelMapPointer + 0xA5A;
-        byte* y7MapPtr = SecondLevelMapPointer + 0x39A;
-        byte* y8MapPtr = SecondLevelMapPointer - 0x326;
-
-        *y5MapPtr = 0x35;
-        *y6MapPtr = 0x36;
-        *y7MapPtr = 0x37;
-        *y8MapPtr = 0x38;
-
-        Game.PrintToLog($"y5MapPtr is 0x{(nuint)y5MapPtr:X} and the value is 0x{*y5MapPtr:X}");
-        Game.PrintToLog($"y6MapPtr is 0x{(nuint)y6MapPtr:X} and the value is 0x{*y6MapPtr:X}");
-        Game.PrintToLog($"y7MapPtr is 0x{(nuint)y7MapPtr:X} and the value is 0x{*y7MapPtr:X}");
-        Game.PrintToLog($"y8MapPtr is 0x{(nuint)y8MapPtr:X} and the value is 0x{*y8MapPtr:X}");
-    }
-
+    /*
+    The following function is our current implementation of how to time travel.
+    We achieve this by overwriting the constant that tells the save file which map you are in.
+    The one downside to this method is that the player has to reload their save.
+    TODO: implement the "Return to Leaky Method" which changes the Return to Leaky Map ID constant
+    */
     public static unsafe void SwitchYears(int year)
     {
+        // Verify that the player has completed DADA banned in game before time travelling
+        // The game doesn't really allow you to be in future years if DADA banned isn't completed
         byte* y5GhostPtr = HubHandler.GhostPathBaseAddress + 0x20;
         if ((*y5GhostPtr & (1 << 1)) == 0)
         {
             Game.PrintToLog("Please complete DADA Banned Lesson before changing years");
             return;
         }
-        // 5, 6, 7, 8 in hex are 0x35, 0x36, 0x37, 0x38
+        // These are the addresses to the Character Customizer Room constants
         byte* y5MapPtr = SecondLevelMapPointer + 0xF02;
         byte* y6MapPtr = SecondLevelMapPointer + 0xA5A;
         byte* y7MapPtr = SecondLevelMapPointer + 0x39A;
         byte* y8MapPtr = SecondLevelMapPointer - 0x326;
 
+        // The different hub maps have different level IDs. We read the current level ID and then update the map constant as applicable.
         switch (Mod.GameInstance!.LevelID)
         {
             case 1:
@@ -442,6 +459,62 @@ public class HubHandler
         }
     }
 
+    // This helper function fixes the constants if the player is on the menu or leaves the Char Customizer Room
+    public static unsafe void VerifyCharCustMaps()
+    {
+        // 5, 6, 7, 8 in hex are 0x35, 0x36, 0x37, 0x38
+        byte* y5MapPtr = SecondLevelMapPointer + 0xF02;
+        byte* y6MapPtr = SecondLevelMapPointer + 0xA5A;
+        byte* y7MapPtr = SecondLevelMapPointer + 0x39A;
+        byte* y8MapPtr = SecondLevelMapPointer - 0x326;
+
+        *y5MapPtr = 0x35;
+        *y6MapPtr = 0x36;
+        *y7MapPtr = 0x37;
+        *y8MapPtr = 0x38;
+    }
+
+    /*
+    In Year 5, the game will warp you back to Hogwarts instead of having you walk back.
+    This essentially locks you out of London through Quad until you have diffindo.
+    To prevent all of these items from being locked behind diffindo, we clear out this warp so the player has to walk back.
+    TODO: Figure out how to make the warp work for Years 6-8 as an option for the player so they don't have to walk back if they don't want to.
+    */
+    public static unsafe void ClearReturnToHogwartsLocation()
+    {
+        byte* entrancePTR = SecondPointerWarp + 0x31C;
+        for (int i = 0; i < 0x40; i++)
+        {
+            byte* ptr = entrancePTR + i;
+            *ptr = 0;
+        }
+    }
+
+    /*
+    In The Seven Harrys, the game ensures you can't return to leaky cauldron unless you unlock apparition by completing the level in story mode.
+    If you try, it will warp you back to Inside the Burrow instead.
+    To get around this since this isn't applicable for the Archi, we revert the value in that address back to The Leaky Cauldron.
+    To note: you can use this to warp back to any map, however, the game still thinks you are in a level if it isn't to leaky so that causes some issues.
+    */
+    public static unsafe void FixReturnToLeakyCauldron()
+    {
+        byte* returnToLeakyPTR = SecondPointerWarp + 0x2FC;
+        byte year = (byte)(Mod.GameInstance!.PrevLevelID + 0x4);
+        if (year < 5 || year > 8)
+        {
+            Game.PrintToLog($"Could not get the proper year to return to. Year: {year}");
+            return;
+        }
+        string hubName = $"{year}HubLeakyCauldron";
+        Game.PrintToLog($"Return to Leaky address: 0x{(uint)returnToLeakyPTR:X}, year: {year}");
+        HintSystem.SetMessageText(hubName, (uint)returnToLeakyPTR);
+    }
+
+    /*
+    Years 6-7 first ghost path is into a level that we skip in the archi.
+    Year 8 also only has levels and doesn't have any hub tasks
+    This helper function marks those levels as completed.
+    */
     public static unsafe void CompleteStartingGhostLevels()
     {
         byte* y6GhostPtr = GhostPathBaseAddress + 0x34;
@@ -461,10 +534,16 @@ public class HubHandler
             *y8GhostPtr = YearCompleteMask;
     }
 
+    /*
+    This helper function is used to handle updating the Hub Ghost tasks.
+    The ghost task updates upon level completion, lesson completion, among other things.
+    We have turned off the vanilla treatment and updated it to match our own functionality.
+    This includes sending archi locations, marking level tasks as complete, or nothing.
+    */
     public static unsafe void HandleGhostPaths(int eax, int edx)
     {
         Game.PrintToLog("Handling Ghost Paths");
-        ushort dx = (ushort)(edx & 0xFFFF);
+        ushort dx = (ushort)(edx & 0xFFFF); // Game only writes dx to this address, converting for safety
         Game.PrintToLog($"eax: 0x{eax:X}, edx: 0x{edx:X}, dx: 0x{dx:X}");
 
         byte* y5GhostPtr = GhostPathBaseAddress + 0x20;
@@ -473,6 +552,7 @@ public class HubHandler
         byte* y6GhostPtr2 = GhostPathBaseAddress + 0x35;
         byte* y7GhostPtr = GhostPathBaseAddress + 0x48;
 
+        // Handle Y5 Ghost Tasks
         if (eax == (int)y5GhostPtr)
         {
             switch (dx)
@@ -481,62 +561,56 @@ public class HubHandler
                     Game.CheckAndReportLocation(1006);
                     *y5GhostPtr |= 1 << 1; // Mark Arrive at Hogwarts Complete
                     break;
-                case 0x4 when !Mod.LHP2_Archipelago!.IsLocationChecked(1007) || (*y5GhostPtr & (1 << 2)) == 0: // DADA Banned Lesson Complete
+                case 0x4 when !Mod.LHP2_Archipelago!.IsLocationChecked(1007) || (*y5GhostPtr & (1 << 2)) == 0: // DADA Banned Lesson
                     Game.CheckAndReportLocation(1007);
                     *y5GhostPtr |= 1 << 2; // Mark DADA Banned Complete
                     break;
-                case 0x8: // Thestral Forest Lesson Complete
+                case 0x8: // Thestral Forest Lesson
                     Game.CheckAndReportLocation(1008);
                     *y5GhostPtr |= 1 << 3; // Mark Thestral Forest Complete
-                    *y5GhostPtr |= 1 << 4; // Mark Dumbledore's Army Story as Complete
-                    // Game.LessonRestoreReturnToHub();
+                    *y5GhostPtr |= 1 << 4; // Mark Dumbledore's Army Story Complete
                     break;
-                case 0x20: // Dueling Lesson Complete
+                case 0x20: // Dueling Lesson
                     Game.CheckAndReportLocation(1009);
                     *y5GhostPtr |= 1 << 5; // Mark Dueling Complete
-                    *y5GhostPtr |= 1 << 6; // Mark Focus! Story as Complete
-                    // Game.LessonRestoreReturnToHub();
+                    *y5GhostPtr |= 1 << 6; // Mark Focus! Story Complete
                     break;
-                case 0x80: // Diffindo Lesson Complete
+                case 0x80: // Diffindo Lesson
                     Game.CheckAndReportLocation(1010);
                     *y5GhostPtr |= 1 << 7; // Mark Diffindo Complete
-                    *y5GhostPtr2 |= 1 << 0; // Mark Kreacher Discomfort Story as Complete
-                    // Game.LessonRestoreReturnToHub();
+                    *y5GhostPtr2 |= 1 << 0; // Mark Kreacher Discomfort Story Complete
                     break;
-                case 0x200: // Patroneous Lesson Complete
+                case 0x200: // Patroneous Lesson
                     Game.CheckAndReportLocation(1011);
                     *y5GhostPtr2 |= 1 << 1; // Mark Patronus Complete
-                    // Game.LessonRestoreReturnToHub();
                     break;
-                case 0x400: // Befriend Grawp Lesson Complete
+                case 0x400: // Befriend Grawp Lesson
                     Game.CheckAndReportLocation(1012);
-                    *y5GhostPtr2 |= 1 << 2; // Mark Befriend Grawp Complete
-                    // Game.LessonRestoreReturnToHub();
+                    *y5GhostPtr2 |= 1 << 2; // Mark Befriend Grawp
                     break;
-                case 0x800: // Snape's Worst Memory Complete
+                case 0x800: // Snape's Worst Memory
                     Game.CheckAndReportLocation(1013);
                     *y5GhostPtr2 |= 1 << 3; // Mark Snape's Worst Memory Story Complete
-                    // Game.LessonRestoreReturnToHub();
                     break;
-                case 0x1000: // WWW Box Lesson Complete
+                case 0x1000: // OWLs Lesson
                     Game.CheckAndReportLocation(1014);
                     *y5GhostPtr2 |= 1 << 4; // Mark OWLs Complete
-                    // Game doesn't open WW Courtyard if these 2 are marked complete
+                    // Game doesn't open WW Courtyard if these 2 are marked complete. We handle this upon map update after the fact
                     // *y5GhostPtr2 |= 1 << 5; // Mark A Giant Viruoso Story Complete
                     // *y5GhostPtr2 |= 1 << 6; // Mark A Veiled Threat Story Complete
                     Game.CheckAndReportLocation(1015); // Send Y5 Story Complete
-                    // Game.LessonRestoreReturnToHub();
                     break;
                 default:
                     Game.PrintToLog($"Y5 Level Beaten, doing nothing: 0x{dx:X}");
                     break;
             }
         }
+        // Handle Y6 Ghost Tasks
         else if (eax == (int)y6GhostPtr)
         {
             switch (dx)
             {
-                case 0x4: // Specs Lesson Complete
+                case 0x4: // Specs Lesson
                     Game.CheckAndReportLocation(1016);
                     *y6GhostPtr |= 1 << 2; // Mark Specs Complete
                     break;
@@ -544,27 +618,25 @@ public class HubHandler
                     Game.CheckAndReportLocation(1017);
                     *y6GhostPtr |= 1 << 3; // Mark Arrive at Hogwarts Complete
                     break;
-                case 0x10: // Draught of Living Death Lesson Complete
+                case 0x10: // Draught of Living Death Lesson
                     Game.CheckAndReportLocation(1018);
                     *y6GhostPtr |= 1 << 4; // Mark Draught of Living Death Complete
-                    // Game.LessonRestoreReturnToHub();
                     break;
-                case 0x20: // Dumbledore's First Lesson Complete
+                case 0x20: // Dumbledore's First Lesson
                     Game.CheckAndReportLocation(1019);
                     *y6GhostPtr |= 1 << 5; // Mark Dumbledore's First Lesson Complete
                     *y6GhostPtr |= 1 << 6; // Mark Just Desserts Story Complete
-                    // Game.LessonRestoreReturnToHub();
                     break;
-                case 0x80: // Aguamenti Lesson Complete
+                case 0x80: // Aguamenti Lesson
                     Game.CheckAndReportLocation(1020);
                     *y6GhostPtr |= 1 << 7; // Mark Aguamenti Lesson Complete
                     *y6GhostPtr2 |= 1 << 0; // Mark A Not So Merry Christmas Story Complete
                     break;
-                case 0x200: // Reducto Lesson Complete
+                case 0x200: // Reducto Lesson
                     Game.CheckAndReportLocation(1021);
                     *y6GhostPtr2 |= 1 << 1; // Mark Reducto Lesson Complete
                     break;
-                case 0x400: // Dumledore's Second Lesson Complete
+                case 0x400: // Dumledore's Second Lesson
                     Game.CheckAndReportLocation(1022);
                     *y6GhostPtr2 |= 1 << 2; // Mark Dumledore's Second Lesson Complete
                     *y6GhostPtr2 |= 1 << 3; // Mark Love Hurts Story Complete
@@ -577,13 +649,13 @@ public class HubHandler
                     break;
             }
         }
+        // Handle Y7 Ghost Tasks
         else if (eax == (int)y7GhostPtr)
         {
-            if (dx == 4) // Cafe Fight Complete
+            if (dx == 4) // Cafe Fight
             {
                 Game.CheckAndReportLocation(1027);
                 *y7GhostPtr = 254; // Mark all Y7 Ghost Paths as Complete
-                Game.LessonRestoreReturnToHub();
             }
             else
             {
@@ -595,9 +667,16 @@ public class HubHandler
         {
             Game.PrintToLog($"Y8 Level Beaten, doing nothing with eax: 0x{eax:X} and dx: 0x{dx:X}");
         }
-
     }
 
+    /*
+    Because we are skipping levels and allowing time travel, there are certain things that break.
+    These following functions correct these broken things in the save file.
+    We call this function when the player is trying to switch years cause they will reload the save.
+    This function will do a byte search through the save file Map container and update the game flags as needed.
+    There are several downsides to this method (i.e. the save file info isn't written until the player enters that map at least once and map reloads are required).
+    TODO: with the breakthrough with loading zones and with security doors, see if we can update the information instantly.
+    */
     public static unsafe void AdjustHubMaps(int year)
     {
         leaky2LondonAddress = GetHubMapAddress("HubLeakyCauldron", 0xB7B); // Leaky2London Loading Zone
@@ -613,25 +692,30 @@ public class HubHandler
         AdjustLeakyCauldron();
         AdjustHogsPath();
         CompleteStartingGhostLevels();
+        // If applicable, update Wilderness and Quad so tokens spawn and invisible barriers are gone
         if (year == 7 || year == 8)
         {
             AdjustWilderness();
             AdjustQuad();
         }
+        // Adjust Hogsmeade Station if the player enters it and the suitcases are still blocking the exit in other years
         if (year != 6 && (!Mod.LHP2_Archipelago!.IsLocationChecked(1016) || (*y6GhostPtr & (1 << 2)) == 0))
         {
             AdjustHogsStat();
         }
+        // Adjust the Y5 Charms loading zone if the player hasn't completed reducto (so they can enter diffindo again if needed)
         if (year != 6 && (!Mod.LHP2_Archipelago!.IsLocationChecked(1021) || (*y6GhostPtr2 & (1 << 0)) == 0))
         {
             AdjustClassLobby();
         }
+        // Add the train back since it isn't there in Y7
         if (year != 7)
         {
             AdjustKingsCross();
         }
     }
 
+    // Helper function to ensure that First Level loading zones aren't active in Leaky Cauldron
     private static unsafe void AdjustLeakyCauldron()
     {
         if (leaky2LondonAddress == MapFlagsBaseAddress + 0x40)
@@ -651,6 +735,8 @@ public class HubHandler
         *leaky2LondonAddress2 &= unchecked((byte)~(1 << 4)); // Clear Thief's Downfall Cutscene
     }
 
+    // Helper function to ensure that Y5/6 Hogwarts Intro Cutscenes don't carry over and that HogsPath opens up
+    // TODO: find the objects that make up the gate lock so we don't have a floating lock
     private static unsafe void AdjustHogsPath()
     {
         if (hogPath2CourtyardAddress == MapFlagsBaseAddress + 0x40)
@@ -666,6 +752,7 @@ public class HubHandler
         *hogPath2CourtyardAddress |= 1 << 2; // Open the gate to Hogsmeade
     }
 
+    // Helper function to remove the invisible walls in the wilderness and make sure the Xeno token spawns
     private static unsafe void AdjustWilderness()
     {
         if (wildernessAddress == MapFlagsBaseAddress + 0x40)
@@ -690,6 +777,7 @@ public class HubHandler
         *xenoTokenFlag |= 1 << 3; // Ensure the Token has a hitbox
     }
 
+    // Helper function to ensure that McGonagall token spawns
     private static unsafe void AdjustQuad()
     {
         if (quadAddress == MapFlagsBaseAddress + 0x40)
@@ -705,7 +793,8 @@ public class HubHandler
         *mcgBlackFlag |= 1 << 1; // Ensure the Token has a hitbox
     }
 
-    // TODO: missing 3 more blocks
+    // TODO: missing 3 more suitcases
+    // Helper function to remove the suitcases and invisible wall from Hogsmeade station if needed
     private static unsafe void AdjustHogsStat()
     {
         if (hogsStatAddress == MapFlagsBaseAddress + 0x40)
@@ -716,23 +805,24 @@ public class HubHandler
         Game.PrintToLog($"Updating Hogs Station Flags. Address is 0x{(nuint)hogsStatAddress:X}");
         hogsStatAddress += 0xA3;
         Game.PrintToLog($"First Hogs Station Flag Address is 0x{(nuint)hogsStatAddress:X}");
-        *hogsStatAddress = 82; // Block 1
+        *hogsStatAddress = 82; // Suitcase 1
         hogsStatAddress += 7;
-        *hogsStatAddress = 82; // Block 2
+        *hogsStatAddress = 82; // Suitcase 2
         hogsStatAddress += 7;
-        *hogsStatAddress = 82; // Block 3
+        *hogsStatAddress = 82; // Suitcase 3
         hogsStatAddress += 7;
         *hogsStatAddress = 64; // Invisible wall 1 (side wall)
         hogsStatAddress += 7;
         *hogsStatAddress = 64; // Invisible wall 2 (front wall)
         hogsStatAddress += 114;
-        *hogsStatAddress &= unchecked((byte)~(1 << 2)); // Block 4
+        *hogsStatAddress &= unchecked((byte)~(1 << 2)); // Suitcase 4
         hogsStatAddress += 3;
-        *hogsStatAddress &= unchecked((byte)~(1 << 6)); // Block 5
+        *hogsStatAddress &= unchecked((byte)~(1 << 6)); // Suitcase 5
         hogsStatAddress += 2;
-        *hogsStatAddress &= unchecked((byte)~(1 << 2)); // Block 6
+        *hogsStatAddress &= unchecked((byte)~(1 << 2)); // Suitcase 6
     }
 
+    // Helper function to ensure that the player can enter into diffindo lesson before reducto lesson
     private static unsafe void AdjustClassLobby()
     {
         if (classLobbyAddress == MapFlagsBaseAddress + 0x40)
@@ -744,6 +834,7 @@ public class HubHandler
         *classLobbyAddress &= unchecked((byte)~(1 << 6)); // Clear out being forced into reducto lesson
     }
 
+    // Helper function to add back the train
     private static unsafe void AdjustKingsCross()
     {
         if (kingsCrossAddress == MapFlagsBaseAddress + 0x40)
@@ -755,20 +846,22 @@ public class HubHandler
 
         for (int i = 0; i < 7; i++)
         {
-            *kingsCrossAddress |= 1 << 6; // Bit 6 makes the compartment visible
+            *kingsCrossAddress |= 1 << 6; // Bit 6 makes each compartment visible
             kingsCrossAddress += 0x7; // Adjust the address to each train compartment
         }
         kingsCrossAddress += 0x72B;
         *kingsCrossAddress = 255; // Make the train appear in all years but 7
     }
 
+    // This is the helper function to search the save file container for the address where the wanted map is stored
     private static unsafe byte* GetHubMapAddress(string mapName, int offset)
     {
-        const int sectionSize = 300000; // Number of bytes in the memory section
+        const int sectionSize = 300000; // Number of bytes we want to search in the Map container
         byte* startingAddress = MapFlagsBaseAddress + 0x40;
         byte* returningAddress = startingAddress;
-        byte[] sectionHeader = Encoding.ASCII.GetBytes(mapName);
+        byte[] sectionHeader = Encoding.ASCII.GetBytes(mapName); // Map names are ASCII coded in the save file with flags right after
 
+        // We use a nested for loop to search through the container for the map name
         for (int i = 0; i < sectionSize - sectionHeader.Length; i++)
         {
             // Check if the current address matches the section header
@@ -781,56 +874,60 @@ public class HubHandler
                     break;
                 }
             }
-
             if (isMatch)
             {
                 returningAddress = startingAddress + i + offset;
                 break;
             }
         }
-
         Game.PrintToLog($"Map Flags Address for {mapName} is 0x{(nuint)returningAddress:X}");
         return returningAddress;
-
     }
 
+    /* 
+    Year 7 Leaky2London is a special case where no matter what I write to the save file, the loading zone is active upon first entrance.
+    This is a helper function to turn off The Seven Harrys Story Mode Loading Zone.
+    I use a pointer to the map's active loading zone in memory, however, because it is one of (if not the) last thing to be updated when loading a new map, we have to run this on a new thread the first time the player enters Y7 Leaky Cauldon.
+    */
     public static unsafe void CheckLeaky2LondonY7PTR()
     {
-        bool hasPTRUpdated = false;
+        bool hasPTRUpdated = false; // bool variable that we use to track if the pointer address has updated
         byte* activeLoadingZoneBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55E1C);
         byte* loadingZoneName = activeLoadingZoneBaseAddress + 0xB14;
         int attempts = 0;
         while (!hasPTRUpdated)
         {
-            string currentLoadingZone = new((sbyte*)loadingZoneName);
-            if (currentLoadingZone == "7LEAKY27LONDON")
+            string currentLoadingZone = new((sbyte*)loadingZoneName); // Read the current loading Zone name (as a string)
+            if (currentLoadingZone == "7LEAKY27LONDON") // This is the loading zone to The Seven Harrys
             {
                 Game.PrintToLog("PTR has updated to 7LEAKY27LONDON.");
                 hasPTRUpdated = true;
+                ClearLeaky2LondonY7(0);
             }
-            else if (currentLoadingZone == "5LONDON25HUBLEAKY")
+            else if (currentLoadingZone == "5LONDON25HUBLEAKY") // This is the loading zone to London
             {
                 Game.PrintToLog("PTR has updated to 5LONDON25HUBLEAKY.");
                 hasPTRUpdated = true;
+                ClearLeaky2LondonY7();
             }
             else
             {
                 Game.PrintToLog($"Current PTR Loading Zone: {currentLoadingZone}, waiting for PTR to update to Leaky2London Y7.");
                 attempts++;
-                if (attempts > 5) // Timeout after 5 attempts
+                // We don't want this function to run forever (i.e. in case the player immediately turns around), so we timeout after 5 attempts or roughly 5 seconds
+                if (attempts > 5)
                 {
                     Game.PrintToLog("Timeout reached, PTR did not update to Leaky2London Y7.");
                     return;
                 }
-                Thread.Sleep(1000);
-
+                Thread.Sleep(1000); // Try again after ~1 second
             }
         }
-
-        ClearLeaky2LondonY7();
         Game.PrintToLog("Y7 Leaky PTR Loop has finished.");
     }
 
+    // Once the pointer is updated, we can clear out the Seven Harrys Loading Zone
+    // 1 indicates that London Loading Zone was being pointed to, 0 indicates that the Seven Harrys was
     public static unsafe void ClearLeaky2LondonY7(int version = 1)
     {
         byte* ActiveLoadingZoneBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55E1C);
@@ -838,9 +935,12 @@ public class HubHandler
         if (ActiveLoadingZoneBaseAddress == null)
         {
             Game.PrintToLog("Active Loading Zone Base Address is null, can't clear Leaky2London Y7 flag.");
+            return;
         }
+
         byte* ptr = *(byte**)(ActiveLoadingZoneBaseAddress + 0xB10); // First Pointer
         Game.PrintToLog($"Active Loading Zone Pointer is 0x{(nuint)ptr:X}");
+
         if (ptr == null || (nuint)ptr == 0xB10 || (nuint)ptr == 0xB11)
         {
             Game.PrintToLog("Active Loading Zone Pointer is null, can't clear Leaky2London Y7 flag.");
@@ -849,9 +949,18 @@ public class HubHandler
         ptr += 0x7A; // Second Pointer
         if (version == 1)
         {
-            ptr -= 0xB10; // Loading Zone was pointing to Leaky2London Y5 instead of Y7 (going to london not level) so adjusting back to point to the correct flag
+            ptr -= 0xB10; // Loading Zone was pointing to London so adjusting back to point to the turn off the correct loading zone
         }
         Game.PrintToLog($"Clearing Leaky2London Y7 Flag at address 0x{(nuint)ptr:X}");
         *ptr = 1; // Remove the Loading Zone Flag to bring to level
     }
+
+    // This is a helper function to verify if the player has previously entered into Y7 Leaky cauldron (indicating that the loading zone update above isn't needed)
+    public static unsafe bool CheckIfLeaky7Entered()
+    {
+        byte* ptr = HubBaseAddress + 0x118A;
+        Game.PrintToLog($"Checking if Leaky Cauldron Y7 entered at address 0x{(nuint)ptr:X}, value: {*ptr}");
+        return (*ptr & (byte)BitMask.Entered) != 0;
+    }
 }
+

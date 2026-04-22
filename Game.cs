@@ -1083,7 +1083,7 @@ public class Game
             }
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, MaxItemID);
-            HubHandler.GetGoldBrickCount();
+            HubHandler.UpdateGoldBrickCount();
             HubHandler.UpdateHorcruxCount();
             SpellHandler.UnlockAllPassiveSpells();
         }

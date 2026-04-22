@@ -2,6 +2,7 @@ namespace LHP2_Archi_Mod;
 
 public class SpellHandler
 {
+    // This is a dictionary of each playable character by their minifig ID and a bit array indicating which spells they have/don't have in vanilla.
     private static readonly Dictionary<int, byte[]> characterAbilities = new()
     {
         {0x0067, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x50]}, // Padfoot
@@ -402,6 +403,7 @@ public class SpellHandler
         {0x02F0, [0xFF, 0xFF, 0x9F, 0xEF, 0xFD, 0xFD, 0x07]}, // Ron (Dummy)
     };
 
+    // This is a helper function that takes the character ID, looks it up in the dictionary, and returns true/false if they have the specified spell/ability
     public static bool HasAbility(int charID, int byteOffset, int bitOffset)
     {
         if (!characterAbilities.TryGetValue(charID, out var abilities))
@@ -418,6 +420,11 @@ public class SpellHandler
         return (b & mask) != 0;
     }
 
+    /* 
+    Helper function to make it so the player can't have a locked spell selected (works in like 95% of cases)
+    This is ran when the active P1 character ID is updated
+    TODO: figure out how to make Focus unlock not break it and first time the character is spawned in by game work
+    */
     public static unsafe void HandleSpellVisibility()
     {
         byte* spellSelectedAddress = SpellHandler.SpellSelectedBaseAddress + 0x18;
@@ -435,15 +442,16 @@ public class SpellHandler
         *spellSelectedAddress = 0; // Sets the spell that you would switch to based on spell 0
 
         *activeShootingSpell = 0; // Sets active shooting spell to 0
-        *spellImage = 0;
+        *spellImage = 0; // Sets the spell image to 0
     }
 
-    private static unsafe readonly byte* spellBaseAddress = (byte*)(Mod.BaseAddress + 0xB06AB0);
-    private static unsafe readonly byte* spellVisibilityBaseAddress = (byte*)(Mod.BaseAddress + 0xB067C4);
+    private static unsafe byte* SpellBaseAddress => (byte*)(Mod.BaseAddress + 0xB06AB0);
+    private static unsafe byte* SpellVisibilityBaseAddress => (byte*)(Mod.BaseAddress + 0xB067C4);
 
     public static unsafe byte* SpellSelectedBaseAddress => *(byte**)(Mod.BaseAddress + 0xC55968);
     public static unsafe byte* ActiveShootingSpellBaseAddress => *(byte**)(Mod.BaseAddress + 0xC53930);
 
+    // This is a helper function that takes an Archi Spell ID and Character ID and unlock the spell if they have it in vanilla
     public static void UnlockSpell(int spellId, int charID)
     {
         if (charID == 0 || charID == 0xFFFF)
@@ -456,7 +464,6 @@ public class SpellHandler
 
         if (hasAbility)
         {
-            // Game.PrintToLog($"Character ID 0x{charID:X} has Spell ID {spellId}");
             UnlockPassiveSpell(byteOffset, bitOffset);
             UnlockActiveSpell(byteOffset, bitOffset);
 
@@ -471,15 +478,13 @@ public class SpellHandler
             // Deluminator and polyjuice are tied together so making polyjuice usable by another other than ron
             UnlockPassiveSpell(byteOffset, bitOffset);
         }
-        // else 
-        // {
-        //     Game.PrintToLog($"Character ID 0x{charID:X} does not have spell {spellId}");
-        // }
     }
 
+    // Spells are stored in 2 separate bit arrays. One is static ("passive") which is later pushed to all the minifig files.
+    // This helper function unlocks the passively
     public static unsafe void UnlockPassiveSpell(int byteOffset, int bitOffset)
     {
-        byte* ptr = spellBaseAddress + byteOffset;
+        byte* ptr = SpellBaseAddress + byteOffset;
 
         if (ptr == null)
         {
@@ -489,6 +494,7 @@ public class SpellHandler
         *ptr |= (byte)(1 << bitOffset);
     }
 
+    // Not currently used, but leaving in if needed in the future.
     // public static unsafe void LockActiveSpell(int id)
     // {
     //     int byteOffset = id / 8;
@@ -511,12 +517,13 @@ public class SpellHandler
     //     *ptr &= unchecked((byte)~(byte)(1 << bitOffset));
     // }
 
+    // Helper function that locks a passive spell. Used when switching game states, changing characters, or in lessons
     public static unsafe void LockPassiveSpell(int id)
     {
         int byteOffset = id / 8;
         int bitOffset = id % 8;
 
-        byte* ptr = spellBaseAddress + byteOffset;
+        byte* ptr = SpellBaseAddress + byteOffset;
 
         if (ptr == null)
         {
@@ -526,9 +533,10 @@ public class SpellHandler
         *ptr &= unchecked((byte)~(byte)(1 << bitOffset));
     }
 
+    // This is a helper function to make a spell on the slot wheel visible/selectable if it is unlocked
     public static unsafe void MakeSpellVisible(int spellId)
     {
-        if (spellVisibilityBaseAddress == null)
+        if (SpellVisibilityBaseAddress == null)
         {
             Game.PrintToLog("SpellVisibilityBaseAddress: null pointer");
             return;
@@ -537,38 +545,39 @@ public class SpellHandler
         int offset = 8;
         int slot = 0;
 
+        // Convert from Archi ID to the applicable spell slot
         switch (spellId)
         {
             case < 23:
-                slot = 1;
+                slot = 1; // Green Spells
                 break;
             case 23:
-                slot = 2;
+                slot = 2; // Diffindo
                 break;
             case < 26:
-                slot = 3;
+                slot = 3; // Lumos & Delum
                 break;
             case 27:
-                slot = 4;
+                slot = 4; // Agua
                 break;
             case 28:
-                slot = 5;
+                slot = 5; // Focus
                 break;
             case 29:
-                slot = 6;
+                slot = 6; // Expecto
                 break;
             case 30:
-                slot = 7;
+                slot = 7; // Reducto
                 break;
             default:
                 break;
         }
 
-        byte* ptr = spellVisibilityBaseAddress + offset * slot;
-        // Game.PrintToLog($"Making Spell ID {spellId} visible at offset {offset * slot}");
+        byte* ptr = SpellVisibilityBaseAddress + offset * slot;
         *ptr = 1;
     }
 
+    // This is a helper function to get the pointer to the active character's spell array
     private static unsafe byte* GetActiveSpellPointer()
     {
         byte* activeSpellBaseAddress = *(byte**)(Mod.BaseAddress + 0x00C53930);
@@ -581,6 +590,7 @@ public class SpellHandler
         return activeSecondPointer + 0x58;
     }
 
+    // Helper function to unlock an active spell in the character's minifig file
     public static unsafe void UnlockActiveSpell(int byteoffset, int bitOffset)
     {
         byte* ptr = GetActiveSpellPointer();
@@ -592,6 +602,7 @@ public class SpellHandler
         *ptr |= (byte)(1 << bitOffset);
     }
 
+    // Helper function to reset all passive, active, and make spells invisible
     public static unsafe void ResetSpells()
     {
         try
@@ -599,19 +610,19 @@ public class SpellHandler
             // Reset Passive Spells
             for (int i = 0; i < 7; i++)
             {
-                byte* passivePTR = spellBaseAddress + i;
+                byte* passivePTR = SpellBaseAddress + i;
                 *passivePTR = 0;
             }
             ResetActiveSpells();
             MakeSpellsInvisible();
         }
-        catch (Exception e)
+        catch (Exception e) // Added this try catch cause this is the first time this file loads in. Any issues with the Dictionary will be caught here.
         {
             Mod.Logger!.Write(e.ToString());
         }
 
         // Set the Default Spells
-        int[] defaultSpells = { 0, 20, 21, 22, 24, 25, 31, 40, 41, 42, 43, 44, 47, 48, 52, 53, 54, 55 };
+        int[] defaultSpells = [0, 20, 21, 22, 24, 25, 31, 40, 41, 42, 43, 44, 47, 48, 52, 53, 54, 55];
         foreach (int spellId in defaultSpells)
         {
             UnlockSpell(spellId, Mod.GameInstance!.CurrentCharID);
@@ -624,13 +635,16 @@ public class SpellHandler
             UnlockSpell(46, Mod.GameInstance!.CurrentCharID); // DADA
         }
 
+        // Make sure that dark magic is usable if you have a character
         byte* darkMagic = HubHandler.HubBaseAddress + 0x19B * 4 + 2;
         *darkMagic |= 1 << 0;
 
+        // Make sure that the hogwarts path cauldron is open and able to be used
         byte* hogPathCauldron = darkMagic + 0x900;
         *hogPathCauldron |= 1 << 2;
     }
 
+    // Helper function to lock all Active minifig spells upon changing characters, game state, or in a lesson
     public static unsafe void ResetActiveSpells()
     {
         byte* activeSecondPointer = GetActiveSpellPointer();
@@ -644,16 +658,17 @@ public class SpellHandler
         }
     }
 
+    // Helper function to make all spells on the spell wheel invisible
     public static unsafe void MakeSpellsInvisible()
     {
 
-        if (spellVisibilityBaseAddress == null)
+        if (SpellVisibilityBaseAddress == null)
         {
             Game.PrintToLog("SpellVisibilityBaseAddress: null pointer");
             return;
         }
 
-        byte* ptr = spellVisibilityBaseAddress + 8;
+        byte* ptr = SpellVisibilityBaseAddress + 8;
 
         for (int i = 0; i < 7; i++)
         {
@@ -662,6 +677,8 @@ public class SpellHandler
         }
     }
 
+    // Helper function to unlock all passive spells
+    // We use this when opening a menu so the player can return to leaky cauldron from a lesson if they enter early/want to
     public static unsafe void UnlockAllPassiveSpells()
     {
         for (int i = 0; i < 7; i++)
@@ -671,11 +688,12 @@ public class SpellHandler
                 continue; // Skip Unknown Spells
             }
 
-            byte* passivePTR = spellBaseAddress + i;
+            byte* passivePTR = SpellBaseAddress + i;
             *passivePTR = 0xFF;
         }
     }
 
+    // Certain maps require additional changes or updates to function properly. We handle those cases here
     public static unsafe void SpellMapLogic(int map)
     {
         byte* y5GhostPtr = HubHandler.GhostPathBaseAddress + 0x20;
@@ -686,12 +704,12 @@ public class SpellHandler
 
         switch (map)
         {
-            // DADA Locked
+            // DADA Banned Lesson
             case 301 when !Mod.LHP2_Archipelago!.IsLocationChecked(1007) || (*y5GhostPtr & (1 << 2)) == 0:
-                SpellHandler.LockPassiveSpell(26); // Lock Polyjuice cause game acts weird if you use it
+                SpellHandler.LockPassiveSpell(26); // Lock Polyjuice cause game acts weird if you use it during the lesson
                 SpellHandler.LockPassiveSpell(46); // Ensure lesson can be beaten since game doesn't like when you already have it
                 break;
-            // Thestral Flying
+            // Thestral Flying Lesson
             case 295 when !Mod.LHP2_Archipelago!.IsLocationChecked(1008) || (*y5GhostPtr & (1 << 3)) == 0:
                 SpellHandler.LockPassiveSpell(43); // Flying the thestral during the lesson can cause issues
                 break;
@@ -712,7 +730,7 @@ public class SpellHandler
                 Game.LessonReturnToHubNOP();
                 break;
             case 165:
-                // Game doesn't like something to do with our spell handling (herm bag specifically), so manually changing the return to leaky address
+                // The game disables return to leaky in vanilla so you don't miss apparition unlocked. That's not applicable for us, so we enable it once you enter the tent.
                 HubHandler.FixReturnToLeakyCauldron();
                 break;
             // Delum & Herm Bag
