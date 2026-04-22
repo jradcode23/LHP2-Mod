@@ -355,6 +355,11 @@ public class ArchipelagoHandler
                 Prints the message type too in case there is something we want to print in the future
                 */
                 Game.PrintToLog($"{message.GetType().Name} Received: {message.ToString() ?? string.Empty}");
+                bool isCheatMessage = message.ToString() != null && message.ToString().Contains("Cheat console");
+                if (isCheatMessage)
+                {
+                    HintSystem.EnqueueMessage(message.ToString(), 3); // If we get a cheat console message, we want to print it
+                }
                 break;
         }
     }
