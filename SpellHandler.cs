@@ -586,7 +586,19 @@ public class SpellHandler
             return null;
 
         byte* activeFirstPointer = *(byte**)(activeSpellBaseAddress + 0x1C);
+        if (activeFirstPointer == null)
+        {
+            Game.PrintToLog("[SpellHandler] activeFirstPointer is null");
+            return null;
+        }
+
         byte* activeSecondPointer = *(byte**)(activeFirstPointer + 0xBF4);
+        if (activeSecondPointer == null)
+        {
+            Game.PrintToLog("[SpellHandler] activeSecondPointer is null");
+            return null;
+        }
+
         return activeSecondPointer + 0x58;
     }
 
@@ -608,10 +620,13 @@ public class SpellHandler
         try
         {
             // Reset Passive Spells
-            for (int i = 0; i < 7; i++)
+            if (SpellBaseAddress != null)
             {
-                byte* passivePTR = SpellBaseAddress + i;
-                *passivePTR = 0;
+                for (int i = 0; i < 7; i++)
+                {
+                    byte* passivePTR = SpellBaseAddress + i;
+                    *passivePTR = 0;
+                }
             }
             ResetActiveSpells();
             MakeSpellsInvisible();
@@ -629,19 +644,25 @@ public class SpellHandler
         }
 
         // Special handling for DADA
-        byte* y5GhostPtr = HubHandler.GhostPathBaseAddress + 0x20;
-        if (Mod.LHP2_Archipelago!.IsLocationChecked(1007) && (*y5GhostPtr & (1 << 2)) != 0)
+        if (HubHandler.GhostPathBaseAddress != null)
         {
-            UnlockSpell(46, Mod.GameInstance!.CurrentCharID); // DADA
+            byte* y5GhostPtr = HubHandler.GhostPathBaseAddress + 0x20;
+            if (Mod.LHP2_Archipelago!.IsLocationChecked(1007) && (*y5GhostPtr & (1 << 2)) != 0)
+            {
+                UnlockSpell(46, Mod.GameInstance!.CurrentCharID); // DADA
+            }
         }
 
         // Make sure that dark magic is usable if you have a character
-        byte* darkMagic = HubHandler.HubBaseAddress + 0x19B * 4 + 2;
-        *darkMagic |= 1 << 0;
+        if (HubHandler.HubBaseAddress != null)
+        {
+            byte* darkMagic = HubHandler.HubBaseAddress + 0x19B * 4 + 2;
+            *darkMagic |= 1 << 0;
 
-        // Make sure that the hogwarts path cauldron is open and able to be used
-        byte* hogPathCauldron = darkMagic + 0x900;
-        *hogPathCauldron |= 1 << 2;
+            // Make sure that the hogwarts path cauldron is open and able to be used
+            byte* hogPathCauldron = darkMagic + 0x900;
+            *hogPathCauldron |= 1 << 2;
+        }
     }
 
     // Helper function to lock all Active minifig spells upon changing characters, game state, or in a lesson
@@ -696,6 +717,12 @@ public class SpellHandler
     // Certain maps require additional changes or updates to function properly. We handle those cases here
     public static unsafe void SpellMapLogic(int map)
     {
+        if (HubHandler.GhostPathBaseAddress == null)
+        {
+            Game.PrintToLog("[SpellHandler] GhostPathBaseAddress is null, cannot handle spell map logic");
+            return;
+        }
+
         byte* y5GhostPtr = HubHandler.GhostPathBaseAddress + 0x20;
         byte* y5GhostPtr2 = HubHandler.GhostPathBaseAddress + 0x21;
         byte* y6GhostPtr = HubHandler.GhostPathBaseAddress + 0x34;
