@@ -42,7 +42,7 @@ public class Mod : ModBase // <= Do not Remove.
             return;
         LHP2_Archipelago = new ArchipelagoHandler(Configuration.ArchipelagoOptions.Server, Configuration.ArchipelagoOptions.Port, Configuration.ArchipelagoOptions.Slot, Configuration.ArchipelagoOptions.Password);
         Logger.WriteLineAsync($"[LHP2.archipelago.mod] Mod Initialized with Server: {Configuration.ArchipelagoOptions.Server}, Port: {Configuration.ArchipelagoOptions.Port}, Slot: {Configuration.ArchipelagoOptions.Slot}");
-        Logger.WriteLineAsync($"[LHP2.archipelago.mod] Mod Version: LHP2.archipelago.mod 1.1.0 Source code");
+        Logger.WriteLineAsync($"[LHP2.archipelago.mod] Mod Version: LHP2.archipelago.mod 1.0.1 Source code");
 
         var thread1 = new Thread(start: () =>
         {
@@ -68,6 +68,11 @@ public class Mod : ModBase // <= Do not Remove.
 
     public static void InitOnMenu()
     {
+        if (Mod._hooks == null)
+        {
+            Game.PrintToLog("Hooks are Null. Please do not proceed and report this to the Dev.");
+            return;
+        }
         int hookCount = Game._asmHooks.Count;
         if (hookCount > 0)
         {
