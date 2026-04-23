@@ -115,12 +115,12 @@
     Publishes a generic package that can be uploaded to any other website.
     
 .PARAMETER PublishNuGet
-    Default: $True
+    Default: $False
 
     Publishes a package that can be uploaded to any NuGet Source.
 
 .PARAMETER PublishGameBanana
-    Default: $True
+    Default: $Flase
 
     Publishes a package that can be uploaded to GameBanana.
 
@@ -155,15 +155,15 @@ param (
     $IsPrerelease=$False, 
     $MakeDelta=$False, 
     $ChangelogPath="",
-    $ReadmePath="",
+    $ReadmePath="./README.md",
     $Build=$True,
     $BuildR2R=$False,
     $RemoveExe=$True,
     $UseScriptDirectory=$True,
 
     ## => User Config <= ## 
-    $ProjectPath = "LHP2_Archi_Mod.csproj",
-    $PackageName = "LHP2_Archi_Mod",
+    $ProjectPath = "LHP2.Archi.Mod.csproj",
+    $PackageName = "LHP2.Archi.Mod",
     $PublishOutputDir = "Publish/ToUpload",
 
     ## => User: Delta Config
@@ -178,9 +178,7 @@ param (
     $GitHubFallbackPattern = "", # For migrating from legacy build script.
     $GitHubInheritVersionFromTag = $True, # Uses version determined from release tag as opposed to metadata file in latest release.
 
-    $GameBananaItemId = 333681, # From mod page URL.
-
-    $NuGetPackageId = "LHP2_Archi_Mod",
+    $NuGetPackageId = "LHP2.Archi.Mod",
     $NuGetFeedUrl = "https://packages.sewer56.moe/v3/index.json",
     $NuGetAllowUnlisted = $False,
 
@@ -205,7 +203,7 @@ $updateToolsPath   = "./Publish/Tools/Update-Tools"      # Used to check if upda
 $reloadedToolPath = "$reloadedToolsPath/Reloaded.Publisher.exe"  # Path to Reloaded publishing tool.
 $updateToolPath   = "$updateToolsPath/Sewer56.Update.Tool.dll" # Path to Update tool.
 $changelogFullPath = $null
-$readmeFullPath = $null
+$readmeFullPath = "./README.md"
 if ($ChangelogPath) { $changelogFullPath = [System.IO.Path]::GetFullPath($ChangelogPath) }
 if ($ReadmePath) { $readmeFullPath = [System.IO.Path]::GetFullPath($ReadmePath) }
 

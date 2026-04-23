@@ -2,8 +2,9 @@
 using Reloaded.Mod.Interfaces;
 using LHP2_Archi_Mod.Template;
 using LHP2_Archi_Mod.Configuration;
-#if DEBUG
 using System.Diagnostics;
+#if DEBUG
+// using System.Diagnostics;
 #endif
 
 namespace LHP2_Archi_Mod;
