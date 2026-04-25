@@ -27,6 +27,8 @@ public class Game
     public bool PrevInLevelSelect { get; private set; } = false;
     public bool PrevInMenu { get; private set; } = false;
     public int CurrentCharID { get; private set; } = 0;
+    private static readonly int[] LeakyMapIDs = [368, 374, 380, 386];
+    private static readonly string[] FastTravelRequests = ["Y5LOND", "Y6LOND", "Y7LOND", "Y8LOND", "Y5FOYE", "Y6FOYE", "Y7FOYE", "Y8FOYE", "Y5QUAD", "Y6QUAD", "Y7QUAD", "Y8QUAD"];
     public const int tokenOffset = 213;
     public const int levelOffset = 450;
     public const int SIPOffset = 475;
@@ -482,7 +484,7 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(updateMapIDHook, (int)(Mod.BaseAddress + 0x356424), AsmHookBehaviour.ExecuteFirst).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(updateMapIDHook, (int)(Mod.BaseAddress + 0x356424), AsmHookBehaviour.ExecuteAfter).Activate());
 
         string[] openCloseShopHook =
         {
@@ -904,6 +906,13 @@ public class Game
         {
             LessonRestoreReturnToHub();
         }
+
+        // When leaving Leaky & staying in Hub, we want to verify what the London ID is still correct
+        if (LeakyMapIDs.Contains(Mod.GameInstance!.PrevMapID) && Mod.GameInstance!.LevelID is >= 1 and <= 4)
+        {
+            HubHandler.VerifyLondonMapIDs();
+        }
+
         PrintToLog($"Map ID updated to {value}.");
         Mod.LHP2_Archipelago!.SendMapID(value);
         ResetItems();
@@ -1055,7 +1064,7 @@ public class Game
 
         // Quality of life update so that players can more quickly change years
         byte* menuCheatAddress = (byte*)(Mod.BaseAddress + 0xC575E0);
-        byte[] bytes = [24, 4, 0, 17, 26, 26];
+        byte[] bytes = [24, 31, 11, 14, 13, 3]; // Y5LOND
         for (int i = 0; i < 6; i++)
         {
             Memory.Instance.Write((nuint)(menuCheatAddress + i), bytes[i]);
@@ -1204,9 +1213,8 @@ public class Game
     public delegate void ChangeYears();
     private static unsafe void OnChangeYears()
     {
-        // Only run in the Character Customization Room
-        if (Mod.GameInstance!.MapID == 365 || Mod.GameInstance!.MapID == 371
-            || Mod.GameInstance!.MapID == 377 || Mod.GameInstance!.MapID == 381)
+        // Only run in the Leaky Cauldron
+        if (LeakyMapIDs.Contains(Mod.GameInstance!.MapID))
         {
             byte* menuCheatAddress = (byte*)(Mod.BaseAddress + 0xC575E0);
             char[] chars = new char[6];
@@ -1227,34 +1235,22 @@ public class Game
                     chars[i] = '_'; // Unknown character
                 }
             }
-            string yearString = new(chars);
-            PrintToLog($"Year Requested is: {yearString}");
+            string mapString = new(chars);
+            PrintToLog($"Map Requested is: {mapString}");
 
-            switch (yearString)
+            if (FastTravelRequests.Contains(mapString))
             {
-                case "YEAR05" when Mod.GameInstance!.LevelID != 1:
-                    HubHandler.SwitchYears(5);
-                    HubHandler.AdjustHubMaps(5);
-                    break;
-                case "YEAR06" when Mod.GameInstance!.LevelID != 2:
-                    HubHandler.SwitchYears(6);
-                    HubHandler.AdjustHubMaps(6);
-                    break;
-                case "YEAR07" when Mod.GameInstance!.LevelID != 3:
-                    HubHandler.SwitchYears(7);
-                    HubHandler.AdjustHubMaps(7);
-                    break;
-                case "YEAR08" when Mod.GameInstance!.LevelID != 4:
-                    HubHandler.SwitchYears(8);
-                    HubHandler.AdjustHubMaps(8);
-                    break;
-                default:
-                    break;
+                HubHandler.FastTravel(mapString);
             }
+            else
+            {
+                PrintToLog($"Unknown Map Requested: {mapString}.");
+            }
+
         }
         else
         {
-            PrintToLog("Please move to the Character Customization Room to change years.");
+            PrintToLog("Please move to the Leaky Cualdron.");
             return;
         }
     }

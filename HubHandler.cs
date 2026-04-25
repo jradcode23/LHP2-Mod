@@ -16,6 +16,10 @@ public class HubHandler
     private static unsafe byte* RedBrickEnabledAddress => (byte*)(Mod.BaseAddress + 0x94CEF3);
     private static unsafe byte* FirstLevelMapPointer => *(byte**)(Mod.BaseAddress + 0x00B06A5C);
     private static unsafe byte* SecondLevelMapPointer => *(byte**)(FirstLevelMapPointer + 0x44);
+    private static unsafe ushort* Y5LondonConstantPTR => *(ushort**)(Mod.BaseAddress + 0xB06914) + 0x32;
+    private static unsafe ushort* Y6LondonConstantPTR => *(ushort**)(Mod.BaseAddress + 0xB06918) + 0x32;
+    private static unsafe ushort* Y7LondonConstantPTR => *(ushort**)(Mod.BaseAddress + 0xB0691C) + 0x32;
+    private static unsafe ushort* Y8LondonConstantPTR => *(ushort**)(Mod.BaseAddress + 0xB06920) + 0x32;
     public static unsafe byte* GhostPathBaseAddress => *(byte**)(Mod.BaseAddress + 0xC55F2C);
     private static unsafe byte* MapFlagsBaseAddress => *(byte**)(Mod.BaseAddress + 0xC5D5F4);
     private static unsafe byte* HogwartWarpEntranceBaseAddress => *(byte**)(Mod.BaseAddress + 0x00C4EE5C);
@@ -417,61 +421,110 @@ public class HubHandler
     }
 
     /*
-    The following function is our current implementation of how to time travel.
-    We achieve this by overwriting the constant that tells the save file which map you are in.
-    The one downside to this method is that the player has to reload their save.
-    TODO: implement the "Return to Leaky Method" which changes the Return to Leaky Map ID constant
+    The following function is our current implementation of how to time travel & Fast Travel back to Hogwarts.
     */
-    public static unsafe void SwitchYears(int year)
+    public static unsafe void FastTravel(string mapRequested)
     {
         // Verify that the player has completed DADA banned in game before time travelling
         // The game doesn't really allow you to be in future years if DADA banned isn't completed
-        byte* y5GhostPtr = HubHandler.GhostPathBaseAddress + 0x20;
+        byte* y5GhostPtr = GhostPathBaseAddress + 0x20;
         if ((*y5GhostPtr & (1 << 1)) == 0)
         {
             Game.PrintToLog("Please complete DADA Banned Lesson before changing years");
             return;
         }
-        // These are the addresses to the Character Customizer Room constants
-        byte* y5MapPtr = SecondLevelMapPointer + 0xF02;
-        byte* y6MapPtr = SecondLevelMapPointer + 0xA5A;
-        byte* y7MapPtr = SecondLevelMapPointer + 0x39A;
-        byte* y8MapPtr = SecondLevelMapPointer - 0x326;
+        // TODO: adjust DADA to own function
+        // TODO: Check specs so player can't skip it
+        char yearChar = mapRequested[1];
+        switch (yearChar)
+        {
+            case '5':
+                AdjustHubMaps(5);
+                break;
+            case '6':
+                AdjustHubMaps(6);
+                break;
+            case '7':
+                AdjustHubMaps(7);
+                break;
+            case '8':
+                AdjustHubMaps(8);
+                break;
+            default:
+                Game.PrintToLog($"Unknown Year Requested: {yearChar}.");
+                return;
+        }
 
-        // The different hub maps have different level IDs. We read the current level ID and then update the map constant as applicable.
+        ushort* currentPTR = Y5LondonConstantPTR;
         switch (Mod.GameInstance!.LevelID)
         {
             case 1:
-                *y5MapPtr = (byte)(0x30 + year);
                 break;
             case 2:
-                *y6MapPtr = (byte)(0x30 + year);
+                currentPTR = Y6LondonConstantPTR;
                 break;
             case 3:
-                *y7MapPtr = (byte)(0x30 + year);
+                currentPTR = Y7LondonConstantPTR;
                 break;
             case 4:
-                *y8MapPtr = (byte)(0x30 + year);
+                currentPTR = Y8LondonConstantPTR;
                 break;
             default:
-                Game.PrintToLog("Can't switch years, not in hub.");
+                Game.PrintToLog($"Critical Error cannot fast travel. LevelID is: {Mod.GameInstance!.LevelID}");
+                return;
+        }
+
+        switch (mapRequested)
+        {
+            case "Y5LOND":
+                *currentPTR = 276;
+                break;
+            case "Y6LOND":
+                *currentPTR = 173;
+                break;
+            case "Y7LOND":
+                *currentPTR = 103;
+                break;
+            case "Y8LOND":
+                *currentPTR = 8;
+                break;
+            case "Y5FOYE":
+                *currentPTR = 306;
+                break;
+            case "Y6FOYE":
+                *currentPTR = 205;
+                break;
+            case "Y7FOYE":
+                *currentPTR = 135;
+                break;
+            case "Y8FOYE":
+                *currentPTR = 41;
+                break;
+            case "Y5QUAD":
+                *currentPTR = 285;
+                break;
+            case "Y6QUAD":
+                *currentPTR = 184;
+                break;
+            case "Y7QUAD":
+                *currentPTR = 112;
+                break;
+            case "Y8QUAD":
+                *currentPTR = 17;
+                break;
+            default:
                 break;
         }
     }
 
-    // This helper function fixes the constants if the player is on the menu or leaves the Char Customizer Room
-    public static unsafe void VerifyCharCustMaps()
+    // This helper function fixes the constants if the player leaves Leaky Cualdron
+    public static unsafe void VerifyLondonMapIDs()
     {
-        // 5, 6, 7, 8 in hex are 0x35, 0x36, 0x37, 0x38
-        byte* y5MapPtr = SecondLevelMapPointer + 0xF02;
-        byte* y6MapPtr = SecondLevelMapPointer + 0xA5A;
-        byte* y7MapPtr = SecondLevelMapPointer + 0x39A;
-        byte* y8MapPtr = SecondLevelMapPointer - 0x326;
-
-        *y5MapPtr = 0x35;
-        *y6MapPtr = 0x36;
-        *y7MapPtr = 0x37;
-        *y8MapPtr = 0x38;
+        // London's Map ID in hex are 0x08, 0x67, 0xAD, 0x114
+        *Y5LondonConstantPTR = 0x114;
+        *Y6LondonConstantPTR = 0xAD;
+        *Y7LondonConstantPTR = 0x67;
+        *Y8LondonConstantPTR = 0x08;
     }
 
     /*

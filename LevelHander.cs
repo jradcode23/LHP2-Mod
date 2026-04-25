@@ -234,14 +234,6 @@ public class LevelHandler
                     new Thread(HubHandler.CheckLeaky2LondonY7PTR).Start();
                 }
                 break;
-            // Menu & MM
-            case 366:
-            case 372:
-            case 378:
-            case 382:
-            case 402:
-                HubHandler.VerifyCharCustMaps();
-                break;
             default:
                 break;
         }
