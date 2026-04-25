@@ -16,6 +16,7 @@ public class ArchipelagoHandler
     private ArchipelagoSession _session;
     private LoginSuccessful _loginSuccessful;
     public SlotData SlotDataInstance;
+    private static unsafe byte* NewGameTextPTR => *(byte**)(Mod.BaseAddress + 0xC4EB9C) + 0x32E;
 
     private string Server { get; set; }
     private int Port { get; set; }
@@ -62,14 +63,17 @@ public class ArchipelagoHandler
     }
 
     // Attempts to connect to the server
-    private bool Connect()
+    private unsafe bool Connect()
     {
         LoginResult result;
+
+
 
         try
         {
             // Check to see if Game/Menu is loaded before trying to connect, we do this to mitigate impact of null values and the game changing things later.
             Game.IsGameLoaded();
+            HintSystem.SetMessageText("Connecting", (uint)NewGameTextPTR);
             Seed = _session.ConnectAsync()?.Result?.SeedName;
             Game.PrintToLog(Seed + Slot);
 
@@ -85,6 +89,7 @@ public class ArchipelagoHandler
         catch (Exception e)
         {
             result = new LoginFailure(e.GetBaseException().Message);
+            HintSystem.SetMessageText("Failed To Connect", (uint)NewGameTextPTR);
         }
 
         if (result.Successful)
@@ -93,12 +98,21 @@ public class ArchipelagoHandler
             // Sets up slot Data
             SlotDataInstance = new(_loginSuccessful.SlotData);
             SlotDataInstance.PrintData();
+            HintSystem.SetMessageText("Hooking, Please Wait", (uint)NewGameTextPTR);
             // Modify the game now that we are connected
-            Mod.InitOnMenu();
+            bool isHooked = Mod.InitOnMenu();
             // Store our slot name in game to access later
             Mod.GameInstance!.PlayerName = Slot;
             // Tell DataStorage we are on the menu
             _session.DataStorage[Scope.Slot, "map"] = 402;
+            if (isHooked)
+            {
+                HintSystem.SetMessageText("Ready to Play, New Game", (uint)NewGameTextPTR);
+            }
+            else
+            {
+                HintSystem.SetMessageText("Failed To Hook", (uint)NewGameTextPTR);
+            }
             // Start our threads
             new Thread(RunCheckLocationsFromList).Start();
             new Thread(HintSystem.HandleMessages).Start();
