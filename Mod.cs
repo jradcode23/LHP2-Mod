@@ -68,6 +68,11 @@ public class Mod : ModBase // <= Do not Remove.
 
     public static void InitOnMenu()
     {
+        if (Mod._hooks == null)
+        {
+            Game.PrintToLog("Hooks are Null. Please do not proceed and report this to the Dev.");
+            return;
+        }
         int hookCount = Game._asmHooks.Count;
         if (hookCount > 0)
         {
