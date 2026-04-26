@@ -29,6 +29,7 @@ public class Game
     public int CurrentCharID { get; private set; } = 0;
     private static readonly int[] LeakyMapIDs = [368, 374, 380, 386];
     private static readonly string[] FastTravelRequests = ["Y5LOND", "Y6LOND", "Y7LOND", "Y8LOND", "Y5FOYE", "Y6FOYE", "Y7FOYE", "Y8FOYE", "Y5QUAD", "Y6QUAD", "Y7QUAD", "Y8QUAD"];
+    private static unsafe ushort* DarkTimesMapConstant => *(ushort**)(Mod.BaseAddress + 0xB069AC) + 0x32;
     public const int tokenOffset = 213;
     public const int levelOffset = 450;
     public const int SIPOffset = 475;
@@ -114,7 +115,7 @@ public class Game
     }
 
     // After Connecting, this function reads initial game variables and NOPs code that we don't want running
-    public static void ModifyInstructions()
+    public static unsafe void ModifyInstructions()
     {
         // Read initial game values upon connecting
         Mod.GameInstance!.LevelID = Memory.Instance.Read<int>(Mod.BaseAddress + 0xADDB7C);
@@ -156,6 +157,11 @@ public class Game
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3C732C, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
 
         ShopPrices.SetShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
+
+        // NOP Code that forces to Dark Times upon save reload
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3CB61, [0x90, 0x90]);
+        // Change Dark Times Map Constant
+        *DarkTimesMapConstant = 388;
     }
 
     // This function turns on the N0CUT5 Cheat Code so cutscenes don't show
@@ -896,7 +902,7 @@ public class Game
     [Function([FunctionAttribute.Register.ecx],
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void UpdateMap(int value);
-    private static void OnMapChange(int value)
+    private static unsafe void OnMapChange(int value)
     {
         Mod.GameInstance!.PrevMapID = Mod.GameInstance!.MapID;
         Mod.GameInstance!.MapID = value;
@@ -921,10 +927,11 @@ public class Game
         HubHandler.UpdateHorcruxCount();
         LevelHandler.ImplementMapLogic(value);
 
-        // Load Red Bricks Enabled if Previous map was 402 (menu)
+        // Load Red Bricks Enabled & Verify that Dark Times Map Constant has been corrected if Previous map was 402 (menu)
         if (Mod.GameInstance!.PrevMapID == 402)
         {
             HubHandler.LoadRedBricksEnabled();
+            *DarkTimesMapConstant = 361;
         }
     }
 
