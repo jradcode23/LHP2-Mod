@@ -28,6 +28,7 @@ public class Game
     public bool PrevInMenu { get; private set; } = false;
     public int CurrentCharID { get; private set; } = 0;
     private static readonly int[] LeakyMapIDs = [368, 374, 380, 386];
+    private static readonly int[] DuelingMapIDs = [44, 73, 137, 157, 207, 223, 309, 324];
     private static readonly string[] FastTravelRequests = ["Y5LOND", "Y6LOND", "Y7LOND", "Y8LOND", "Y5FOYE", "Y6FOYE", "Y7FOYE", "Y8FOYE", "Y5QUAD", "Y6QUAD", "Y7QUAD", "Y8QUAD"];
     private static unsafe ushort* DarkTimesMapConstant => *(ushort**)(Mod.BaseAddress + 0xB069AC) + 0x32;
     public const int tokenOffset = 213;
@@ -310,6 +311,7 @@ public class Game
     private static IReverseWrapper<ChangeCharacters> _reverseWrapOnChangeCharacters = default!;
     private static IReverseWrapper<ChangeYears> _reverseWrapChangeYears = default!;
     private static IReverseWrapper<HandleInterruptedMessage> _reverseWrapOnHandleInterruptedMessage = default!;
+    private static IReverseWrapper<SetDuelingHealth> _reverseWrapOnSetDuelingHealth = default!;
 
     // Modifying the associated assembly of our game to call our functions
     // TODO: Future proof this from game updates by implementing signature scanning
@@ -632,6 +634,27 @@ public class Game
         // Walking through Loading Zone Zero Out Hint Game Code
         _asmHooks.Add(hooks.CreateAsmHook(handleInterruptedMessageHook, (int)(Mod.BaseAddress + 0x3C727B), AsmHookBehaviour.ExecuteFirst).Activate());
 
+        string[] startDuelHook =
+        {
+            // Push and Pop all Registers except for the ECX register since we need it in our function
+            "use32",
+            "pushfd",
+            "push eax",
+            "push ebx",
+            "push edx",
+            "push esi",
+            "push edi",
+            "push ebp",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnSetDuelingHealth, out _reverseWrapOnSetDuelingHealth)}",
+            "pop ebp",
+            "pop edi",
+            "pop esi",
+            "pop edx",
+            "pop ebx",
+            "pop eax",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(startDuelHook, (int)(Mod.BaseAddress + 0x8C75E), AsmHookBehaviour.ExecuteFirst).Activate());
     }
 
     [Function(CallingConventions.Fastcall)]
@@ -1267,6 +1290,20 @@ public class Game
     private static void OnHandleInterruptedMessage()
     {
         HintSystem.HandleInterruptedMessage();
+    }
+
+    [Function([FunctionAttribute.Register.ecx],
+    FunctionAttribute.Register.ecx, FunctionAttribute.StackCleanup.Callee)]
+    public delegate nuint SetDuelingHealth(nuint ecx);
+
+    private static nuint OnSetDuelingHealth(nuint ecx)
+    {
+        if (DuelingMapIDs.Contains(Mod.GameInstance!.MapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.FasterDuels == 1)
+        {
+            Game.PrintToLog("Dueling Health Set to 1");
+            ecx = (ecx & ~0xFFu) | 1u;
+        }
+        return ecx;
     }
 
     private static void ResetItems()
