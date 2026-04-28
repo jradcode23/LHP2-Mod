@@ -846,7 +846,6 @@ public class HubHandler
         *mcgBlackFlag |= 1 << 1; // Ensure the Token has a hitbox
     }
 
-    // TODO: missing 3 more suitcases
     // Helper function to remove the suitcases and invisible wall from Hogsmeade station if needed
     private static unsafe void AdjustHogsStat()
     {
@@ -867,7 +866,13 @@ public class HubHandler
         *hogsStatAddress = 64; // Invisible wall 1 (side wall)
         hogsStatAddress += 7;
         *hogsStatAddress = 64; // Invisible wall 2 (front wall)
-        hogsStatAddress += 114;
+        hogsStatAddress += 5;
+        *hogsStatAddress = 225; // Small Suitcase 1
+        hogsStatAddress += 31;
+        *hogsStatAddress = 225; // Small Suitcase 2
+        hogsStatAddress += 31;
+        *hogsStatAddress = 225; // Small Suitcase 3
+        hogsStatAddress += 47;
         *hogsStatAddress &= unchecked((byte)~(1 << 2)); // Suitcase 4
         hogsStatAddress += 3;
         *hogsStatAddress &= unchecked((byte)~(1 << 6)); // Suitcase 5
