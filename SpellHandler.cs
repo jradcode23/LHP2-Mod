@@ -427,8 +427,8 @@ public class SpellHandler
     */
     public static unsafe void HandleSpellVisibility()
     {
-        byte* spellSelectedAddress = SpellHandler.SpellSelectedBaseAddress + 0x18;
-        byte* activeShootingSpell = SpellHandler.ActiveShootingSpellBaseAddress + 0xED3;
+        byte* spellSelectedAddress = SpellSelectedBaseAddress + 0x18;
+        byte* activeShootingSpell = ActiveShootingSpellBaseAddress + 0xED3;
         byte* spellImage = activeShootingSpell + 0x1;
 
         if (spellSelectedAddress == null || activeShootingSpell == null || spellImage == null)
@@ -712,6 +712,25 @@ public class SpellHandler
             byte* passivePTR = SpellBaseAddress + i;
             *passivePTR = 0xFF;
         }
+    }
+
+    /* 
+    Helper function to return the unlocked spells from the minifig file
+    The game checks abilities against their static addresses instead of the minifig file
+    This change makes it so it compares against the minifig file instead
+    */
+    public static unsafe int CheckAbilityUnlock()
+    {
+        byte* spellArray0 = GetActiveSpellPointer();
+
+        if (spellArray0 == null)
+        {
+            Game.PrintToLog("Active Spell Pointer Null - can't return unlocked spells");
+            return 0;
+        }
+        int* spellArray4 = (int*)spellArray0 + 1;
+        Game.PrintToLog($"Spell Array 4 contains {*spellArray4:X}");
+        return *spellArray4;
     }
 
     // Certain maps require additional changes or updates to function properly. We handle those cases here

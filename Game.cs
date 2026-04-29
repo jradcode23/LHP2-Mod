@@ -153,6 +153,13 @@ public class Game
         // NOP Resetting Hint message constantly if the pets are out
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3C732C, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
 
+        // NOP Jump past check of spell unlocks in Specs lesson - Animation 1
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3EECC, [0x90, 0x90]);
+        // NOP Jump past check of spell unlocks in Specs lesson - Animation 2
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3EF6C, [0x90, 0x90]);
+        // NOP Jump past check of spell unlocks in Specs lesson - If ability active
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x6C497, [0x90, 0x90]);
+
         ShopPrices.SetShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
     }
 
@@ -302,6 +309,7 @@ public class Game
     private static IReverseWrapper<ChangeCharacters> _reverseWrapOnChangeCharacters = default!;
     private static IReverseWrapper<ChangeYears> _reverseWrapChangeYears = default!;
     private static IReverseWrapper<HandleInterruptedMessage> _reverseWrapOnHandleInterruptedMessage = default!;
+    private static IReverseWrapper<CmpUnlockedAbilities> _reverseWrapOnCmpUnlockedAbilities = default!;
 
     // Modifying the associated assembly of our game to call our functions
     // TODO: Future proof this from game updates by implementing signature scanning
@@ -624,6 +632,32 @@ public class Game
         // Walking through Loading Zone Zero Out Hint Game Code
         _asmHooks.Add(hooks.CreateAsmHook(handleInterruptedMessageHook, (int)(Mod.BaseAddress + 0x3C727B), AsmHookBehaviour.ExecuteFirst).Activate());
 
+        string[] compareAbilitiesHook =
+        {
+            // Push and Pop all Registers except for the ECX register since we need it in our function
+            "use32",
+            "pushfd",
+            "push eax",
+            "push ebx",
+            "push edx",
+            "push esi",
+            "push edi",
+            "push ebp",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnCmpUnlockedAbilities, out _reverseWrapOnCmpUnlockedAbilities)}",
+            "pop ebp",
+            "pop edi",
+            "pop esi",
+            "pop edx",
+            "pop ebx",
+            "pop eax",
+            "popfd",
+        };
+        // Specs Animation 1
+        _asmHooks.Add(hooks.CreateAsmHook(compareAbilitiesHook, (int)(Mod.BaseAddress + 0x3EEE0), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
+        // Specs Animation 2
+        _asmHooks.Add(hooks.CreateAsmHook(compareAbilitiesHook, (int)(Mod.BaseAddress + 0x3EF80), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
+        // If Specs is usable of not
+        _asmHooks.Add(hooks.CreateAsmHook(compareAbilitiesHook, (int)(Mod.BaseAddress + 0x6C4AB), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
     }
 
     [Function(CallingConventions.Fastcall)]
@@ -1264,6 +1298,14 @@ public class Game
     private static void OnHandleInterruptedMessage()
     {
         HintSystem.HandleInterruptedMessage();
+    }
+
+    [Function([],
+    FunctionAttribute.Register.ecx, FunctionAttribute.StackCleanup.Callee)]
+    public delegate int CmpUnlockedAbilities();
+    private static int OnCmpUnlockedAbilities()
+    {
+        return SpellHandler.CheckAbilityUnlock();
     }
 
     private static void ResetItems()

@@ -159,6 +159,7 @@ public class ArchipelagoHandler
                 if (gameID >= 998)
                 {
                     Game.ManageItem(gameID);
+                    SpellHandler.SpellMapLogic(Mod.GameInstance!.MapID);
                     return;
                 }
                 // Handle Purple Studs
