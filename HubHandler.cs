@@ -681,6 +681,7 @@ public class HubHandler
     {
         leaky2LondonAddress = GetHubMapAddress("HubLeakyCauldron", 0xB7B); // Leaky2London Loading Zone
         hogPath2CourtyardAddress = GetHubMapAddress("HogsApproach", 0x1A90); // HogPath2Courtyard Loading Zone
+        // TODO: see if we can do wilderness upon returning to diagon alley instead of time travel
         wildernessAddress = GetHubMapAddress("ForestHub", 0); // Wilderness
         quadAddress = GetHubMapAddress("Quad", 0); // Quad
         hogsStatAddress = GetHubMapAddress("HogsStation", 0); //HogsStation

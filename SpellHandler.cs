@@ -494,28 +494,28 @@ public class SpellHandler
         *ptr |= (byte)(1 << bitOffset);
     }
 
-    // Not currently used, but leaving in if needed in the future.
-    // public static unsafe void LockActiveSpell(int id)
-    // {
-    //     int byteOffset = id / 8;
-    //     int bitOffset = id % 8;
+    // Helper function to lock an active spell. Currently used with apparition
+    public static unsafe void LockActiveSpell(int id)
+    {
+        int byteOffset = id / 8;
+        int bitOffset = id % 8;
 
-    //     byte* activeSpellBaseAddress = *(byte**)(Mod.BaseAddress + 0x00C53930);
-    //     byte* activeFirstPointer = *(byte**)(activeSpellBaseAddress + 0x1C);
-    //     byte* activeSecondPointer = *(byte**)(activeFirstPointer + 0xBF4);
+        byte* activeSpellBaseAddress = *(byte**)(Mod.BaseAddress + 0x00C53930);
+        byte* activeFirstPointer = *(byte**)(activeSpellBaseAddress + 0x1C);
+        byte* activeSecondPointer = *(byte**)(activeFirstPointer + 0xBF4);
 
-    //     activeSecondPointer += 0x58;
+        activeSecondPointer += 0x58;
 
-    //     byte* ptr = activeSecondPointer + byteOffset;
+        byte* ptr = activeSecondPointer + byteOffset;
 
-    //     if (ptr == null)
-    //     {
-    //         Game.PrintToLog("SpellBaseAddress: null pointer");
-    //         return;
-    //     }
+        if (ptr == null)
+        {
+            Game.PrintToLog("SpellBaseAddress: null pointer");
+            return;
+        }
 
-    //     *ptr &= unchecked((byte)~(byte)(1 << bitOffset));
-    // }
+        *ptr &= unchecked((byte)~(byte)(1 << bitOffset));
+    }
 
     // Helper function that locks a passive spell. Used when switching game states, changing characters, or in lessons
     public static unsafe void LockPassiveSpell(int id)
@@ -752,24 +752,24 @@ public class SpellHandler
         {
             // DADA Banned Lesson
             case 301 when !Mod.LHP2_Archipelago!.IsLocationChecked(1007) || (*y5GhostPtr & (1 << 2)) == 0:
-                SpellHandler.LockPassiveSpell(26); // Lock Polyjuice cause game acts weird if you use it during the lesson
-                SpellHandler.LockPassiveSpell(46); // Ensure lesson can be beaten since game doesn't like when you already have it
+                LockPassiveSpell(26); // Lock Polyjuice cause game acts weird if you use it during the lesson
+                LockPassiveSpell(46); // Ensure lesson can be beaten since game doesn't like when you already have it
                 break;
             // Thestral Flying Lesson
             case 295 when !Mod.LHP2_Archipelago!.IsLocationChecked(1008) || (*y5GhostPtr & (1 << 3)) == 0:
-                SpellHandler.LockPassiveSpell(43); // Flying the thestral during the lesson can cause issues
+                LockPassiveSpell(43); // Flying the thestral during the lesson can cause issues
                 break;
             // Aguamenti Lesson
             case 195 when !Mod.LHP2_Archipelago!.IsLocationChecked(1020) || (*y6GhostPtr & (1 << 7)) == 0:
-                SpellHandler.LockPassiveSpell(27); // Ensure lesson can be beaten since game doesn't like when you already have it
+                LockPassiveSpell(27); // Ensure lesson can be beaten since game doesn't like when you already have it
                 break;
             // Reducto Lesson
             case 196 when !Mod.LHP2_Archipelago!.IsLocationChecked(1021) || (*y6GhostPtr2 & (1 << 1)) == 0:
-                SpellHandler.LockPassiveSpell(30); // Ensure lesson can be beaten since game doesn't like when you already have it
+                LockPassiveSpell(30); // Ensure lesson can be beaten since game doesn't like when you already have it
                 break;
             // Specs Lesson
             case 179 when !Mod.LHP2_Archipelago!.IsLocationChecked(1016) || (*y6GhostPtr & (1 << 2)) == 0:
-                SpellHandler.LockPassiveSpell(50); // Ensure lesson can be beaten since game doesn't like when you already have it
+                LockPassiveSpell(50); // Ensure lesson can be beaten since game doesn't like when you already have it
                 break;
             // London when Apparition is supposed to be unlocked
             case 103 when !Mod.LHP2_Archipelago!.IsLocationChecked(1027) || (*y7GhostPtr & (1 << 2)) == 0:
@@ -784,17 +784,18 @@ public class SpellHandler
             case 166:
                 if (!Mod.LHP2_Archipelago!.IsLocationChecked(1001)) // Delum
                 {
-                    SpellHandler.LockPassiveSpell(26);
+                    LockPassiveSpell(26);
                 }
                 if (!Mod.LHP2_Archipelago!.IsLocationChecked(1025)) // Herm Bag
                 {
-                    SpellHandler.LockPassiveSpell(51);
+                    LockPassiveSpell(51);
                 }
                 break;
             // Wilderness - Lock Apparition
             case 5:
             case 99:
-                SpellHandler.LockPassiveSpell(45);
+                LockPassiveSpell(45);
+                LockActiveSpell(45);
                 break;
             default:
                 break;

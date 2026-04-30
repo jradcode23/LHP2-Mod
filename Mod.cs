@@ -32,7 +32,7 @@ public class Mod : ModBase // <= Do not Remove.
 
 #if DEBUG
         // Attaches debugger in debug mode; ignored in release.
-        Debugger.Launch();
+        // Debugger.Launch();
 #endif
 
         GameInstance = new Game();
