@@ -791,6 +791,11 @@ public class SpellHandler
                     SpellHandler.LockPassiveSpell(51);
                 }
                 break;
+            // Wilderness - Lock Apparition
+            case 5:
+            case 99:
+                SpellHandler.LockPassiveSpell(45);
+                break;
             default:
                 break;
         }
