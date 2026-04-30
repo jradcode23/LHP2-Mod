@@ -19,6 +19,8 @@ public class Game
 
     // This lock is used for PrevInShop, PrevInLevelSelect, PrevInMenu because of the Hint System
     public readonly object StateLock = new();
+    // This lock is used for MapID and PrevMapID because of background threads
+    public readonly object MapLock = new();
     public int PrevLevelID { get; private set; } = -1;
     public int LevelID { get; private set; } = -1;
     public int PrevMapID { get; private set; } = -1;
@@ -116,9 +118,17 @@ public class Game
     {
         // Read initial game values upon connecting
         Mod.GameInstance!.LevelID = Memory.Instance.Read<int>(Mod.BaseAddress + 0xADDB7C);
-        Mod.GameInstance!.MapID = Memory.Instance.Read<int>(Mod.BaseAddress + 0xC5B374);
+        int mapID;
+        int prevMapID;
+        mapID = Memory.Instance.Read<int>(Mod.BaseAddress + 0xC5B374);
+        prevMapID = Mod.GameInstance!.PrevMapID;
+        lock (Mod.GameInstance!.MapLock)
+        {
+            Mod.GameInstance!.MapID = mapID;
+            Mod.GameInstance!.PrevMapID = prevMapID;
+        }
+        PrintToLog($"Initial mapID: {mapID}, Initial levelID: {Mod.GameInstance!.LevelID}");
         Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
-        Mod.GameInstance!.PrevMapID = Mod.GameInstance!.MapID; PrintToLog($"Initial Level ID: {Mod.GameInstance!.LevelID}, Map ID: {Mod.GameInstance!.MapID}");
 
         WriteN0CUT5Flag();
 
@@ -764,8 +774,13 @@ public class Game
     private static void OnSpellUnlock(int eax, int edx)
     {
         // Only run if in Joke Shop or in 7 Harrys Delum/Bag lesson
-        if (Mod.GameInstance!.MapID == 369 || Mod.GameInstance!.MapID == 375
-            || Mod.GameInstance!.MapID == 383 || Mod.GameInstance!.MapID == 387 || Mod.GameInstance!.MapID == 166)
+        int mapID;
+        lock (Mod.GameInstance!.MapLock)
+        {
+            mapID = Mod.GameInstance!.MapID;
+        }
+        if (mapID == 369 || mapID == 375
+            || mapID == 383 || mapID == 387 || mapID == 166)
         {
             PrintToLog($"Spell Unlock Function Ran: EDX is 0x{edx:X} and EAX is 0x{eax:X}");
 
@@ -790,6 +805,7 @@ public class Game
 
             CheckAndReportLocation(itemId);
         }
+
     }
 
     [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.edx],
@@ -803,7 +819,12 @@ public class Game
             PrintToLog("Error getting Level Token Item ID");
             PrintToLog($"EAX is: 0x{eax:X}");
             PrintToLog($"EDX is: 0x{edx:X}");
-            PrintToLog("Map ID is: " + Mod.GameInstance!.MapID);
+            int mapID;
+            lock (Mod.GameInstance!.MapLock)
+            {
+                mapID = Mod.GameInstance!.MapID;
+            }
+            PrintToLog("Map ID is: " + mapID);
             return;
         }
         CheckAndReportLocation(itemID + tokenOffset);
@@ -819,7 +840,12 @@ public class Game
         {
             PrintToLog("Error getting Level Token Item ID");
             PrintToLog($"EBX is: 0x{ebx:X}");
-            PrintToLog("Map ID is: " + Mod.GameInstance!.MapID);
+            int mapID;
+            lock (Mod.GameInstance!.MapLock)
+            {
+                mapID = Mod.GameInstance!.MapID;
+            }
+            PrintToLog("Map ID is: " + mapID);
             return;
         }
         CheckAndReportLocation(itemID + tokenOffset);
@@ -831,12 +857,17 @@ public class Game
     private static void OnCharacterPurchased(IntPtr ecx, int eax)
     {
         bool prevInShop;
+        int mapID;
         lock (Mod.GameInstance!.StateLock)
         {
             prevInShop = Mod.GameInstance!.PrevInShop;
         }
-        if ((Mod.GameInstance!.MapID == 366 || Mod.GameInstance!.MapID == 372
-            || Mod.GameInstance!.MapID == 378 || Mod.GameInstance!.MapID == 382) && prevInShop == true) //Make sure Player is in Robe Shop
+        lock (Mod.GameInstance!.MapLock)
+        {
+            mapID = Mod.GameInstance!.MapID;
+        }
+        if ((mapID == 366 || mapID == 372
+            || mapID == 378 || mapID == 382) && prevInShop == true) //Make sure Player is in Robe Shop
         {
             int itemID = CharacterHandler.GetPurchaseCharacterID(ecx, eax);
             if (itemID == -1)
@@ -844,7 +875,7 @@ public class Game
                 PrintToLog("Error getting Purchased Character ID");
                 PrintToLog($"EAX is: {eax:X}");
                 PrintToLog($"ECX is: {ecx:X}");
-                PrintToLog("Map ID is: " + Mod.GameInstance!.MapID);
+                PrintToLog("Map ID is: " + mapID);
                 return;
             }
             CheckAndReportLocation(itemID);
@@ -863,7 +894,12 @@ public class Game
             PrintToLog($"EDX is: 0x {edx:X}");
             int lookupvalue = edx * 4 + 2;
             PrintToLog($"Lookup Value should be: 0x{lookupvalue:X}");
-            PrintToLog("Map ID is: " + Mod.GameInstance!.MapID);
+            int mapID;
+            lock (Mod.GameInstance!.MapLock)
+            {
+                mapID = Mod.GameInstance!.MapID;
+            }
+            PrintToLog("Map ID is: " + mapID);
             return;
         }
         CheckAndReportLocation(itemID + HubSIPOffset);
@@ -882,7 +918,12 @@ public class Game
             PrintToLog($"EAX is: 0x{eax:X}");
             int lookupvalue = eax * 4 + 2;
             PrintToLog($"Lookup Value should be: 0x{lookupvalue:X}");
-            PrintToLog("Map ID is: " + Mod.GameInstance!.MapID);
+            int mapID;
+            lock (Mod.GameInstance!.MapLock)
+            {
+                mapID = Mod.GameInstance!.MapID;
+            }
+            PrintToLog("Map ID is: " + mapID);
             return;
         }
         CheckAndReportLocation(itemID + HubGBOffset);
@@ -901,7 +942,12 @@ public class Game
             PrintToLog($"EAX is: 0x{eax:X}");
             int lookupvalue = eax * 4 + 2;
             PrintToLog($"Lookup Value should be: 0x{lookupvalue:X}");
-            PrintToLog("Map ID is: " + Mod.GameInstance!.MapID);
+            int mapID;
+            lock (Mod.GameInstance!.MapLock)
+            {
+                mapID = Mod.GameInstance!.MapID;
+            }
+            PrintToLog("Map ID is: " + mapID);
             return;
         }
         CheckAndReportLocation(itemID + RedBrickCollectOffset);
@@ -930,14 +976,22 @@ public class Game
     public delegate void UpdateMap(int value);
     private static void OnMapChange(int value)
     {
-        Mod.GameInstance!.PrevMapID = Mod.GameInstance!.MapID;
-        Mod.GameInstance!.MapID = value;
+        int mapID;
+        int prevMapID;
+        lock (Mod.GameInstance!.MapLock)
+        {
+            prevMapID = Mod.GameInstance!.PrevMapID;
+            mapID = Mod.GameInstance!.MapID;
+            Mod.GameInstance!.PrevMapID = mapID;
+            Mod.GameInstance!.MapID = value;
 
+        }
         // When leaving Y7 London, ensure that Code is running as normal (disabled in Y7 London cause of apparition)
-        if (Mod.GameInstance!.PrevMapID == 104 && !Mod.LHP2_Archipelago!.IsLocationChecked(1027))
+        if (prevMapID == 104 && !Mod.LHP2_Archipelago!.IsLocationChecked(1027))
         {
             LessonRestoreReturnToHub();
         }
+
         PrintToLog($"Map ID updated to {value}.");
         Mod.LHP2_Archipelago!.SendMapID(value);
         ResetItems();
@@ -947,7 +1001,8 @@ public class Game
         LevelHandler.ImplementMapLogic(value);
 
         // Load Red Bricks Enabled if Previous map was 402 (menu)
-        if (Mod.GameInstance!.PrevMapID == 402)
+
+        if (prevMapID == 402)
         {
             HubHandler.LoadRedBricksEnabled();
         }
@@ -966,7 +1021,12 @@ public class Game
             Mod.GameInstance!.CurrentCharID = edx;
             SpellHandler.ResetSpells();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
-            SpellHandler.SpellMapLogic(Mod.GameInstance!.MapID);
+            int currentMapID;
+            lock (Mod.GameInstance!.MapLock)
+            {
+                currentMapID = Mod.GameInstance!.MapID;
+            }
+            SpellHandler.SpellMapLogic(currentMapID);
             SpellHandler.HandleSpellVisibility();
         }
     }
@@ -978,6 +1038,11 @@ public class Game
     {
         bool eaxBit0Set = (eax & 1) != 0;
         int lastNibble = esp & 0xF;
+        int ShopMapID;
+        lock (Mod.GameInstance!.MapLock)
+        {
+            ShopMapID = Mod.GameInstance!.MapID;
+        }
 
         if (eaxBit0Set && lastNibble == 0x08)
         {
@@ -1006,7 +1071,8 @@ public class Game
             HubHandler.UpdateHorcruxCount();
 
             // Joke Shop prices are set when save is loaded. So we handle that by changing it upon opening and closing that shop
-            if (Mod.GameInstance!.MapID == 369 || Mod.GameInstance!.MapID == 375 || Mod.GameInstance!.MapID == 383 || Mod.GameInstance!.MapID == 387)
+
+            if (ShopMapID == 369 || ShopMapID == 375 || ShopMapID == 383 || ShopMapID == 387)
             {
                 ShopPrices.SetJokeShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
             }
@@ -1056,7 +1122,8 @@ public class Game
                 }
 
                 // Joke Shop prices are set when save is loaded. So we handle that by changing it upon opening and closing that shop
-                if (Mod.GameInstance!.MapID == 369 || Mod.GameInstance!.MapID == 375 || Mod.GameInstance!.MapID == 383 || Mod.GameInstance!.MapID == 387)
+
+                if (ShopMapID == 369 || ShopMapID == 375 || ShopMapID == 383 || ShopMapID == 387)
                 {
                     ShopPrices.ReverseJokeShopPriceChanges(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
                 }
@@ -1129,8 +1196,11 @@ public class Game
     private static bool OnCharacterCmp()
     {
         // Only run CMP on menu map or levels 1–4
-        if (Mod.GameInstance!.MapID == 402)
-            return false;
+        lock (Mod.GameInstance!.MapLock)
+        {
+            if (Mod.GameInstance!.MapID == 402)
+                return false;
+        }
 
         if (Mod.GameInstance!.LevelID >= 1 && Mod.GameInstance!.LevelID <= 4)
             return false;
@@ -1144,14 +1214,17 @@ public class Game
     private static void OnReduceMenuCount(int edi)
     {
         bool prevInMenu;
-        int prevMapID;
+        int MapID;
         lock (Mod.GameInstance!.StateLock)
         {
             prevInMenu = Mod.GameInstance!.PrevInMenu;
-            prevMapID = Mod.GameInstance!.MapID;
         }
-        Console.WriteLine($"Reduce Menu Count Triggered. PrevInMenu: {prevInMenu}, PrevMapID: {prevMapID}, EDI: {edi}");
-        if (!prevInMenu || prevMapID == 402 || edi != 1) // Only trigger when in menu, not on main menu, and when menu level goes back to 1
+        lock (Mod.GameInstance!.MapLock)
+        {
+            MapID = Mod.GameInstance!.MapID;
+        }
+        Console.WriteLine($"Reduce Menu Count Triggered. PrevInMenu: {prevInMenu}, MapID: {MapID}, EDI: {edi}");
+        if (!prevInMenu || MapID == 402 || edi != 1) // Only trigger when in menu, not on main menu, and when menu level goes back to 1
         {
             return;
         }
@@ -1178,13 +1251,18 @@ public class Game
         {
             Mod.GameInstance!.PrevInMenu = false;
         }
+        int mapID;
+        lock (Mod.GameInstance!.MapLock)
+        {
+            mapID = Mod.GameInstance!.MapID;
+        }
         PrintToLog("Menu Closed");
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
         HubHandler.UpdateHorcruxCount();
-        LevelHandler.ImplementMapLogic(Mod.GameInstance!.MapID);
-        SpellHandler.SpellMapLogic(Mod.GameInstance!.MapID);
+        LevelHandler.ImplementMapLogic(mapID);
+        SpellHandler.SpellMapLogic(mapID);
         HubHandler.SaveRedBricksEnabled();
     }
 
@@ -1221,6 +1299,11 @@ public class Game
         {
             prevInLevelSelect = Mod.GameInstance!.PrevInLevelSelect;
         }
+        int mapID;
+        lock (Mod.GameInstance!.MapLock)
+        {
+            mapID = Mod.GameInstance!.MapID;
+        }
         if (cauldronItem != 4 || prevInLevelSelect == true) // Only trigger on opening the Polyjuice Pot
         {
             return;
@@ -1230,17 +1313,21 @@ public class Game
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
-        LevelHandler.ImplementMapLogic(Mod.GameInstance!.MapID);
-        SpellHandler.SpellMapLogic(Mod.GameInstance!.MapID);
+        LevelHandler.ImplementMapLogic(mapID);
+        SpellHandler.SpellMapLogic(mapID);
     }
 
     [Function(CallingConventions.Fastcall)]
     public delegate void ChangeYears();
     private static unsafe void OnChangeYears()
     {
+        int mapID;
+        lock (Mod.GameInstance!.MapLock)
+        {
+            mapID = Mod.GameInstance!.MapID;
+        }
         // Only run in the Character Customization Room
-        if (Mod.GameInstance!.MapID == 365 || Mod.GameInstance!.MapID == 371
-            || Mod.GameInstance!.MapID == 377 || Mod.GameInstance!.MapID == 381)
+        if (mapID == 365 || mapID == 371 || mapID == 377 || mapID == 381)
         {
             byte* menuCheatAddress = (byte*)(Mod.BaseAddress + 0xC575E0);
             char[] chars = new char[6];
