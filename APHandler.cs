@@ -173,6 +173,12 @@ public class ArchipelagoHandler
                 if (gameID >= 998)
                 {
                     Game.ManageItem(gameID);
+                    int mapID;
+                    lock (Mod.GameInstance!.MapLock)
+                    {
+                        mapID = Mod.GameInstance!.MapID;
+                    }
+                    SpellHandler.SpellMapLogic(mapID);
                     return;
                 }
                 // Handle Purple Studs
