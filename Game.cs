@@ -1025,7 +1025,7 @@ public class Game
         }
 
         // When leaving Leaky & staying in Hub, we want to verify what the London ID is still correct
-        if (LeakyMapIDs.Contains(PrevMapID) && Mod.GameInstance!.LevelID is >= 1 and <= 4)
+        if (LeakyMapIDs.Contains(prevMapID) && Mod.GameInstance!.LevelID is >= 1 and <= 4)
         {
             HubHandler.VerifyLondonMapIDs();
         }
@@ -1365,7 +1365,7 @@ public class Game
             mapID = Mod.GameInstance!.MapID;
         }
         // Only run in the Leaky Cauldron
-        if (LeakyMapIDs.Contains(MapID))
+        if (LeakyMapIDs.Contains(mapID))
         {
             byte* menuCheatAddress = (byte*)(Mod.BaseAddress + 0xC575E0);
             char[] chars = new char[6];

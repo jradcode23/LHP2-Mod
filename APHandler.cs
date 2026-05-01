@@ -14,8 +14,8 @@ public class ArchipelagoHandler
 {
     private const string GAME_NAME = "Lego Harry Potter 5-7";
     private ArchipelagoSession _session;
-    private LoginSuccessful _loginSuccessful;
-    public SlotData SlotDataInstance;
+    private LoginSuccessful? _loginSuccessful;
+    public SlotData? SlotDataInstance;
     private static unsafe byte* NewGameTextPTR => *(byte**)(Mod.BaseAddress + 0xC4EB9C) + 0x32E;
 
     private string Server { get; set; }
