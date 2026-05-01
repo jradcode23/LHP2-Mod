@@ -1261,11 +1261,11 @@ public class Game
         {
             MapID = Mod.GameInstance!.MapID;
         }
-        Console.WriteLine($"Reduce Menu Count Triggered. PrevInMenu: {prevInMenu}, MapID: {MapID}, EDI: {edi}");
-        if (!prevInMenu || MapID == 402 || edi != 1) // Only trigger when in menu, not on main menu, and when menu level goes back to 1
+        if (!prevInMenu || MapID == 402 || edi == 1) // Only trigger when in menu, not on main menu, and when menu level goes back to 1
         {
             return;
         }
+        Console.WriteLine($"Reduce Menu Count Triggered. PrevInMenu: {prevInMenu}, MapID: {MapID}, EDI: {edi}");
         HubHandler.SaveRedBricksEnabled();
     }
 
