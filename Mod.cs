@@ -66,18 +66,18 @@ public class Mod : ModBase // <= Do not Remove.
         Logger!.WriteLine($"[LHP2.archipelago.mod] Config Updated: Applying");
     }
 
-    public static void InitOnMenu()
+    public static bool InitOnMenu()
     {
         if (Mod._hooks == null)
         {
             Game.PrintToLog("Hooks are Null. Please do not proceed and report this to the Dev.");
-            return;
+            return false;
         }
         int hookCount = Game._asmHooks.Count;
         if (hookCount > 0)
         {
             Game.PrintToLog($"Hooks already set up. Count: {hookCount}, skipping setup.");
-            return;
+            return true; ;
         }
         Game.ModifyInstructions();
         if (Mod._hooks != null)
@@ -85,7 +85,9 @@ public class Mod : ModBase // <= Do not Remove.
             Game.PrintToLog("Menu loaded, setting up hooks. Please wait for hook setup before loading a save file.");
             GameInstance!.SetupHooks(Mod._hooks!);
             Game.PrintToLog("Hooks set up complete. You may now load a save file.");
+            return true;
         }
+        return false;
     }
 
     #endregion
