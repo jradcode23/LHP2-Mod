@@ -392,6 +392,7 @@ public class SpellHandler
         {0x02DD, [0xFF, 0xFF, 0xCF, 0xD8, 0xFD, 0xF7, 0x07]}, // Snatcher
         {0x02DF, [0xFF, 0xFF, 0x9F, 0xEF, 0xFD, 0xFD, 0x07]}, // Ron (Dark Check)
         {0x02E2, [0xFF, 0xFF, 0x9F, 0xEF, 0xFD, 0xFD, 0x07]}, // Ron (Green Shirt)
+        {0x02E3, [0x01, 0x08, 0x80, 0xEB, 0xFD, 0xF7, 0x07]}, // Ollivander (Waistcoat)
         {0x02E4, [0xFF, 0xFF, 0x9F, 0xEF, 0xFD, 0xFD, 0x07]}, // Ron (Disguised)
         {0x02E5, [0xFF, 0xFF, 0x9F, 0xEB, 0xFD, 0xFD, 0x07]}, // Neville (Waiter)
         {0x02E6, [0xFF, 0xFF, 0x8F, 0xEB, 0xFD, 0xF7, 0x07]}, // Xenophilius (Wedding)
@@ -427,8 +428,8 @@ public class SpellHandler
     */
     public static unsafe void HandleSpellVisibility()
     {
-        byte* spellSelectedAddress = SpellHandler.SpellSelectedBaseAddress + 0x18;
-        byte* activeShootingSpell = SpellHandler.ActiveShootingSpellBaseAddress + 0xED3;
+        byte* spellSelectedAddress = SpellSelectedBaseAddress + 0x18;
+        byte* activeShootingSpell = ActiveShootingSpellBaseAddress + 0xED3;
         byte* spellImage = activeShootingSpell + 0x1;
 
         if (spellSelectedAddress == null || activeShootingSpell == null || spellImage == null)
@@ -494,28 +495,28 @@ public class SpellHandler
         *ptr |= (byte)(1 << bitOffset);
     }
 
-    // Not currently used, but leaving in if needed in the future.
-    // public static unsafe void LockActiveSpell(int id)
-    // {
-    //     int byteOffset = id / 8;
-    //     int bitOffset = id % 8;
+    // Helper function to lock an active spell. Currently used with apparition
+    public static unsafe void LockActiveSpell(int id)
+    {
+        int byteOffset = id / 8;
+        int bitOffset = id % 8;
 
-    //     byte* activeSpellBaseAddress = *(byte**)(Mod.BaseAddress + 0x00C53930);
-    //     byte* activeFirstPointer = *(byte**)(activeSpellBaseAddress + 0x1C);
-    //     byte* activeSecondPointer = *(byte**)(activeFirstPointer + 0xBF4);
+        byte* activeSpellBaseAddress = *(byte**)(Mod.BaseAddress + 0x00C53930);
+        byte* activeFirstPointer = *(byte**)(activeSpellBaseAddress + 0x1C);
+        byte* activeSecondPointer = *(byte**)(activeFirstPointer + 0xBF4);
 
-    //     activeSecondPointer += 0x58;
+        activeSecondPointer += 0x58;
 
-    //     byte* ptr = activeSecondPointer + byteOffset;
+        byte* ptr = activeSecondPointer + byteOffset;
 
-    //     if (ptr == null)
-    //     {
-    //         Game.PrintToLog("SpellBaseAddress: null pointer");
-    //         return;
-    //     }
+        if (ptr == null)
+        {
+            Game.PrintToLog("SpellBaseAddress: null pointer");
+            return;
+        }
 
-    //     *ptr &= unchecked((byte)~(byte)(1 << bitOffset));
-    // }
+        *ptr &= unchecked((byte)~(byte)(1 << bitOffset));
+    }
 
     // Helper function that locks a passive spell. Used when switching game states, changing characters, or in lessons
     public static unsafe void LockPassiveSpell(int id)
@@ -714,6 +715,31 @@ public class SpellHandler
         }
     }
 
+    /* 
+    Helper function to return the unlocked spells from the minifig file
+    The game checks abilities against their static addresses instead of the minifig file
+    This change makes it so it compares against the minifig file instead
+    */
+    public static unsafe int CheckAbilityUnlock()
+    {
+        byte* spellArray0 = GetActiveSpellPointer();
+
+        if (spellArray0 == null)
+        {
+            Game.PrintToLog("Active Spell Pointer Null - can't return unlocked spells");
+            return 0;
+        }
+        int* spellArray4 = (int*)spellArray0 + 1;
+        Game.PrintToLog($"Spell Array 4 contains {*spellArray4:X}");
+        return *spellArray4;
+    }
+
+    private static unsafe void AstronomyTowerLogic()
+    {
+        byte* darkMagic = HubHandler.HubBaseAddress + 0x19B * 4 + 2;
+        *darkMagic &= unchecked((byte)~(1 << 0)); // Lock Dark Magic
+    }
+
     // Certain maps require additional changes or updates to function properly. We handle those cases here
     public static unsafe void SpellMapLogic(int map)
     {
@@ -733,24 +759,33 @@ public class SpellHandler
         {
             // DADA Banned Lesson
             case 301 when !Mod.LHP2_Archipelago!.IsLocationChecked(1007) || (*y5GhostPtr & (1 << 2)) == 0:
-                SpellHandler.LockPassiveSpell(26); // Lock Polyjuice cause game acts weird if you use it during the lesson
-                SpellHandler.LockPassiveSpell(46); // Ensure lesson can be beaten since game doesn't like when you already have it
+                LockPassiveSpell(26); // Lock Polyjuice cause game acts weird if you use it during the lesson
+                LockPassiveSpell(46); // Ensure lesson can be beaten since game doesn't like when you already have it
                 break;
             // Thestral Flying Lesson
             case 295 when !Mod.LHP2_Archipelago!.IsLocationChecked(1008) || (*y5GhostPtr & (1 << 3)) == 0:
-                SpellHandler.LockPassiveSpell(43); // Flying the thestral during the lesson can cause issues
+                LockPassiveSpell(43); // Flying the thestral during the lesson can cause issues
                 break;
             // Aguamenti Lesson
             case 195 when !Mod.LHP2_Archipelago!.IsLocationChecked(1020) || (*y6GhostPtr & (1 << 7)) == 0:
-                SpellHandler.LockPassiveSpell(27); // Ensure lesson can be beaten since game doesn't like when you already have it
+                LockPassiveSpell(27); // Ensure lesson can be beaten since game doesn't like when you already have it
                 break;
             // Reducto Lesson
             case 196 when !Mod.LHP2_Archipelago!.IsLocationChecked(1021) || (*y6GhostPtr2 & (1 << 1)) == 0:
-                SpellHandler.LockPassiveSpell(30); // Ensure lesson can be beaten since game doesn't like when you already have it
+                LockPassiveSpell(30); // Ensure lesson can be beaten since game doesn't like when you already have it
                 break;
-            // Specs Lesson
+            // Hogsmeade Station in Y6 (Specs Lesson)
             case 179 when !Mod.LHP2_Archipelago!.IsLocationChecked(1016) || (*y6GhostPtr & (1 << 2)) == 0:
-                SpellHandler.LockPassiveSpell(50); // Ensure lesson can be beaten since game doesn't like when you already have it
+                LockPassiveSpell(50); // Ensure lesson can be beaten since game doesn't like when you already have it
+                LockPassiveSpell(51); // Lock Bag cause SIP doesn't work until Y7
+                break;
+            // Hogsmeade Station
+            case 179:
+            case 280:
+            // Hogwarts Grounds
+            case 191:
+            case 296:
+                LockPassiveSpell(51); // Lock Bag cause SIP doesn't work until Y7
                 break;
             // London when Apparition is supposed to be unlocked
             case 103 when !Mod.LHP2_Archipelago!.IsLocationChecked(1027) || (*y7GhostPtr & (1 << 2)) == 0:
@@ -765,12 +800,22 @@ public class SpellHandler
             case 166:
                 if (!Mod.LHP2_Archipelago!.IsLocationChecked(1001)) // Delum
                 {
-                    SpellHandler.LockPassiveSpell(26);
+                    LockPassiveSpell(26);
                 }
                 if (!Mod.LHP2_Archipelago!.IsLocationChecked(1025)) // Herm Bag
                 {
-                    SpellHandler.LockPassiveSpell(51);
+                    LockPassiveSpell(51);
                 }
+                break;
+            // Wilderness - Lock Apparition
+            case 5:
+            case 99:
+                LockPassiveSpell(45);
+                LockActiveSpell(45);
+                break;
+            // Astronomy Tower - Lock Dark Magic in Y6 in Y6 cause certain checks don't work
+            case 183:
+                AstronomyTowerLogic();
                 break;
             default:
                 break;
