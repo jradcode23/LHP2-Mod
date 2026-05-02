@@ -1265,7 +1265,7 @@ public class Game
         {
             return;
         }
-        Console.WriteLine($"Reduce Menu Count Triggered. PrevInMenu: {prevInMenu}, MapID: {MapID}, EDI: {edi}");
+        PrintToLog($"Reduce Menu Count Triggered. PrevInMenu: {prevInMenu}, MapID: {MapID}, EDI: {edi}");
         HubHandler.SaveRedBricksEnabled();
     }
 
