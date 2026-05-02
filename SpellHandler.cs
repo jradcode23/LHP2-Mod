@@ -733,6 +733,12 @@ public class SpellHandler
         return *spellArray4;
     }
 
+    private static unsafe void AstronomyTowerLogic()
+    {
+        byte* darkMagic = HubHandler.HubBaseAddress + 0x19B * 4 + 2;
+        *darkMagic &= unchecked((byte)~(1 << 0)); // Lock Dark Magic
+    }
+
     // Certain maps require additional changes or updates to function properly. We handle those cases here
     public static unsafe void SpellMapLogic(int map)
     {
@@ -767,9 +773,18 @@ public class SpellHandler
             case 196 when !Mod.LHP2_Archipelago!.IsLocationChecked(1021) || (*y6GhostPtr2 & (1 << 1)) == 0:
                 LockPassiveSpell(30); // Ensure lesson can be beaten since game doesn't like when you already have it
                 break;
-            // Specs Lesson
+            // Hogsmeade Station in Y6 (Specs Lesson)
             case 179 when !Mod.LHP2_Archipelago!.IsLocationChecked(1016) || (*y6GhostPtr & (1 << 2)) == 0:
                 LockPassiveSpell(50); // Ensure lesson can be beaten since game doesn't like when you already have it
+                LockPassiveSpell(51); // Lock Bag cause SIP doesn't work until Y7
+                break;
+            // Hogsmeade Station
+            case 179:
+            case 280:
+            // Hogwarts Grounds
+            case 191:
+            case 296:
+                LockPassiveSpell(51); // Lock Bag cause SIP doesn't work until Y7
                 break;
             // London when Apparition is supposed to be unlocked
             case 103 when !Mod.LHP2_Archipelago!.IsLocationChecked(1027) || (*y7GhostPtr & (1 << 2)) == 0:
@@ -796,6 +811,10 @@ public class SpellHandler
             case 99:
                 LockPassiveSpell(45);
                 LockActiveSpell(45);
+                break;
+            // Astronomy Tower - Lock Dark Magic in Y6 in Y6 cause certain checks don't work
+            case 183:
+                AstronomyTowerLogic();
                 break;
             default:
                 break;
