@@ -23,7 +23,7 @@ public class HubHandler
 
     // These null addresses don't have a fixed pointer (the saved data is a unordered collection). We handle this by doing a byte search over the collection.
     private static unsafe byte* leaky2LondonAddress = null;
-    private static unsafe byte* hogPath2CourtyardAddress = null;
+    private static unsafe byte* hogsPathAddress = null;
     private static unsafe byte* wildernessAddress = null;
     private static unsafe byte* quadAddress = null;
     private static unsafe byte* hogsStatAddress = null;
@@ -542,9 +542,9 @@ public class HubHandler
     */
     public static unsafe void HandleGhostPaths(int eax, int edx)
     {
-        Game.PrintToLog("Handling Ghost Paths");
+        // Game.PrintToLog("Handling Ghost Paths");
         ushort dx = (ushort)(edx & 0xFFFF); // Game only writes dx to this address, converting for safety
-        Game.PrintToLog($"eax: 0x{eax:X}, edx: 0x{edx:X}, dx: 0x{dx:X}");
+        // Game.PrintToLog($"eax: 0x{eax:X}, edx: 0x{edx:X}, dx: 0x{dx:X}");
 
         byte* y5GhostPtr = GhostPathBaseAddress + 0x20;
         byte* y5GhostPtr2 = GhostPathBaseAddress + 0x21;
@@ -558,41 +558,77 @@ public class HubHandler
             switch (dx)
             {
                 case 0x2: // Arrive at Hogwarts Y5
+                    if (Mod.LHP2_Archipelago!.IsLocationChecked(1006))
+                    {
+                        break;
+                    }
                     Game.CheckAndReportLocation(1006);
                     *y5GhostPtr |= 1 << 1; // Mark Arrive at Hogwarts Complete
                     break;
-                case 0x4 when !Mod.LHP2_Archipelago!.IsLocationChecked(1007) || (*y5GhostPtr & (1 << 2)) == 0: // DADA Banned Lesson
+                case 0x4: // DADA Banned Lesson
+                    if (Mod.LHP2_Archipelago!.IsLocationChecked(1007))
+                    {
+                        break;
+                    }
                     Game.CheckAndReportLocation(1007);
                     *y5GhostPtr |= 1 << 2; // Mark DADA Banned Complete
                     break;
                 case 0x8: // Thestral Forest Lesson
+                    if (Mod.LHP2_Archipelago!.IsLocationChecked(1008))
+                    {
+                        break;
+                    }
                     Game.CheckAndReportLocation(1008);
                     *y5GhostPtr |= 1 << 3; // Mark Thestral Forest Complete
                     *y5GhostPtr |= 1 << 4; // Mark Dumbledore's Army Story Complete
                     break;
                 case 0x20: // Dueling Lesson
+                    if (Mod.LHP2_Archipelago!.IsLocationChecked(1009))
+                    {
+                        break;
+                    }
                     Game.CheckAndReportLocation(1009);
                     *y5GhostPtr |= 1 << 5; // Mark Dueling Complete
                     *y5GhostPtr |= 1 << 6; // Mark Focus! Story Complete
                     break;
                 case 0x80: // Diffindo Lesson
+                    if (Mod.LHP2_Archipelago!.IsLocationChecked(1010))
+                    {
+                        break;
+                    }
                     Game.CheckAndReportLocation(1010);
                     *y5GhostPtr |= 1 << 7; // Mark Diffindo Complete
                     *y5GhostPtr2 |= 1 << 0; // Mark Kreacher Discomfort Story Complete
                     break;
                 case 0x200: // Patroneous Lesson
+                    if (Mod.LHP2_Archipelago!.IsLocationChecked(1011))
+                    {
+                        break;
+                    }
                     Game.CheckAndReportLocation(1011);
                     *y5GhostPtr2 |= 1 << 1; // Mark Patronus Complete
                     break;
                 case 0x400: // Befriend Grawp Lesson
+                    if (Mod.LHP2_Archipelago!.IsLocationChecked(1012))
+                    {
+                        break;
+                    }
                     Game.CheckAndReportLocation(1012);
                     *y5GhostPtr2 |= 1 << 2; // Mark Befriend Grawp
                     break;
                 case 0x800: // Snape's Worst Memory
+                    if (Mod.LHP2_Archipelago!.IsLocationChecked(1013))
+                    {
+                        break;
+                    }
                     Game.CheckAndReportLocation(1013);
                     *y5GhostPtr2 |= 1 << 3; // Mark Snape's Worst Memory Story Complete
                     break;
                 case 0x1000: // OWLs Lesson
+                    if (Mod.LHP2_Archipelago!.IsLocationChecked(1014))
+                    {
+                        break;
+                    }
                     Game.CheckAndReportLocation(1014);
                     *y5GhostPtr2 |= 1 << 4; // Mark OWLs Complete
                     // Game doesn't open WW Courtyard if these 2 are marked complete. We handle this upon map update after the fact
@@ -611,32 +647,60 @@ public class HubHandler
             switch (dx)
             {
                 case 0x4: // Specs Lesson
+                    if (Mod.LHP2_Archipelago!.IsLocationChecked(1016))
+                    {
+                        break;
+                    }
                     Game.CheckAndReportLocation(1016);
                     *y6GhostPtr |= 1 << 2; // Mark Specs Complete
                     break;
                 case 0x8: // Arrive at Hogwarts Y6
+                    if (Mod.LHP2_Archipelago!.IsLocationChecked(1017))
+                    {
+                        break;
+                    }
                     Game.CheckAndReportLocation(1017);
                     *y6GhostPtr |= 1 << 3; // Mark Arrive at Hogwarts Complete
                     break;
                 case 0x10: // Draught of Living Death Lesson
+                    if (Mod.LHP2_Archipelago!.IsLocationChecked(1018))
+                    {
+                        break;
+                    }
                     Game.CheckAndReportLocation(1018);
                     *y6GhostPtr |= 1 << 4; // Mark Draught of Living Death Complete
                     break;
                 case 0x20: // Dumbledore's First Lesson
+                    if (Mod.LHP2_Archipelago!.IsLocationChecked(1019))
+                    {
+                        break;
+                    }
                     Game.CheckAndReportLocation(1019);
                     *y6GhostPtr |= 1 << 5; // Mark Dumbledore's First Lesson Complete
                     *y6GhostPtr |= 1 << 6; // Mark Just Desserts Story Complete
                     break;
                 case 0x80: // Aguamenti Lesson
+                    if (Mod.LHP2_Archipelago!.IsLocationChecked(1020))
+                    {
+                        break;
+                    }
                     Game.CheckAndReportLocation(1020);
                     *y6GhostPtr |= 1 << 7; // Mark Aguamenti Lesson Complete
                     *y6GhostPtr2 |= 1 << 0; // Mark A Not So Merry Christmas Story Complete
                     break;
                 case 0x200: // Reducto Lesson
+                    if (Mod.LHP2_Archipelago!.IsLocationChecked(1021))
+                    {
+                        break;
+                    }
                     Game.CheckAndReportLocation(1021);
                     *y6GhostPtr2 |= 1 << 1; // Mark Reducto Lesson Complete
                     break;
                 case 0x400: // Dumledore's Second Lesson
+                    if (Mod.LHP2_Archipelago!.IsLocationChecked(1022))
+                    {
+                        break;
+                    }
                     Game.CheckAndReportLocation(1022);
                     *y6GhostPtr2 |= 1 << 2; // Mark Dumledore's Second Lesson Complete
                     *y6GhostPtr2 |= 1 << 3; // Mark Love Hurts Story Complete
@@ -652,7 +716,7 @@ public class HubHandler
         // Handle Y7 Ghost Tasks
         else if (eax == (int)y7GhostPtr)
         {
-            if (dx == 4) // Cafe Fight
+            if (dx == 4 && !Mod.LHP2_Archipelago!.IsLocationChecked(1027)) // Cafe Fight
             {
                 Game.CheckAndReportLocation(1027);
                 *y7GhostPtr = 254; // Mark all Y7 Ghost Paths as Complete
@@ -680,7 +744,7 @@ public class HubHandler
     public static unsafe void AdjustHubMaps(int year)
     {
         leaky2LondonAddress = GetHubMapAddress("HubLeakyCauldron", 0xB7B); // Leaky2London Loading Zone
-        hogPath2CourtyardAddress = GetHubMapAddress("HogsApproach", 0x1A90); // HogPath2Courtyard Loading Zone
+        hogsPathAddress = GetHubMapAddress("HogsApproach", 0); // HogPath2Courtyard Loading Zone
         wildernessAddress = GetHubMapAddress("ForestHub", 0); // Wilderness
         quadAddress = GetHubMapAddress("Quad", 0); // Quad
         hogsStatAddress = GetHubMapAddress("HogsStation", 0); //HogsStation
@@ -739,17 +803,28 @@ public class HubHandler
     // TODO: find the objects that make up the gate lock so we don't have a floating lock
     private static unsafe void AdjustHogsPath()
     {
-        if (hogPath2CourtyardAddress == MapFlagsBaseAddress + 0x40)
+        if (hogsPathAddress == MapFlagsBaseAddress + 0x40)
         {
             Game.PrintToLog("HogsPath Save info hasn't been written yet.");
             return;
         }
-        Game.PrintToLog($"Updating HogsPath Flags; Address is 0x{(nuint)hogPath2CourtyardAddress:X}");
-        *hogPath2CourtyardAddress &= unchecked((byte)~(1 << 5)); // Clear Y5 Hogs Intro Cutscene
-        *hogPath2CourtyardAddress |= 1 << 7; // Clear Y6 Hogs Intro Cutscene (Note that this one is inverted logic in-game)
-        hogPath2CourtyardAddress -= 0x359; // Adjust to open hogsmeade
-        Game.PrintToLog($"Adjusted HogsPath Address to 0x{(nuint)hogPath2CourtyardAddress:X}");
-        *hogPath2CourtyardAddress |= 1 << 2; // Open the gate to Hogsmeade
+        hogsPathAddress += 0xA2; //Move Flag to Gate 1
+        *hogsPathAddress = 4;
+        hogsPathAddress += 0x1; // Move Flag to Gate 1 part 2
+        *hogsPathAddress |= 1 << 4;
+        *hogsPathAddress |= 1 << 5;
+        hogsPathAddress += 0xD; // Move Flag to Gate 2 part 1
+        *hogsPathAddress = 4;
+        hogsPathAddress += 0x1; // Move Flag to Gate 2 part 2
+        *hogsPathAddress |= 1 << 4;
+        *hogsPathAddress |= 1 << 5;
+        hogsPathAddress += 0x19DF; // Adjust to the correct address for the loading zone flags
+        Game.PrintToLog($"Updating HogsPath Flags; Address is 0x{(nuint)hogsPathAddress:X}");
+        *hogsPathAddress &= unchecked((byte)~(1 << 5)); // Clear Y5 Hogs Intro Cutscene
+        *hogsPathAddress |= 1 << 7; // Clear Y6 Hogs Intro Cutscene (Note that this one is inverted logic in-game)
+        hogsPathAddress -= 0x359; // Adjust to open hogsmeade
+        Game.PrintToLog($"Adjusted HogsPath Address to 0x{(nuint)hogsPathAddress:X}");
+        *hogsPathAddress |= 1 << 2; // Open the gate to Hogsmeade
     }
 
     // Helper function to remove the invisible walls in the wilderness and make sure the Xeno token spawns

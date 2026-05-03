@@ -58,6 +58,7 @@ public class ArchipelagoHandler
     private void OnSocketClosed(string reason)
     {
         Game.PrintToLog($"Connection closed ({reason}) Attempting reconnect...");
+        Game.PrintToLog("Socket Closed");
         IsConnected = false;
     }
 

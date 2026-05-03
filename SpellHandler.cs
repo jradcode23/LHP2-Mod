@@ -778,6 +778,7 @@ public class SpellHandler
             case 179 when !Mod.LHP2_Archipelago!.IsLocationChecked(1016) || (*y6GhostPtr & (1 << 2)) == 0:
                 LockPassiveSpell(50); // Ensure lesson can be beaten since game doesn't like when you already have it
                 LockPassiveSpell(51); // Lock Bag cause SIP doesn't work until Y7
+                Game.SpecsLessonNOP();
                 break;
             // Hogsmeade Station
             case 179:

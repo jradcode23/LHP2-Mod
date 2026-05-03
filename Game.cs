@@ -176,6 +176,28 @@ public class Game
         Memory.Instance.Write(ptr, (byte)0x01);
     }
 
+    // Turn off the code that skips the check for specs
+    public static void SpecsLessonNOP()
+    {
+        // NOP Jump past check of spell unlocks in Specs lesson - Animation 1
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3EECC, [0x90, 0x90]);
+        // NOP Jump past check of spell unlocks in Specs lesson - Animation 2
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3EF6C, [0x90, 0x90]);
+        // NOP Jump past check of spell unlocks in Specs lesson - If ability active
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x6C497, [0x90, 0x90]);
+    }
+
+    // After leaving specs lesson, restore the normal code cause it causes animation lag
+    public static void RestoreSpecsLesson()
+    {
+        // NOP Jump past check of spell unlocks in Specs lesson - Animation 1
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3EECC, [0x74, 0x48]);
+        // NOP Jump past check of spell unlocks in Specs lesson - Animation 2
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3EF6C, [0x74, 0x48]);
+        // NOP Jump past check of spell unlocks in Specs lesson - If ability active
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x6C497, [0x74, 0x54]);
+    }
+
     /* 
     This function blocks the code that checks if lesson has been completed while in the lesson
     thus allowing the player to return to diagon. Also prevents the game from showing that you completed the lesson
@@ -995,6 +1017,12 @@ public class Game
         if (prevMapID == 402)
         {
             HubHandler.LoadRedBricksEnabled();
+        }
+
+        // Restore normal game code after leaving specs lesson
+        if (prevMapID == 179)
+        {
+            RestoreSpecsLesson();
         }
     }
 
