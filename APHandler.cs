@@ -93,14 +93,11 @@ public class ArchipelagoHandler
     {
         LoginResult result;
 
-
-
         try
         {
             // Check to see if Game/Menu is loaded before trying to connect, we do this to mitigate impact of null values and the game changing things later.
             Game.IsGameLoaded();
             HintSystem.SetMessageText("Connecting", (uint)NewGameTextPTR);
-            Seed = _session.ConnectAsync()?.Result?.SeedName;
             Seed = Session.ConnectAsync()?.Result?.SeedName;
             Game.PrintToLog(Seed + Slot);
 
