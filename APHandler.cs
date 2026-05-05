@@ -13,10 +13,12 @@ namespace LHP2_Archi_Mod;
 public class ArchipelagoHandler
 {
     private const string GAME_NAME = "Lego Harry Potter 5-7";
-    private ArchipelagoSession _session;
+    private ArchipelagoSession? _session;
+    private ArchipelagoSession Session => _session ?? throw new InvalidOperationException("Session has not been initialized.");
     private LoginSuccessful? _loginSuccessful;
     public SlotData? SlotDataInstance;
     private static unsafe byte* NewGameTextPTR => *(byte**)(Mod.BaseAddress + 0xC4EB9C) + 0x32E;
+
     private string Server { get; set; }
     private int Port { get; set; }
     private string Slot { get; set; }
@@ -26,6 +28,10 @@ public class ArchipelagoHandler
     public static bool IsConnected;
     public static bool IsConnecting;
     public static int gameOffset = 400000;
+
+    private Thread? _locationsThread;
+    private Thread? _hintThread;
+    private Thread? _queuedItemsThread;
 
     public ArchipelagoHandler(string server, int port, string slot, string password)
     {
@@ -42,6 +48,7 @@ public class ArchipelagoHandler
         _session = ArchipelagoSessionFactory.CreateSession(Server, Port);
         _session.MessageLog.OnMessageReceived += OnMessageReceived;
         _session.Socket.SocketClosed += OnSocketClosed;
+        _session.Socket.ErrorReceived += OnSessionErrorReceived;
         // _session.Socket.PacketReceived += OnPacketReceived;
         _session.Items.ItemReceived += ItemReceived;
     }
@@ -54,11 +61,29 @@ public class ArchipelagoHandler
         IsConnecting = false;
     }
 
-    // Tells the server what we want done when the connection is closed
-    private void OnSocketClosed(string reason)
+    // Tells the game what we want done when the connection is closed
+    private void OnSocketClosed(string reason = "")
     {
         Game.PrintToLog($"Connection closed ({reason}) Attempting reconnect...");
         Game.PrintToLog("Socket Closed");
+        Disconnect();
+    }
+
+    // Tells the game what we want done when there is a session error
+    private void OnSessionErrorReceived(Exception e, string message)
+    {
+        Game.PrintToLog($"Connection error ({message}).");
+        Game.PrintToLog($"Session Error: {e.GetBaseException().Message}");
+        Disconnect();
+    }
+
+
+    // something we wrong or we need to properly disconnect from the server. cleanup and re null our session
+    private void Disconnect()
+    {
+        Game.PrintToLog("Disconnected from server and attempting to reconnect. Please do not complete any checks");
+        _ = _session?.Socket.DisconnectAsync();
+        _session = null;
         IsConnected = false;
     }
 
@@ -71,10 +96,11 @@ public class ArchipelagoHandler
         {
             // Check to see if Game/Menu is loaded before trying to connect, we do this to mitigate impact of null values and the game changing things later.
             Game.IsGameLoaded();
-            Seed = _session.ConnectAsync()?.Result?.SeedName;
+            HintSystem.SetMessageText("Connecting", (uint)NewGameTextPTR);
+            Seed = Session.ConnectAsync()?.Result?.SeedName;
             Game.PrintToLog(Seed + Slot);
 
-            result = _session.LoginAsync(
+            result = Session.LoginAsync(
                 game: GAME_NAME,
                 name: Slot,
                 itemsHandlingFlags: ItemsHandlingFlags.AllItems,
@@ -86,6 +112,7 @@ public class ArchipelagoHandler
         catch (Exception e)
         {
             result = new LoginFailure(e.GetBaseException().Message);
+            HintSystem.SetMessageText("Failed To Connect", (uint)NewGameTextPTR);
         }
 
         if (result.Successful)
@@ -100,7 +127,7 @@ public class ArchipelagoHandler
             // Store our slot name in game to access later
             Mod.GameInstance!.PlayerName = Slot;
             // Tell DataStorage we are on the menu
-            _session.DataStorage[Scope.Slot, "map"] = 402;
+            Session.DataStorage[Scope.Slot, "map"] = 402;
             if (isHooked)
             {
                 HintSystem.SetMessageText("Ready to Play, New Game", (uint)NewGameTextPTR);
@@ -109,9 +136,7 @@ public class ArchipelagoHandler
             {
                 HintSystem.SetMessageText("Failed To Hook", (uint)NewGameTextPTR);
             }
-            new Thread(RunCheckLocationsFromList).Start();
-            new Thread(HintSystem.HandleMessages).Start();
-            new Thread(HandleQueuedItems).Start();
+            EnsureBackgroundThreads();
             //resync here
             return true;
         }
@@ -167,6 +192,7 @@ public class ArchipelagoHandler
                 // Handle Spells/Abilities
                 if (gameID >= 998)
                 {
+                    Game.ManageItem(gameID);
                     int mapID;
                     lock (Mod.GameInstance!.MapLock)
                     {
@@ -200,8 +226,8 @@ public class ArchipelagoHandler
     // Once Goal is completed, this function is called
     public void Release()
     {
-        _session.SetGoalAchieved();
-        _session.SetClientState(ArchipelagoClientState.ClientGoal);
+        Session.SetGoalAchieved();
+        Session.SetClientState(ArchipelagoClientState.ClientGoal);
     }
 
     // This is the function we use to send completed locations. Pass the ID to this function and it will be marked complete.
@@ -220,12 +246,54 @@ public class ArchipelagoHandler
     {
         while (true)
         {
-            if (_locationsToCheck.TryDequeue(out var locationId))
-                _session.Locations.CompleteLocationChecks(locationId);
+            if (_locationsToCheck.TryPeek(out _))
+            {
+                if (IsConnected && _session != null)
+                {
+                    if (_locationsToCheck.TryDequeue(out long locationId))
+                    {
+                        Session.Locations.CompleteLocationChecks(locationId);
+                    }
+                }
+                else
+                {
+                    Thread.Sleep(100);
+                }
+            }
             else
             {
                 Thread.Sleep(100);
             }
+        }
+    }
+
+    private void EnsureBackgroundThreads()
+    {
+        if (_locationsThread == null || !_locationsThread.IsAlive)
+        {
+            _locationsThread = new Thread(RunCheckLocationsFromList)
+            {
+                IsBackground = true
+            };
+            _locationsThread.Start();
+        }
+
+        if (_hintThread == null || !_hintThread.IsAlive)
+        {
+            _hintThread = new Thread(HintSystem.HandleMessages)
+            {
+                IsBackground = true
+            };
+            _hintThread.Start();
+        }
+
+        if (_queuedItemsThread == null || !_queuedItemsThread.IsAlive)
+        {
+            _queuedItemsThread = new Thread(HandleQueuedItems)
+            {
+                IsBackground = true
+            };
+            _queuedItemsThread.Start();
         }
     }
 
@@ -264,7 +332,7 @@ public class ArchipelagoHandler
     {
         lock (_locationsLock)
         {
-            return _session.Locations.AllLocationsChecked.Contains(id + gameOffset);
+            return Session.Locations.AllLocationsChecked.Contains(id + gameOffset);
         }
     }
 
@@ -278,7 +346,7 @@ public class ArchipelagoHandler
     {
         lock (_itemsLock)
         {
-            foreach (var item in _session.Items.AllItemsReceived)
+            foreach (var item in Session.Items.AllItemsReceived)
             {
                 // Only process items whose AP item ID falls within the desired range
                 if (item.ItemId - gameOffset < minItemId || item.ItemId - gameOffset > maxItemId)
@@ -295,7 +363,7 @@ public class ArchipelagoHandler
     {
         lock (_locationsLock)
         {
-            foreach (var location in _session.Locations.AllLocationsChecked)
+            foreach (var location in Session.Locations.AllLocationsChecked)
             {
                 // Only handle locations within the desired ID range
                 if (location - gameOffset < minLocationId || location - gameOffset > maxLocationId)
@@ -314,7 +382,7 @@ public class ArchipelagoHandler
         {
             var startId = start + gameOffset;
             var endId = end + gameOffset;
-            return _session.Items.AllItemsReceived.Count(item => item.ItemId >= startId && item.ItemId <= endId);
+            return Session.Items.AllItemsReceived.Count(item => item.ItemId >= startId && item.ItemId <= endId);
         }
     }
 
@@ -324,7 +392,7 @@ public class ArchipelagoHandler
         lock (_itemsLock)
         {
             var targetId = gameId + gameOffset;
-            return _session.Items.AllItemsReceived.Count(item => item.ItemId == targetId);
+            return Session.Items.AllItemsReceived.Count(item => item.ItemId == targetId);
         }
     }
 
@@ -404,7 +472,7 @@ public class ArchipelagoHandler
     // We pass the Map ID to data storage for auto tracking purposes
     public void SendMapID(int MapID)
     {
-        _session.DataStorage[Scope.Slot, "map"] = MapID;
+        Session.DataStorage[Scope.Slot, "map"] = MapID;
     }
 
 }
