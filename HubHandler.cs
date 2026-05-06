@@ -29,6 +29,7 @@ public class HubHandler
     private static unsafe byte* hogsStatAddress = null;
     private static unsafe byte* classLobbyAddress = null;
     private static unsafe byte* kingsCrossAddress = null;
+    private static unsafe byte* foyerAddress = null;
 
     // These are the bit flags that handle the different collectibles stored in the same memory address.
     [Flags]
@@ -558,79 +559,79 @@ public class HubHandler
             switch (dx)
             {
                 case 0x2: // Arrive at Hogwarts Y5
+                    *y5GhostPtr |= 1 << 1; // Mark Arrive at Hogwarts Complete
                     if (Mod.LHP2_Archipelago!.IsLocationChecked(1006))
                     {
                         break;
                     }
                     Game.CheckAndReportLocation(1006);
-                    *y5GhostPtr |= 1 << 1; // Mark Arrive at Hogwarts Complete
                     break;
                 case 0x4: // DADA Banned Lesson
+                    *y5GhostPtr |= 1 << 2; // Mark DADA Banned Complete
                     if (Mod.LHP2_Archipelago!.IsLocationChecked(1007))
                     {
                         break;
                     }
                     Game.CheckAndReportLocation(1007);
-                    *y5GhostPtr |= 1 << 2; // Mark DADA Banned Complete
                     break;
                 case 0x8: // Thestral Forest Lesson
+                    *y5GhostPtr |= 1 << 3; // Mark Thestral Forest Complete
+                    *y5GhostPtr |= 1 << 4; // Mark Dumbledore's Army Story Complete
                     if (Mod.LHP2_Archipelago!.IsLocationChecked(1008))
                     {
                         break;
                     }
                     Game.CheckAndReportLocation(1008);
-                    *y5GhostPtr |= 1 << 3; // Mark Thestral Forest Complete
-                    *y5GhostPtr |= 1 << 4; // Mark Dumbledore's Army Story Complete
                     break;
                 case 0x20: // Dueling Lesson
+                    *y5GhostPtr |= 1 << 5; // Mark Dueling Complete
+                    *y5GhostPtr |= 1 << 6; // Mark Focus! Story Complete
                     if (Mod.LHP2_Archipelago!.IsLocationChecked(1009))
                     {
                         break;
                     }
                     Game.CheckAndReportLocation(1009);
-                    *y5GhostPtr |= 1 << 5; // Mark Dueling Complete
-                    *y5GhostPtr |= 1 << 6; // Mark Focus! Story Complete
                     break;
                 case 0x80: // Diffindo Lesson
+                    *y5GhostPtr |= 1 << 7; // Mark Diffindo Complete
+                    *y5GhostPtr2 |= 1 << 0; // Mark Kreacher Discomfort Story Complete
                     if (Mod.LHP2_Archipelago!.IsLocationChecked(1010))
                     {
                         break;
                     }
                     Game.CheckAndReportLocation(1010);
-                    *y5GhostPtr |= 1 << 7; // Mark Diffindo Complete
-                    *y5GhostPtr2 |= 1 << 0; // Mark Kreacher Discomfort Story Complete
                     break;
                 case 0x200: // Patroneous Lesson
+                    *y5GhostPtr2 |= 1 << 1; // Mark Patronus Complete
                     if (Mod.LHP2_Archipelago!.IsLocationChecked(1011))
                     {
                         break;
                     }
                     Game.CheckAndReportLocation(1011);
-                    *y5GhostPtr2 |= 1 << 1; // Mark Patronus Complete
                     break;
                 case 0x400: // Befriend Grawp Lesson
+                    *y5GhostPtr2 |= 1 << 2; // Mark Befriend Grawp
                     if (Mod.LHP2_Archipelago!.IsLocationChecked(1012))
                     {
                         break;
                     }
                     Game.CheckAndReportLocation(1012);
-                    *y5GhostPtr2 |= 1 << 2; // Mark Befriend Grawp
                     break;
                 case 0x800: // Snape's Worst Memory
+                    *y5GhostPtr2 |= 1 << 3; // Mark Snape's Worst Memory Story Complete
                     if (Mod.LHP2_Archipelago!.IsLocationChecked(1013))
                     {
                         break;
                     }
                     Game.CheckAndReportLocation(1013);
-                    *y5GhostPtr2 |= 1 << 3; // Mark Snape's Worst Memory Story Complete
                     break;
                 case 0x1000: // OWLs Lesson
+                    *y5GhostPtr2 |= 1 << 4; // Mark OWLs Complete
                     if (Mod.LHP2_Archipelago!.IsLocationChecked(1014))
                     {
                         break;
                     }
                     Game.CheckAndReportLocation(1014);
-                    *y5GhostPtr2 |= 1 << 4; // Mark OWLs Complete
                     // Game doesn't open WW Courtyard if these 2 are marked complete. We handle this upon map update after the fact
                     // *y5GhostPtr2 |= 1 << 5; // Mark A Giant Viruoso Story Complete
                     // *y5GhostPtr2 |= 1 << 6; // Mark A Veiled Threat Story Complete
@@ -647,65 +648,65 @@ public class HubHandler
             switch (dx)
             {
                 case 0x4: // Specs Lesson
+                    *y6GhostPtr |= 1 << 2; // Mark Specs Complete
                     if (Mod.LHP2_Archipelago!.IsLocationChecked(1016))
                     {
                         break;
                     }
                     Game.CheckAndReportLocation(1016);
-                    *y6GhostPtr |= 1 << 2; // Mark Specs Complete
                     break;
                 case 0x8: // Arrive at Hogwarts Y6
+                    *y6GhostPtr |= 1 << 3; // Mark Arrive at Hogwarts Complete
                     if (Mod.LHP2_Archipelago!.IsLocationChecked(1017))
                     {
                         break;
                     }
                     Game.CheckAndReportLocation(1017);
-                    *y6GhostPtr |= 1 << 3; // Mark Arrive at Hogwarts Complete
                     break;
                 case 0x10: // Draught of Living Death Lesson
+                    *y6GhostPtr |= 1 << 4; // Mark Draught of Living Death Complete
                     if (Mod.LHP2_Archipelago!.IsLocationChecked(1018))
                     {
                         break;
                     }
                     Game.CheckAndReportLocation(1018);
-                    *y6GhostPtr |= 1 << 4; // Mark Draught of Living Death Complete
                     break;
                 case 0x20: // Dumbledore's First Lesson
+                    *y6GhostPtr |= 1 << 5; // Mark Dumbledore's First Lesson Complete
+                    *y6GhostPtr |= 1 << 6; // Mark Just Desserts Story Complete
                     if (Mod.LHP2_Archipelago!.IsLocationChecked(1019))
                     {
                         break;
                     }
                     Game.CheckAndReportLocation(1019);
-                    *y6GhostPtr |= 1 << 5; // Mark Dumbledore's First Lesson Complete
-                    *y6GhostPtr |= 1 << 6; // Mark Just Desserts Story Complete
                     break;
                 case 0x80: // Aguamenti Lesson
+                    *y6GhostPtr |= 1 << 7; // Mark Aguamenti Lesson Complete
+                    *y6GhostPtr2 |= 1 << 0; // Mark A Not So Merry Christmas Story Complete
                     if (Mod.LHP2_Archipelago!.IsLocationChecked(1020))
                     {
                         break;
                     }
                     Game.CheckAndReportLocation(1020);
-                    *y6GhostPtr |= 1 << 7; // Mark Aguamenti Lesson Complete
-                    *y6GhostPtr2 |= 1 << 0; // Mark A Not So Merry Christmas Story Complete
                     break;
                 case 0x200: // Reducto Lesson
+                    *y6GhostPtr2 |= 1 << 1; // Mark Reducto Lesson Complete
                     if (Mod.LHP2_Archipelago!.IsLocationChecked(1021))
                     {
                         break;
                     }
                     Game.CheckAndReportLocation(1021);
-                    *y6GhostPtr2 |= 1 << 1; // Mark Reducto Lesson Complete
                     break;
                 case 0x400: // Dumledore's Second Lesson
+                    *y6GhostPtr2 |= 1 << 2; // Mark Dumledore's Second Lesson Complete
+                    *y6GhostPtr2 |= 1 << 3; // Mark Love Hurts Story Complete
+                    *y6GhostPtr2 |= 1 << 4; // Mark Felix Felicis Story Complete
+                    *y6GhostPtr2 |= 1 << 5; // Mark The Horcrux and The Hand Story Complete
                     if (Mod.LHP2_Archipelago!.IsLocationChecked(1022))
                     {
                         break;
                     }
                     Game.CheckAndReportLocation(1022);
-                    *y6GhostPtr2 |= 1 << 2; // Mark Dumledore's Second Lesson Complete
-                    *y6GhostPtr2 |= 1 << 3; // Mark Love Hurts Story Complete
-                    *y6GhostPtr2 |= 1 << 4; // Mark Felix Felicis Story Complete
-                    *y6GhostPtr2 |= 1 << 5; // Mark The Horcrux and The Hand Story Complete
                     Game.CheckAndReportLocation(1023); // Send Y6 Story Complete
                     break;
                 default:
@@ -716,10 +717,10 @@ public class HubHandler
         // Handle Y7 Ghost Tasks
         else if (eax == (int)y7GhostPtr)
         {
+            *y7GhostPtr = 254; // Mark all Y7 Ghost Paths as Complete
             if (dx == 4 && !Mod.LHP2_Archipelago!.IsLocationChecked(1027)) // Cafe Fight
             {
                 Game.CheckAndReportLocation(1027);
-                *y7GhostPtr = 254; // Mark all Y7 Ghost Paths as Complete
             }
             else
             {
@@ -750,12 +751,14 @@ public class HubHandler
         hogsStatAddress = GetHubMapAddress("HogsStation", 0); //HogsStation
         classLobbyAddress = GetHubMapAddress("ClassLobby", 0x1318); // Class Lobby
         kingsCrossAddress = GetHubMapAddress("KingsCross", 0x7B); // King's Cross
+        foyerAddress = GetHubMapAddress("Foyer", 0); // Foyer
         byte* y6GhostPtr = HubHandler.GhostPathBaseAddress + 0x34;
         byte* y6GhostPtr2 = HubHandler.GhostPathBaseAddress + 0x35;
 
         AdjustLeakyCauldron();
         AdjustHogsPath();
         CompleteStartingGhostLevels();
+        AdjustFoyer();
         // If applicable, update Wilderness and Quad so tokens spawn and invisible barriers are gone
         if (year == 7 || year == 8)
         {
@@ -926,6 +929,92 @@ public class HubHandler
         }
         kingsCrossAddress += 0x72B;
         *kingsCrossAddress = 255; // Make the train appear in all years but 7
+    }
+
+    // Helper function to open the lower foyer door & to open the door to Great Hall Lobby
+    private static unsafe void AdjustFoyer()
+    {
+        if (foyerAddress == MapFlagsBaseAddress + 0x40)
+        {
+            Game.PrintToLog("Foyer Address Save Info hasn't been written yet.");
+            return;
+        }
+        Game.PrintToLog($"Updating Foyer Flags. Address is 0x{(nuint)foyerAddress:X}");
+
+        // Open the lower foyer door
+        // Adjust the first wall's 4 flags
+        byte* foyerDoorAddress = foyerAddress + 0x86;
+        *foyerDoorAddress |= 1 << 5;
+        foyerDoorAddress += 1;
+        *foyerDoorAddress = 88;
+        foyerDoorAddress += 1;
+        *foyerDoorAddress = 204;
+        foyerDoorAddress += 1;
+        *foyerDoorAddress &= unchecked((byte)~(1 << 3));
+
+        //Adjust the second wall's 4 flags
+        foyerDoorAddress += 0x4;
+        *foyerDoorAddress |= 1 << 5;
+        foyerDoorAddress += 1;
+        *foyerDoorAddress = 88;
+        foyerDoorAddress += 1;
+        *foyerDoorAddress = 204;
+        foyerDoorAddress += 1;
+        *foyerDoorAddress &= unchecked((byte)~(1 << 3));
+
+        //Adjust the third wall's 4 flags
+        foyerDoorAddress += 0x4;
+        *foyerDoorAddress |= 1 << 5;
+        foyerDoorAddress += 1;
+        *foyerDoorAddress = 88;
+        foyerDoorAddress += 1;
+        *foyerDoorAddress = 204;
+        foyerDoorAddress += 1;
+        *foyerDoorAddress &= unchecked((byte)~(1 << 3));
+
+        // Remove the invisible wall
+        foyerDoorAddress += 0x166B;
+        *foyerDoorAddress |= 1 << 1;
+
+        // Remove Door to Great Hall
+        byte* greatHallDoorAddress = foyerAddress + 0x61;
+        *greatHallDoorAddress = 76;
+        greatHallDoorAddress += 0x1D0;
+        *greatHallDoorAddress = 254;
+        greatHallDoorAddress += 1;
+        *greatHallDoorAddress |= 1 << 0;
+        greatHallDoorAddress += 3;
+        *greatHallDoorAddress = 5;
+        greatHallDoorAddress += 1;
+        *greatHallDoorAddress = 45;
+        greatHallDoorAddress += 1;
+        *greatHallDoorAddress &= unchecked((byte)~(1 << 6));
+        greatHallDoorAddress += 1;
+        *greatHallDoorAddress = 192;
+        greatHallDoorAddress += 1;
+        *greatHallDoorAddress = 84;
+        greatHallDoorAddress += 6;
+        *greatHallDoorAddress |= 1 << 5;
+        greatHallDoorAddress += 1;
+        *greatHallDoorAddress = 84;
+        greatHallDoorAddress += 5;
+        *greatHallDoorAddress &= unchecked((byte)~(1 << 6));
+        greatHallDoorAddress += 1;
+        *greatHallDoorAddress |= 1 << 5;
+        greatHallDoorAddress += 1;
+        *greatHallDoorAddress = 84;
+        greatHallDoorAddress += 5;
+        *greatHallDoorAddress &= unchecked((byte)~(1 << 6));
+        greatHallDoorAddress += 1;
+        *greatHallDoorAddress |= 1 << 5;
+        greatHallDoorAddress += 1;
+        *greatHallDoorAddress = 84;
+        greatHallDoorAddress += 5;
+        *greatHallDoorAddress &= unchecked((byte)~(1 << 6));
+        greatHallDoorAddress += 1;
+        *greatHallDoorAddress |= 1 << 5;
+        greatHallDoorAddress += 1;
+        *greatHallDoorAddress = 84;
     }
 
     // This is the helper function to search the save file container for the address where the wanted map is stored
