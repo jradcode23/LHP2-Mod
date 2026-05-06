@@ -943,38 +943,78 @@ public class HubHandler
 
         // Open the lower foyer door
         // Adjust the first wall's 4 flags
-        foyerAddress += 0x86;
-        *foyerAddress |= 1 << 5;
-        foyerAddress += 1;
-        *foyerAddress = 88;
-        foyerAddress += 1;
-        *foyerAddress = 204;
-        foyerAddress += 1;
-        *foyerAddress &= unchecked((byte)~(1 << 3));
+        byte* foyerDoorAddress = foyerAddress + 0x86;
+        *foyerDoorAddress |= 1 << 5;
+        foyerDoorAddress += 1;
+        *foyerDoorAddress = 88;
+        foyerDoorAddress += 1;
+        *foyerDoorAddress = 204;
+        foyerDoorAddress += 1;
+        *foyerDoorAddress &= unchecked((byte)~(1 << 3));
 
         //Adjust the second wall's 4 flags
-        foyerAddress += 0x4;
-        *foyerAddress |= 1 << 5;
-        foyerAddress += 1;
-        *foyerAddress = 88;
-        foyerAddress += 1;
-        *foyerAddress = 204;
-        foyerAddress += 1;
-        *foyerAddress &= unchecked((byte)~(1 << 3));
+        foyerDoorAddress += 0x4;
+        *foyerDoorAddress |= 1 << 5;
+        foyerDoorAddress += 1;
+        *foyerDoorAddress = 88;
+        foyerDoorAddress += 1;
+        *foyerDoorAddress = 204;
+        foyerDoorAddress += 1;
+        *foyerDoorAddress &= unchecked((byte)~(1 << 3));
 
         //Adjust the third wall's 4 flags
-        foyerAddress += 0x4;
-        *foyerAddress |= 1 << 5;
-        foyerAddress += 1;
-        *foyerAddress = 88;
-        foyerAddress += 1;
-        *foyerAddress = 204;
-        foyerAddress += 1;
-        *foyerAddress &= unchecked((byte)~(1 << 3));
+        foyerDoorAddress += 0x4;
+        *foyerDoorAddress |= 1 << 5;
+        foyerDoorAddress += 1;
+        *foyerDoorAddress = 88;
+        foyerDoorAddress += 1;
+        *foyerDoorAddress = 204;
+        foyerDoorAddress += 1;
+        *foyerDoorAddress &= unchecked((byte)~(1 << 3));
 
         // Remove the invisible wall
-        foyerAddress += 0x166B;
-        *foyerAddress |= 1 << 1;
+        foyerDoorAddress += 0x166B;
+        *foyerDoorAddress |= 1 << 1;
+
+        // Remove Door to Great Hall
+        byte* greatHallDoorAddress = foyerAddress + 0x61;
+        *greatHallDoorAddress = 76;
+        greatHallDoorAddress += 0x1D0;
+        *greatHallDoorAddress = 254;
+        greatHallDoorAddress += 1;
+        *greatHallDoorAddress |= 1 << 0;
+        greatHallDoorAddress += 3;
+        *greatHallDoorAddress = 5;
+        greatHallDoorAddress += 1;
+        *greatHallDoorAddress = 45;
+        greatHallDoorAddress += 1;
+        *greatHallDoorAddress &= unchecked((byte)~(1 << 6));
+        greatHallDoorAddress += 1;
+        *greatHallDoorAddress = 192;
+        greatHallDoorAddress += 1;
+        *greatHallDoorAddress = 84;
+        greatHallDoorAddress += 6;
+        *greatHallDoorAddress |= 1 << 5;
+        greatHallDoorAddress += 1;
+        *greatHallDoorAddress = 84;
+        greatHallDoorAddress += 5;
+        *greatHallDoorAddress &= unchecked((byte)~(1 << 6));
+        greatHallDoorAddress += 1;
+        *greatHallDoorAddress |= 1 << 5;
+        greatHallDoorAddress += 1;
+        *greatHallDoorAddress = 84;
+        greatHallDoorAddress += 5;
+        *greatHallDoorAddress &= unchecked((byte)~(1 << 6));
+        greatHallDoorAddress += 1;
+        *greatHallDoorAddress |= 1 << 5;
+        greatHallDoorAddress += 1;
+        *greatHallDoorAddress = 84;
+        greatHallDoorAddress += 5;
+        *greatHallDoorAddress &= unchecked((byte)~(1 << 6));
+        greatHallDoorAddress += 1;
+        *greatHallDoorAddress |= 1 << 5;
+        greatHallDoorAddress += 1;
+        *greatHallDoorAddress = 84;
     }
 
     // This is the helper function to search the save file container for the address where the wanted map is stored
