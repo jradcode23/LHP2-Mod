@@ -203,13 +203,8 @@ public class LevelHandler
         bool bitSet1 = (*y5GhostPtr2 & (1 << 4)) != 0;
         bool bitSet2 = (*y5GhostPtr2 & (1 << 5)) == 0;
 
-        int mapID;
-        lock (Mod.GameInstance!.MapLock)
-        {
-            mapID = Mod.GameInstance!.MapID;
-        }
         // Marks the two levels complete after the next map change (assuming they aren't in great hall lobby)
-        if (locationChecked && bitSet1 && bitSet2 && mapID != 293)
+        if (locationChecked && bitSet1 && bitSet2 && Mod.GameInstance!.MapID != 293)
         {
             *y5GhostPtr2 |= 1 << 5; // Mark A Giant Viruoso Story Complete
             *y5GhostPtr2 |= 1 << 6; // Mark A Veiled Threat Story Complete
@@ -238,6 +233,14 @@ public class LevelHandler
                     Game.PrintToLog("Player has not entered Leaky2London Y7, clearing boards and setting PTR for Leaky2London Y7.");
                     new Thread(HubHandler.CheckLeaky2LondonY7PTR).Start();
                 }
+                break;
+            // Menu & MM
+            case 366:
+            case 372:
+            case 378:
+            case 382:
+            case 402:
+                HubHandler.VerifyCharCustMaps();
                 break;
             default:
                 break;

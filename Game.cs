@@ -29,10 +29,6 @@ public class Game
     public bool PrevInLevelSelect { get; private set; } = false;
     public bool PrevInMenu { get; private set; } = false;
     public int CurrentCharID { get; private set; } = 0;
-    private static readonly int[] LeakyMapIDs = [368, 374, 380, 386];
-    private static readonly int[] DuelingMapIDs = [44, 73, 137, 157, 207, 223, 309, 324];
-    private static readonly string[] FastTravelRequests = ["Y5LOND", "Y6LOND", "Y7LOND", "Y8LOND", "Y5FOYE", "Y6FOYE", "Y7FOYE", "Y8FOYE", "Y5QUAD", "Y6QUAD", "Y7QUAD", "Y8QUAD"];
-    private static unsafe ushort* DarkTimesMapConstant => *(ushort**)(Mod.BaseAddress + 0xB069AC) + 0x32;
     public const int tokenOffset = 213;
     public const int levelOffset = 450;
     public const int SIPOffset = 475;
@@ -118,7 +114,7 @@ public class Game
     }
 
     // After Connecting, this function reads initial game variables and NOPs code that we don't want running
-    public static unsafe void ModifyInstructions()
+    public static void ModifyInstructions()
     {
         // Read initial game values upon connecting
         Mod.GameInstance!.LevelID = Memory.Instance.Read<int>(Mod.BaseAddress + 0xADDB7C);
@@ -167,19 +163,7 @@ public class Game
         // NOP Resetting Hint message constantly if the pets are out
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3C732C, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
 
-        // NOP Jump past check of spell unlocks in Specs lesson - Animation 1
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3EECC, [0x90, 0x90]);
-        // NOP Jump past check of spell unlocks in Specs lesson - Animation 2
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3EF6C, [0x90, 0x90]);
-        // NOP Jump past check of spell unlocks in Specs lesson - If ability active
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x6C497, [0x90, 0x90]);
-
         ShopPrices.SetShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
-
-        // NOP Code that forces to Dark Times upon save reload
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3CB61, [0x90, 0x90]);
-        // Change Dark Times Map Constant
-        *DarkTimesMapConstant = 388;
     }
 
     // This function turns on the N0CUT5 Cheat Code so cutscenes don't show
@@ -351,7 +335,6 @@ public class Game
     private static IReverseWrapper<ChangeYears> _reverseWrapChangeYears = default!;
     private static IReverseWrapper<HandleInterruptedMessage> _reverseWrapOnHandleInterruptedMessage = default!;
     private static IReverseWrapper<CmpUnlockedAbilities> _reverseWrapOnCmpUnlockedAbilities = default!;
-    private static IReverseWrapper<SetDuelingHealth> _reverseWrapOnSetDuelingHealth = default!;
 
     // Modifying the associated assembly of our game to call our functions
     // TODO: Future proof this from game updates by implementing signature scanning
@@ -700,27 +683,6 @@ public class Game
         _asmHooks.Add(hooks.CreateAsmHook(compareAbilitiesHook, (int)(Mod.BaseAddress + 0x3EF80), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
         // If Specs is usable of not
         _asmHooks.Add(hooks.CreateAsmHook(compareAbilitiesHook, (int)(Mod.BaseAddress + 0x6C4AB), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
-        string[] startDuelHook =
-        {
-            // Push and Pop all Registers except for the ECX register since we need it in our function
-            "use32",
-            "pushfd",
-            "push eax",
-            "push ebx",
-            "push edx",
-            "push esi",
-            "push edi",
-            "push ebp",
-            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnSetDuelingHealth, out _reverseWrapOnSetDuelingHealth)}",
-            "pop ebp",
-            "pop edi",
-            "pop esi",
-            "pop edx",
-            "pop ebx",
-            "pop eax",
-            "popfd",
-        };
-        _asmHooks.Add(hooks.CreateAsmHook(startDuelHook, (int)(Mod.BaseAddress + 0x8C75E), AsmHookBehaviour.ExecuteFirst).Activate());
     }
 
     [Function(CallingConventions.Fastcall)]
@@ -858,7 +820,6 @@ public class Game
 
             CheckAndReportLocation(itemId);
         }
-
     }
 
     [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.edx],
@@ -1027,7 +988,7 @@ public class Game
     [Function([FunctionAttribute.Register.ecx],
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void UpdateMap(int value);
-    private static unsafe void OnMapChange(int value)
+    private static void OnMapChange(int value)
     {
         int mapID;
         int prevMapID;
@@ -1044,13 +1005,6 @@ public class Game
         {
             LessonRestoreReturnToHub();
         }
-
-        // When leaving Leaky & staying in Hub, we want to verify what the London ID is still correct
-        if (LeakyMapIDs.Contains(prevMapID) && Mod.GameInstance!.LevelID is >= 1 and <= 4)
-        {
-            HubHandler.VerifyLondonMapIDs();
-        }
-
         PrintToLog($"Map ID updated to {value}.");
         Mod.LHP2_Archipelago!.SendMapID(value);
         ResetItems();
@@ -1063,7 +1017,6 @@ public class Game
         if (prevMapID == 402)
         {
             HubHandler.LoadRedBricksEnabled();
-            *DarkTimesMapConstant = 361;
         }
 
         // Restore normal game code after leaving specs lesson
@@ -1219,7 +1172,7 @@ public class Game
 
         // Quality of life update so that players can more quickly change years
         byte* menuCheatAddress = (byte*)(Mod.BaseAddress + 0xC575E0);
-        byte[] bytes = [24, 31, 11, 14, 13, 3]; // Y5LOND
+        byte[] bytes = [24, 4, 0, 17, 26, 26];
         for (int i = 0; i < 6; i++)
         {
             Memory.Instance.Write((nuint)(menuCheatAddress + i), bytes[i]);
@@ -1362,11 +1315,6 @@ public class Game
         {
             prevInLevelSelect = Mod.GameInstance!.PrevInLevelSelect;
         }
-        int mapID;
-        lock (Mod.GameInstance!.MapLock)
-        {
-            mapID = Mod.GameInstance!.MapID;
-        }
         if (cauldronItem != 4 || prevInLevelSelect == true) // Only trigger on opening the Polyjuice Pot
         {
             return;
@@ -1416,22 +1364,34 @@ public class Game
                     chars[i] = '_'; // Unknown character
                 }
             }
-            string mapString = new(chars);
-            PrintToLog($"Map Requested is: {mapString}");
+            string yearString = new(chars);
+            PrintToLog($"Year Requested is: {yearString}");
 
-            if (FastTravelRequests.Contains(mapString))
+            switch (yearString)
             {
-                HubHandler.FastTravel(mapString);
+                case "YEAR05" when Mod.GameInstance!.LevelID != 1:
+                    HubHandler.SwitchYears(5);
+                    HubHandler.AdjustHubMaps(5);
+                    break;
+                case "YEAR06" when Mod.GameInstance!.LevelID != 2:
+                    HubHandler.SwitchYears(6);
+                    HubHandler.AdjustHubMaps(6);
+                    break;
+                case "YEAR07" when Mod.GameInstance!.LevelID != 3:
+                    HubHandler.SwitchYears(7);
+                    HubHandler.AdjustHubMaps(7);
+                    break;
+                case "YEAR08" when Mod.GameInstance!.LevelID != 4:
+                    HubHandler.SwitchYears(8);
+                    HubHandler.AdjustHubMaps(8);
+                    break;
+                default:
+                    break;
             }
-            else
-            {
-                PrintToLog($"Unknown Map Requested: {mapString}.");
-            }
-
         }
         else
         {
-            PrintToLog("Please move to the Leaky Cualdron.");
+            PrintToLog("Please move to the Character Customization Room to change years.");
             return;
         }
     }
@@ -1451,19 +1411,6 @@ public class Game
         return SpellHandler.CheckAbilityUnlock();
     }
 
-    [Function([FunctionAttribute.Register.ecx],
-    FunctionAttribute.Register.ecx, FunctionAttribute.StackCleanup.Callee)]
-    public delegate nuint SetDuelingHealth(nuint ecx);
-
-    private static nuint OnSetDuelingHealth(nuint ecx)
-    {
-        if (DuelingMapIDs.Contains(Mod.GameInstance!.MapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.FasterDuels == 1)
-        {
-            Game.PrintToLog("Dueling Health Set to 1");
-            ecx = (ecx & ~0xFFu) | 1u;
-        }
-        return ecx;
-    }
 
     private static void ResetItems()
     {
