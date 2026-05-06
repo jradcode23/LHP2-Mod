@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Concurrent;
 using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.Enums;
