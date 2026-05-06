@@ -167,13 +167,6 @@ public class Game
         // NOP Resetting Hint message constantly if the pets are out
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3C732C, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
 
-        // NOP Jump past check of spell unlocks in Specs lesson - Animation 1
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3EECC, [0x90, 0x90]);
-        // NOP Jump past check of spell unlocks in Specs lesson - Animation 2
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3EF6C, [0x90, 0x90]);
-        // NOP Jump past check of spell unlocks in Specs lesson - If ability active
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x6C497, [0x90, 0x90]);
-
         ShopPrices.SetShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
 
         // NOP Code that forces to Dark Times upon save reload
@@ -700,6 +693,7 @@ public class Game
         _asmHooks.Add(hooks.CreateAsmHook(compareAbilitiesHook, (int)(Mod.BaseAddress + 0x3EF80), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
         // If Specs is usable of not
         _asmHooks.Add(hooks.CreateAsmHook(compareAbilitiesHook, (int)(Mod.BaseAddress + 0x6C4AB), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
+
         string[] startDuelHook =
         {
             // Push and Pop all Registers except for the ECX register since we need it in our function
@@ -1376,11 +1370,6 @@ public class Game
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
-        int mapID;
-        lock (Mod.GameInstance!.MapLock)
-        {
-            mapID = Mod.GameInstance!.MapID;
-        }
         LevelHandler.ImplementMapLogic(mapID);
         SpellHandler.SpellMapLogic(mapID);
     }
