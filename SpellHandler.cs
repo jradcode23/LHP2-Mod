@@ -818,6 +818,13 @@ public class SpellHandler
             case 183:
                 AstronomyTowerLogic();
                 break;
+            // Training Grounds - Lock Avada cause the SIP won't be saved if you kill the bully
+            case 16:
+            case 111:
+            case 182:
+            case 284:
+                LockActiveSpell(22);
+                break;
             default:
                 break;
         }
