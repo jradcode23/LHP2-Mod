@@ -1384,7 +1384,7 @@ public class Game
             mapID = Mod.GameInstance!.MapID;
         }
         // Only run in the Character Customization Room
-        if (mapID == 365 || mapID == 371 || mapID == 377 || mapID == 381)
+        if (LeakyMapIDs.Contains(mapID))
         {
             byte* menuCheatAddress = (byte*)(Mod.BaseAddress + 0xC575E0);
             char[] chars = new char[6];
