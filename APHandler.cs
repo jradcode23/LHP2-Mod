@@ -442,6 +442,9 @@ public class ArchipelagoHandler
 
                 HintSystem.EnqueueMessage(itmmsg, itemFlag);
                 break;
+            case GoalLogMessage goalLogMessage:
+                HintSystem.EnqueueMessage(goalLogMessage.ToString(), 3);
+                break;
             default:
                 /* 
                 Printing all messages in case it breaks something, but don't think that will be the case.
