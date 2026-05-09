@@ -733,10 +733,7 @@ public class Game
             {
                 CheckAndReportLocation(1026); // Apparition is unlocked at the end of 7 Harrys
             }
-            if (id == 23) // The Flaw in the Plan - Check win con
-            {
-                CheckWinCon();
-            }
+            CheckWinCon();
         }
     }
 
@@ -1478,6 +1475,7 @@ public class Game
 
     public static void CheckWinCon()
     {
+        // Defeat Voldemort
         if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 0)
         {
             int horcruxesReceived = Mod.LHP2_Archipelago!.CountItemsCheckedInRange(440, 446);
@@ -1489,6 +1487,23 @@ public class Game
             }
             PrintToLog($"Player Has Received {horcruxesReceived} Horcruxes");
             if (horcruxesReceived >= requiredHorcruxes)
+            {
+                Mod.LHP2_Archipelago!.Release();
+            }
+        }
+
+        // Levels Beaten
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 2)
+        {
+            int levelsCompleted = Mod.LHP2_Archipelago!.CountLocationsCheckedInRange(450, 473);
+            int requiredLevels = Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredLevels;
+            if (requiredLevels == -1)
+            {
+                PrintToLog("Can't Determine if the game is completed, Level slot data not available.");
+                return;
+            }
+            PrintToLog($"Player Has Completed {levelsCompleted} Levels");
+            if (levelsCompleted >= requiredLevels)
             {
                 Mod.LHP2_Archipelago!.Release();
             }

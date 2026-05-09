@@ -386,6 +386,17 @@ public class ArchipelagoHandler
         }
     }
 
+    // Helper Function to count how many items inbetween a certain archi ID range have been received
+    public int CountLocationsCheckedInRange(Int64 start, Int64 end)
+    {
+        lock (_locationsLock)
+        {
+            var startId = start + gameOffset;
+            var endId = end + gameOffset;
+            return Session.Locations.AllLocationsChecked.Count(location => location >= startId && location <= endId);
+        }
+    }
+
     // Helper Function to count how many items with a specific archi ID (i.e. gold brick or purple stud) have been received
     public int CountItemsReceivedWithId(Int64 gameId)
     {

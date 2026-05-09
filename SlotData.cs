@@ -45,6 +45,26 @@ public class SlotData(Dictionary<string, object> slotData)
     }
 
     /// <summary>
+    /// Gets the Horcrux requirement as an integer. Returns -1 if not found or unable to convert.
+    /// </summary>
+    public int NumberOfRequiredLevels
+    {
+        get
+        {
+            if (SlotDataDictionary?.TryGetValue("NumLevelsRequired", out var value) != true || value == null)
+                return -1;
+
+            if (!int.TryParse(value.ToString(), out int result))
+            {
+                Game.PrintToLog($"[SlotData] Failed to parse NumLevelsRequired value '{value}'");
+                return -1;
+            }
+
+            return result;
+        }
+    }
+
+    /// <summary>
     /// Gets whether Joke shop spells are shuffled (0 or 1). Returns -1 if not found or unable to convert.
     /// </summary>
     public int ShuffleJokeSpells
@@ -157,13 +177,14 @@ public class SlotData(Dictionary<string, object> slotData)
         Game.PrintToLog("=== Slot Data ===");
         Game.PrintToLog($"EndGoal: {EndGoal}");
         Game.PrintToLog($"Required Horcruxes: {NumberOfRequiredHorcruxes}");
+        Game.PrintToLog($"Required Levels: {NumberOfRequiredLevels}");
         Game.PrintToLog($"Shuffle Joke Spells: {ShuffleJokeSpells}");
         Game.PrintToLog($"Shuffle Gold Brick Purchases: {ShuffleGoldBrickPurchases}");
         Game.PrintToLog($"Cheaper Shops Multiplier: {CheaperShops}");
         Game.PrintToLog($"Faster Duels: {FasterDuels}");
 
 
-        if (EndGoal == -1 || NumberOfRequiredHorcruxes == -1 || ShuffleJokeSpells == -1 || ShuffleGoldBrickPurchases == -1 || CheaperShops == -1 || FasterDuels == -1)
+        if (EndGoal == -1 || NumberOfRequiredHorcruxes == -1 || NumberOfRequiredLevels == -1 || ShuffleJokeSpells == -1 || ShuffleGoldBrickPurchases == -1 || CheaperShops == -1 || FasterDuels == -1)
         {
             Game.PrintToLog("One or more values not found or invalid. Please report to the devs.");
         }
