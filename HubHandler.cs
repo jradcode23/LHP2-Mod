@@ -415,10 +415,18 @@ public class HubHandler
     }
 
     // This is a helper function that verifies the count of horcruxes received and updates the on screen text
-    public static void UpdateHorcruxCount()
+    public static void UpdateWinConText()
     {
-        HorcruxCount = (byte)Mod.LHP2_Archipelago!.CountItemsCheckedInRange(440, 446);
-        HintSystem.DisplayHorcruxCount(HorcruxCount);
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 0)
+        {
+            HorcruxCount = (byte)Mod.LHP2_Archipelago!.CountItemsCheckedInRange(440, 446);
+            HintSystem.DisplayHorcruxCount(HorcruxCount);
+        }
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 2)
+        {
+            byte levelsBeaten = (byte)Mod.LHP2_Archipelago!.CountLocationsCheckedInRange(450, 473);
+            HintSystem.DislplayLevelsBeaten(levelsBeaten);
+        }
     }
 
     /*

@@ -1047,7 +1047,7 @@ public class Game
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
-        HubHandler.UpdateHorcruxCount();
+        HubHandler.UpdateWinConText();
         LevelHandler.ImplementMapLogic(value);
 
         // Load Red Bricks Enabled if Previous map was 402 (menu)
@@ -1109,7 +1109,7 @@ public class Game
             PrintToLog("Level Selector Opened");
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, MaxItemID);
-            HubHandler.UpdateHorcruxCount();
+            HubHandler.UpdateWinConText();
         }
 
         if (eaxBit0Set && lastNibble == 0x0C)
@@ -1124,7 +1124,7 @@ public class Game
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(0, tokenOffset - 1);
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(RedBrickCollectOffset, RedBrickPurchOffset - 17);
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(RedBrickPurchOffset, 1026);
-            HubHandler.UpdateHorcruxCount();
+            HubHandler.UpdateWinConText();
 
             // Joke Shop prices are set when save is loaded. So we handle that by changing it upon opening and closing that shop
             if (ShopMapID == 369 || ShopMapID == 375 || ShopMapID == 383 || ShopMapID == 387)
@@ -1155,7 +1155,7 @@ public class Game
                     ResetItems();
                     Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
                     Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
-                    HubHandler.UpdateHorcruxCount();
+                    HubHandler.UpdateWinConText();
                 }
             }
             else if (!eaxBit0Set && prevInShop)
@@ -1173,7 +1173,7 @@ public class Game
                     SpellHandler.ResetSpells();
                     Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
                     Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
-                    HubHandler.UpdateHorcruxCount();
+                    HubHandler.UpdateWinConText();
                 }
 
                 // Joke Shop prices are set when save is loaded. So we handle that by changing it upon opening and closing that shop
@@ -1227,7 +1227,7 @@ public class Game
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(0, RedBrickPurchOffset - 1);
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(RedBrickPurchOffset, MaxItemID);
-            HubHandler.UpdateHorcruxCount();
+            HubHandler.UpdateWinConText();
         }
         else // In Hub, want to show all items
         {
@@ -1239,7 +1239,7 @@ public class Game
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, MaxItemID);
             HubHandler.UpdateGoldBrickCount();
-            HubHandler.UpdateHorcruxCount();
+            HubHandler.UpdateWinConText();
             SpellHandler.UnlockAllPassiveSpells();
         }
     }
@@ -1314,7 +1314,7 @@ public class Game
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
-        HubHandler.UpdateHorcruxCount();
+        HubHandler.UpdateWinConText();
         LevelHandler.ImplementMapLogic(mapID);
         SpellHandler.SpellMapLogic(mapID);
         HubHandler.SaveRedBricksEnabled();

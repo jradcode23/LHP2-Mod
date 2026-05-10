@@ -210,7 +210,7 @@ public class ArchipelagoHandler
                 //Handle Horcruxes
                 if (gameID >= 440 && gameID <= 446)
                 {
-                    HubHandler.UpdateHorcruxCount();
+                    HubHandler.UpdateWinConText();
                     return;
                 }
             }

@@ -185,4 +185,11 @@ public class HintSystem
         SetMessageText(message, PressButtonToStartTextAddress);
     }
 
+    // Helper function to write the Levels Beaten to the Player 2 slot name
+    public static void DislplayLevelsBeaten(byte count)
+    {
+        string message = $"Levels Beaten: {count}";
+        SetMessageText(message, PressButtonToStartTextAddress);
+    }
+
 }
