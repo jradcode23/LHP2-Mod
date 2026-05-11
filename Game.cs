@@ -734,6 +734,7 @@ public class Game
                 CheckAndReportLocation(1026); // Apparition is unlocked at the end of 7 Harrys
             }
             CheckWinCon();
+            HubHandler.UpdateWinConText();
         }
     }
 
@@ -1443,7 +1444,13 @@ public class Game
 
     private static nuint OnSetDuelingHealth(nuint ecx)
     {
-        if (DuelingMapIDs.Contains(Mod.GameInstance!.MapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.FasterDuels == 1)
+        int mapID;
+        lock (Mod.GameInstance!.MapLock)
+        {
+            mapID = Mod.GameInstance!.MapID;
+        }
+
+        if (DuelingMapIDs.Contains(mapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.FasterDuels == 1)
         {
             Game.PrintToLog("Dueling Health Set to 1");
             ecx = (ecx & ~0xFFu) | 1u;
