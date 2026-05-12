@@ -1012,6 +1012,10 @@ public class Game
     {
         Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
         Mod.GameInstance!.LevelID = value; PrintToLog($"Level ID updated to {value}.");
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 2)
+        {
+            HubHandler.UpdateWinConText();
+        }
     }
 
     [Function([FunctionAttribute.Register.ecx],
@@ -1046,7 +1050,6 @@ public class Game
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
-        HubHandler.UpdateWinConText();
         LevelHandler.ImplementMapLogic(value);
 
         // Load Red Bricks Enabled if Previous map was 402 (menu)
@@ -1061,6 +1064,7 @@ public class Game
         {
             RestoreSpecsLesson();
         }
+        HubHandler.UpdateWinConText();
     }
 
     [Function([FunctionAttribute.Register.edx],
