@@ -123,13 +123,11 @@ public class Game
         // Read initial game values upon connecting
         Mod.GameInstance!.LevelID = Memory.Instance.Read<int>(Mod.BaseAddress + 0xADDB7C);
         int mapID;
-        int prevMapID;
         mapID = Memory.Instance.Read<int>(Mod.BaseAddress + 0xC5B374);
-        prevMapID = Mod.GameInstance!.PrevMapID;
         lock (Mod.GameInstance!.MapLock)
         {
             Mod.GameInstance!.MapID = mapID;
-            Mod.GameInstance!.PrevMapID = prevMapID;
+            Mod.GameInstance!.PrevMapID = mapID;
         }
         PrintToLog($"Initial mapID: {mapID}, Initial levelID: {Mod.GameInstance!.LevelID}");
         Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
@@ -1025,10 +1023,10 @@ public class Game
         int prevMapID;
         lock (Mod.GameInstance!.MapLock)
         {
-            prevMapID = Mod.GameInstance!.PrevMapID;
-            mapID = Mod.GameInstance!.MapID;
-            Mod.GameInstance!.PrevMapID = mapID;
+            Mod.GameInstance!.PrevMapID = Mod.GameInstance!.MapID;
             Mod.GameInstance!.MapID = value;
+            mapID = Mod.GameInstance!.MapID;
+            prevMapID = Mod.GameInstance!.PrevMapID;
         }
 
         // When leaving Y7 London, ensure that Code is running as normal (disabled in Y7 London cause of apparition)
