@@ -3,6 +3,7 @@ using Reloaded.Memory.Interfaces;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Hooks.Definitions.Enums;
 using Reloaded.Hooks.Definitions.X86;
+using Archipelago.MultiClient.Net.Enums;
 using System.Numerics;
 
 namespace LHP2_Archi_Mod;
@@ -1170,6 +1171,14 @@ public class Game
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(0, RedBrickPurchOffset - 1);
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(RedBrickPurchOffset, MaxItemID);
             HubHandler.UpdateHorcruxCount();
+
+            if (Mod.GameInstance!.LevelID == 27) // Flaw in the Plan
+            {
+                if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 0)
+                {
+                    LevelHandler.LockLevel(LevelHandler.LevelData.TheFlawInThePlan);
+                }
+            }
         }
         else // In Hub, want to show all items
         {
