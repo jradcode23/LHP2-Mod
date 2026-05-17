@@ -3,7 +3,6 @@ using Reloaded.Memory.Interfaces;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Hooks.Definitions.Enums;
 using Reloaded.Hooks.Definitions.X86;
-using Archipelago.MultiClient.Net.Enums;
 using System.Numerics;
 
 namespace LHP2_Archi_Mod;
@@ -166,6 +165,13 @@ public class Game
         // NOP Resetting Hint message constantly if the pets are out
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3C732C, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
 
+        // NOP Jump past check of spell unlocks in Specs lesson - Animation 1
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3EECC, [0x90, 0x90]);
+        // NOP Jump past check of spell unlocks in Specs lesson - Animation 2
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3EF6C, [0x90, 0x90]);
+        // NOP Jump past check of spell unlocks in Specs lesson - If ability active
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x6C497, [0x90, 0x90]);
+
         ShopPrices.SetShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
 
         // NOP Code that forces to Dark Times upon save reload
@@ -182,28 +188,6 @@ public class Game
 
         // Write N0CUT5 flag to game
         Memory.Instance.Write(ptr, (byte)0x01);
-    }
-
-    // Turn off the code that skips the check for specs
-    public static void SpecsLessonNOP()
-    {
-        // NOP Jump past check of spell unlocks in Specs lesson - Animation 1
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3EECC, [0x90, 0x90]);
-        // NOP Jump past check of spell unlocks in Specs lesson - Animation 2
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3EF6C, [0x90, 0x90]);
-        // NOP Jump past check of spell unlocks in Specs lesson - If ability active
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x6C497, [0x90, 0x90]);
-    }
-
-    // After leaving specs lesson, restore the normal code cause it causes animation lag
-    public static void RestoreSpecsLesson()
-    {
-        // NOP Jump past check of spell unlocks in Specs lesson - Animation 1
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3EECC, [0x74, 0x48]);
-        // NOP Jump past check of spell unlocks in Specs lesson - Animation 2
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3EF6C, [0x74, 0x48]);
-        // NOP Jump past check of spell unlocks in Specs lesson - If ability active
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x6C497, [0x74, 0x54]);
     }
 
     /* 
@@ -1024,7 +1008,7 @@ public class Game
     public delegate void UpdateMap(int value);
     private static unsafe void OnMapChange(int value)
     {
-        int mapID;
+        int mapID = value;
         int prevMapID;
         lock (Mod.GameInstance!.MapLock)
         {
@@ -1035,7 +1019,7 @@ public class Game
         }
 
         // When leaving Y7 London, ensure that Code is running as normal (disabled in Y7 London cause of apparition)
-        if (prevMapID == 104 && !Mod.LHP2_Archipelago!.IsLocationChecked(1027))
+        if (prevMapID == 103)
         {
             LessonRestoreReturnToHub();
         }
@@ -1059,13 +1043,6 @@ public class Game
             HubHandler.LoadRedBricksEnabled();
             *DarkTimesMapConstant = 361;
         }
-
-        // Restore normal game code after leaving specs lesson
-        if (prevMapID == 179)
-        {
-            RestoreSpecsLesson();
-        }
-        HubHandler.UpdateWinConText();
     }
 
     [Function([FunctionAttribute.Register.edx],
