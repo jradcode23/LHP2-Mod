@@ -163,6 +163,13 @@ public class Game
         // NOP Resetting Hint message constantly if the pets are out
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3C732C, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
 
+        // NOP Jump past check of spell unlocks in Specs lesson - Animation 1
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3EECC, [0x90, 0x90]);
+        // NOP Jump past check of spell unlocks in Specs lesson - Animation 2
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3EF6C, [0x90, 0x90]);
+        // NOP Jump past check of spell unlocks in Specs lesson - If ability active
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x6C497, [0x90, 0x90]);
+
         ShopPrices.SetShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
     }
 
@@ -176,27 +183,6 @@ public class Game
         Memory.Instance.Write(ptr, (byte)0x01);
     }
 
-    // Turn off the code that skips the check for specs
-    public static void SpecsLessonNOP()
-    {
-        // NOP Jump past check of spell unlocks in Specs lesson - Animation 1
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3EECC, [0x90, 0x90]);
-        // NOP Jump past check of spell unlocks in Specs lesson - Animation 2
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3EF6C, [0x90, 0x90]);
-        // NOP Jump past check of spell unlocks in Specs lesson - If ability active
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x6C497, [0x90, 0x90]);
-    }
-
-    // After leaving specs lesson, restore the normal code cause it causes animation lag
-    public static void RestoreSpecsLesson()
-    {
-        // NOP Jump past check of spell unlocks in Specs lesson - Animation 1
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3EECC, [0x74, 0x48]);
-        // NOP Jump past check of spell unlocks in Specs lesson - Animation 2
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3EF6C, [0x74, 0x48]);
-        // NOP Jump past check of spell unlocks in Specs lesson - If ability active
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x6C497, [0x74, 0x54]);
-    }
 
     /* 
     This function blocks the code that checks if lesson has been completed while in the lesson
@@ -990,18 +976,18 @@ public class Game
     public delegate void UpdateMap(int value);
     private static void OnMapChange(int value)
     {
-        int mapID;
+        int mapID = value;
         int prevMapID;
         lock (Mod.GameInstance!.MapLock)
         {
-            prevMapID = Mod.GameInstance!.PrevMapID;
-            mapID = Mod.GameInstance!.MapID;
-            Mod.GameInstance!.PrevMapID = mapID;
+            Mod.GameInstance!.PrevMapID = Mod.GameInstance!.MapID;
             Mod.GameInstance!.MapID = value;
+            mapID = Mod.GameInstance!.MapID;
+            prevMapID = Mod.GameInstance!.PrevMapID;
         }
 
         // When leaving Y7 London, ensure that Code is running as normal (disabled in Y7 London cause of apparition)
-        if (prevMapID == 104 && !Mod.LHP2_Archipelago!.IsLocationChecked(1027))
+        if (prevMapID == 103)
         {
             LessonRestoreReturnToHub();
         }
@@ -1017,12 +1003,6 @@ public class Game
         if (prevMapID == 402)
         {
             HubHandler.LoadRedBricksEnabled();
-        }
-
-        // Restore normal game code after leaving specs lesson
-        if (prevMapID == 179)
-        {
-            RestoreSpecsLesson();
         }
     }
 
