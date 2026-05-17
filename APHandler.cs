@@ -14,7 +14,7 @@ public class ArchipelagoHandler
 {
     private const string GAME_NAME = "Lego Harry Potter 5-7";
     private ArchipelagoSession? _session;
-    private ArchipelagoSession Session => _session ?? throw new InvalidOperationException("Session has not been initialized.");
+    public ArchipelagoSession Session => _session ?? throw new InvalidOperationException("Session has not been initialized.");
     private LoginSuccessful? _loginSuccessful;
     public SlotData? SlotDataInstance;
     private static unsafe byte* NewGameTextPTR => *(byte**)(Mod.BaseAddress + 0xC4EB9C) + 0x32E;
@@ -227,7 +227,6 @@ public class ArchipelagoHandler
     public void Release()
     {
         Session.SetGoalAchieved();
-        Session.SetClientState(ArchipelagoClientState.ClientGoal);
     }
 
     // This is the function we use to send completed locations. Pass the ID to this function and it will be marked complete.

@@ -102,6 +102,17 @@ public class LevelHandler
         *ptr |= (byte)(BitMask.StoryUnlocked | BitMask.FreeplayUnlocked);
     }
 
+    // Helper function to lock a level
+    public static unsafe void LockLevel(LevelData level)
+    {
+        byte* ptr = LevelBaseAddress + (ushort)level;
+        if (ptr == null || LevelBaseAddress == null)
+        {
+            Game.PrintToLog($"Can't Unlock Level, null pointer at 0x{(nuint)ptr:X}");
+        }
+        *ptr &= unchecked((byte)~(byte)(BitMask.StoryUnlocked | BitMask.FreeplayUnlocked));
+    }
+
     // Helper function to unlock a Gryffindor Crest
     public static unsafe void UnlockGryffindorCrest(LevelData level)
     {
