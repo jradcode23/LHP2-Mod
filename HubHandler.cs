@@ -1,3 +1,4 @@
+using System.Reflection.Metadata;
 using System.Text;
 
 namespace LHP2_Archi_Mod;
@@ -14,8 +15,8 @@ public class HubHandler
     private static unsafe byte* PurpleCountAddress => (byte*)StudTotalBaseAddress + 0x30;
     private static unsafe byte* RedBrickSaveFileAddress => PurpleCountAddress + 0x04;
     private static unsafe byte* RedBrickEnabledAddress => (byte*)(Mod.BaseAddress + 0x94CEF3);
-    private static unsafe byte* FirstLevelMapPointer => *(byte**)(Mod.BaseAddress + 0x00B06A5C);
-    private static unsafe byte* SecondLevelMapPointer => *(byte**)(FirstLevelMapPointer + 0x44);
+    // private static unsafe byte* FirstLevelMapPointer => *(byte**)(Mod.BaseAddress + 0x00B06A5C);
+    // private static unsafe byte* SecondLevelMapPointer => *(byte**)(FirstLevelMapPointer + 0x44);
     private static unsafe ushort* Y5LondonConstantPTR => *(ushort**)(Mod.BaseAddress + 0xB06914) + 0x32;
     private static unsafe ushort* Y6LondonConstantPTR => *(ushort**)(Mod.BaseAddress + 0xB06918) + 0x32;
     private static unsafe ushort* Y7LondonConstantPTR => *(ushort**)(Mod.BaseAddress + 0xB0691C) + 0x32;
@@ -429,9 +430,25 @@ public class HubHandler
         }
     }
 
-    /*
-    The following function is our current implementation of how to time travel & Fast Travel back to Hogwarts.
-    */
+    private static unsafe ushort* DarkTimesMapBase => *(ushort**)(Mod.BaseAddress + 0xB069AC);
+    public static unsafe ushort* DarkTimesMapConstant => DarkTimesMapBase + 0x32;
+    private static unsafe ushort* OutOfRetirementMapConstant => DarkTimesMapBase - 0x1AFE;
+    private static unsafe ushort* TheSevenHarrysMapConstant => DarkTimesMapBase - 0x3C1E;
+    private static unsafe ushort* TheThiefsDownfallMapConstant => DarkTimesMapBase - 0x54CE;
+    private static readonly ushort Y5London = 276;
+    private static readonly ushort Y6London = 173;
+    private static readonly ushort Y7London = 103;
+    private static readonly ushort Y8London = 8;
+    private static readonly ushort Y5Foyer = 306;
+    private static readonly ushort Y6Foyer = 205;
+    private static readonly ushort Y7Foyer = 135;
+    private static readonly ushort Y8Foyer = 41;
+    private static readonly ushort Y5Quad = 285;
+    private static readonly ushort Y6Quad = 184;
+    private static readonly ushort Y7Quad = 112;
+    private static readonly ushort Y8Quad = 17;
+
+    // The following function is our current implementation of how to time travel & Fast Travel back to Hogwarts.
     public static unsafe void FastTravel(string mapRequested)
     {
         // Verify that the player has completed DADA banned in game before time travelling
@@ -486,44 +503,78 @@ public class HubHandler
         switch (mapRequested)
         {
             case "Y5LOND":
-                *currentPTR = 276;
+                *currentPTR = Y5London;
                 break;
             case "Y6LOND":
-                *currentPTR = 173;
+                *currentPTR = Y6London;
                 break;
             case "Y7LOND":
-                *currentPTR = 103;
+                *currentPTR = Y7London;
                 break;
             case "Y8LOND":
-                *currentPTR = 8;
+                *currentPTR = Y8London;
                 break;
             case "Y5FOYE":
-                *currentPTR = 306;
+                *currentPTR = Y5Foyer;
                 break;
             case "Y6FOYE":
-                *currentPTR = 205;
+                *currentPTR = Y6Foyer;
                 break;
             case "Y7FOYE":
-                *currentPTR = 135;
+                *currentPTR = Y7Foyer;
                 break;
             case "Y8FOYE":
-                *currentPTR = 41;
+                *currentPTR = Y8Foyer;
                 break;
             case "Y5QUAD":
-                *currentPTR = 285;
+                *currentPTR = Y5Quad;
                 break;
             case "Y6QUAD":
-                *currentPTR = 184;
+                *currentPTR = Y6Quad;
                 break;
             case "Y7QUAD":
-                *currentPTR = 112;
+                *currentPTR = Y7Quad;
                 break;
             case "Y8QUAD":
-                *currentPTR = 17;
+                *currentPTR = Y8Quad;
                 break;
             default:
                 break;
         }
+    }
+
+    /*
+    These following functions are used to update the Map ID Constant for Out of Retirement, The Seven Harrys, and The Thief's Downfall. In story mode, the Leaky2London loading zone is updated to send you to 1 of these 3 levels. As such, we are updating the Map Constants so that it sends the player to London instead of sending them to the level. We change all 3 of them, cause sometimes they don't transfer very well across time travelling.
+    TODO: May cause issues with fast/time travel? Wasn't seeing any in testing, but to keep an eye out
+    */
+    public static unsafe void ChangeLeakyLoadingZones(int level)
+    {
+        ushort mapValue = level switch
+        {
+            1 => Y5London,
+            2 => Y6London,
+            3 => Y7London,
+            4 => Y8London,
+            _ => 0
+        };
+
+        if (mapValue == 0)
+        {
+            Game.PrintToLog($"Could not properly adjust Leaky loading zone. Level: {level}");
+            return;
+        }
+
+        *OutOfRetirementMapConstant = mapValue;
+        *TheSevenHarrysMapConstant = mapValue;
+        *TheThiefsDownfallMapConstant = mapValue;
+    }
+
+    // This function returns the Level Map IDs back to their intended ID. Used upon level selector opening
+    public static unsafe void RestoreLeakyLoadingZones()
+    {
+        *OutOfRetirementMapConstant = 274;
+        *TheSevenHarrysMapConstant = 168;
+        *TheThiefsDownfallMapConstant = 89;
     }
 
     // This helper function fixes the constants if the player leaves Leaky Cualdron
@@ -1114,83 +1165,83 @@ public class HubHandler
         return returningAddress;
     }
 
-    /* 
-    Year 7 Leaky2London is a special case where no matter what I write to the save file, the loading zone is active upon first entrance.
-    This is a helper function to turn off The Seven Harrys Story Mode Loading Zone.
-    I use a pointer to the map's active loading zone in memory, however, because it is one of (if not the) last thing to be updated when loading a new map, we have to run this on a new thread the first time the player enters Y7 Leaky Cauldon.
-    */
-    public static unsafe void CheckLeaky2LondonY7PTR()
-    {
-        bool hasPTRUpdated = false; // bool variable that we use to track if the pointer address has updated
-        byte* activeLoadingZoneBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55E1C);
-        byte* loadingZoneName = activeLoadingZoneBaseAddress + 0xB14;
-        int attempts = 0;
-        while (!hasPTRUpdated)
-        {
-            string currentLoadingZone = new((sbyte*)loadingZoneName); // Read the current loading Zone name (as a string)
-            if (currentLoadingZone == "7LEAKY27LONDON") // This is the loading zone to The Seven Harrys
-            {
-                Game.PrintToLog("PTR has updated to 7LEAKY27LONDON.");
-                hasPTRUpdated = true;
-                ClearLeaky2LondonY7(0);
-            }
-            else if (currentLoadingZone == "5LONDON25HUBLEAKY") // This is the loading zone to London
-            {
-                Game.PrintToLog("PTR has updated to 5LONDON25HUBLEAKY.");
-                hasPTRUpdated = true;
-                ClearLeaky2LondonY7();
-            }
-            else
-            {
-                Game.PrintToLog($"Current PTR Loading Zone: {currentLoadingZone}, waiting for PTR to update to Leaky2London Y7.");
-                attempts++;
-                // We don't want this function to run forever (i.e. in case the player immediately turns around), so we timeout after 5 attempts or roughly 5 seconds
-                if (attempts > 5)
-                {
-                    Game.PrintToLog("Timeout reached, PTR did not update to Leaky2London Y7.");
-                    return;
-                }
-                Thread.Sleep(1000); // Try again after ~1 second
-            }
-        }
-        Game.PrintToLog("Y7 Leaky PTR Loop has finished.");
-    }
+    // /* 
+    // Year 7 Leaky2London is a special case where no matter what I write to the save file, the loading zone is active upon first entrance.
+    // This is a helper function to turn off The Seven Harrys Story Mode Loading Zone.
+    // I use a pointer to the map's active loading zone in memory, however, because it is one of (if not the) last thing to be updated when loading a new map, we have to run this on a new thread the first time the player enters Y7 Leaky Cauldon.
+    // */
+    // public static unsafe void CheckLeaky2LondonY7PTR()
+    // {
+    //     bool hasPTRUpdated = false; // bool variable that we use to track if the pointer address has updated
+    //     byte* activeLoadingZoneBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55E1C);
+    //     byte* loadingZoneName = activeLoadingZoneBaseAddress + 0xB14;
+    //     int attempts = 0;
+    //     while (!hasPTRUpdated)
+    //     {
+    //         string currentLoadingZone = new((sbyte*)loadingZoneName); // Read the current loading Zone name (as a string)
+    //         if (currentLoadingZone == "7LEAKY27LONDON") // This is the loading zone to The Seven Harrys
+    //         {
+    //             Game.PrintToLog("PTR has updated to 7LEAKY27LONDON.");
+    //             hasPTRUpdated = true;
+    //             ClearLeaky2LondonY7(0);
+    //         }
+    //         else if (currentLoadingZone == "5LONDON25HUBLEAKY") // This is the loading zone to London
+    //         {
+    //             Game.PrintToLog("PTR has updated to 5LONDON25HUBLEAKY.");
+    //             hasPTRUpdated = true;
+    //             ClearLeaky2LondonY7();
+    //         }
+    //         else
+    //         {
+    //             Game.PrintToLog($"Current PTR Loading Zone: {currentLoadingZone}, waiting for PTR to update to Leaky2London Y7.");
+    //             attempts++;
+    //             // We don't want this function to run forever (i.e. in case the player immediately turns around), so we timeout after 5 attempts or roughly 5 seconds
+    //             if (attempts > 5)
+    //             {
+    //                 Game.PrintToLog("Timeout reached, PTR did not update to Leaky2London Y7.");
+    //                 return;
+    //             }
+    //             Thread.Sleep(1000); // Try again after ~1 second
+    //         }
+    //     }
+    //     Game.PrintToLog("Y7 Leaky PTR Loop has finished.");
+    // }
 
-    // Once the pointer is updated, we can clear out the Seven Harrys Loading Zone
-    // 1 indicates that London Loading Zone was being pointed to, 0 indicates that the Seven Harrys was
-    public static unsafe void ClearLeaky2LondonY7(int version = 1)
-    {
-        byte* ActiveLoadingZoneBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55E1C);
+    // // Once the pointer is updated, we can clear out the Seven Harrys Loading Zone
+    // // 1 indicates that London Loading Zone was being pointed to, 0 indicates that the Seven Harrys was
+    // public static unsafe void ClearLeaky2LondonY7(int version = 1)
+    // {
+    //     byte* ActiveLoadingZoneBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55E1C);
 
-        if (ActiveLoadingZoneBaseAddress == null)
-        {
-            Game.PrintToLog("Active Loading Zone Base Address is null, can't clear Leaky2London Y7 flag.");
-            return;
-        }
+    //     if (ActiveLoadingZoneBaseAddress == null)
+    //     {
+    //         Game.PrintToLog("Active Loading Zone Base Address is null, can't clear Leaky2London Y7 flag.");
+    //         return;
+    //     }
 
-        byte* ptr = *(byte**)(ActiveLoadingZoneBaseAddress + 0xB10); // First Pointer
-        Game.PrintToLog($"Active Loading Zone Pointer is 0x{(nuint)ptr:X}");
+    //     byte* ptr = *(byte**)(ActiveLoadingZoneBaseAddress + 0xB10); // First Pointer
+    //     Game.PrintToLog($"Active Loading Zone Pointer is 0x{(nuint)ptr:X}");
 
-        if (ptr == null || (nuint)ptr == 0xB10 || (nuint)ptr == 0xB11)
-        {
-            Game.PrintToLog("Active Loading Zone Pointer is null, can't clear Leaky2London Y7 flag.");
-            return;
-        }
-        ptr += 0x7A; // Second Pointer
-        if (version == 1)
-        {
-            ptr -= 0xB10; // Loading Zone was pointing to London so adjusting back to point to the turn off the correct loading zone
-        }
-        Game.PrintToLog($"Clearing Leaky2London Y7 Flag at address 0x{(nuint)ptr:X}");
-        *ptr = 1; // Remove the Loading Zone Flag to bring to level
-    }
+    //     if (ptr == null || (nuint)ptr == 0xB10 || (nuint)ptr == 0xB11)
+    //     {
+    //         Game.PrintToLog("Active Loading Zone Pointer is null, can't clear Leaky2London Y7 flag.");
+    //         return;
+    //     }
+    //     ptr += 0x7A; // Second Pointer
+    //     if (version == 1)
+    //     {
+    //         ptr -= 0xB10; // Loading Zone was pointing to London so adjusting back to point to the turn off the correct loading zone
+    //     }
+    //     Game.PrintToLog($"Clearing Leaky2London Y7 Flag at address 0x{(nuint)ptr:X}");
+    //     *ptr = 1; // Remove the Loading Zone Flag to bring to level
+    // }
 
-    // This is a helper function to verify if the player has previously entered into Y7 Leaky cauldron (indicating that the loading zone update above isn't needed)
-    public static unsafe bool CheckIfLeaky7Entered()
-    {
-        byte* ptr = HubBaseAddress + 0x118A;
-        Game.PrintToLog($"Checking if Leaky Cauldron Y7 entered at address 0x{(nuint)ptr:X}, value: {*ptr}");
-        return (*ptr & (byte)BitMask.Entered) != 0;
-    }
+    // // This is a helper function to verify if the player has previously entered into Y7 Leaky cauldron (indicating that the loading zone update above isn't needed)
+    // public static unsafe bool CheckIfLeaky7Entered()
+    // {
+    //     byte* ptr = HubBaseAddress + 0x118A;
+    //     Game.PrintToLog($"Checking if Leaky Cauldron Y7 entered at address 0x{(nuint)ptr:X}, value: {*ptr}");
+    //     return (*ptr & (byte)BitMask.Entered) != 0;
+    // }
 }
 

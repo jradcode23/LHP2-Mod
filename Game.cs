@@ -32,7 +32,6 @@ public class Game
     private static readonly int[] LeakyMapIDs = [368, 374, 380, 386];
     private static readonly int[] DuelingMapIDs = [44, 73, 137, 157, 207, 223, 309, 324];
     private static readonly string[] FastTravelRequests = ["Y5LOND", "Y6LOND", "Y7LOND", "Y8LOND", "Y5FOYE", "Y6FOYE", "Y7FOYE", "Y8FOYE", "Y5QUAD", "Y6QUAD", "Y7QUAD", "Y8QUAD"];
-    private static unsafe ushort* DarkTimesMapConstant => *(ushort**)(Mod.BaseAddress + 0xB069AC) + 0x32;
     public const int tokenOffset = 213;
     public const int levelOffset = 450;
     public const int SIPOffset = 475;
@@ -177,7 +176,7 @@ public class Game
         // NOP Code that forces to Dark Times upon save reload
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3CB61, [0x90, 0x90]);
         // Change Dark Times Map Constant
-        *DarkTimesMapConstant = 388;
+        *HubHandler.DarkTimesMapConstant = 388;
     }
 
     // This function turns on the N0CUT5 Cheat Code so cutscenes don't show
@@ -996,10 +995,15 @@ public class Game
     private static void OnLevelChange(int value)
     {
         Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
-        Mod.GameInstance!.LevelID = value; PrintToLog($"Level ID updated to {value}.");
+        Mod.GameInstance!.LevelID = value;
+        PrintToLog($"Level ID updated to {value}.");
         if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 2)
         {
             HubHandler.UpdateWinConText();
+        }
+        if (value is >= 1 and <= 4)
+        {
+            HubHandler.ChangeLeakyLoadingZones(value);
         }
     }
 
@@ -1041,7 +1045,7 @@ public class Game
         if (prevMapID == 402)
         {
             HubHandler.LoadRedBricksEnabled();
-            *DarkTimesMapConstant = 361;
+            *HubHandler.DarkTimesMapConstant = 361;
         }
     }
 
@@ -1090,6 +1094,7 @@ public class Game
             PrintToLog("Level Selector Opened");
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, MaxItemID);
+            HubHandler.RestoreLeakyLoadingZones();
             HubHandler.UpdateWinConText();
         }
 
@@ -1136,6 +1141,7 @@ public class Game
                     ResetItems();
                     Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
                     Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
+                    HubHandler.ChangeLeakyLoadingZones(Mod.GameInstance!.LevelID);
                     HubHandler.UpdateWinConText();
                 }
             }
