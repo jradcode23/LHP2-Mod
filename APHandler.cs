@@ -24,6 +24,7 @@ public class ArchipelagoHandler
     private string Slot { get; set; }
     private string? Seed { get; set; }
     private string Password { get; set; }
+    public Dictionary<long, ScoutedItemInfo>? ScoutedLocations { get; private set; }
 
     public static bool IsConnected;
     public static bool IsConnecting;
@@ -121,6 +122,8 @@ public class ArchipelagoHandler
             // Sets up slot Data
             SlotDataInstance = new(_loginSuccessful.SlotData);
             SlotDataInstance.PrintData();
+            var locationIDs = BuildLocationIds();
+            var scouting = Session.Locations.ScoutLocationsAsync(HintCreationPolicy.None, locationIDs);
             HintSystem.SetMessageText("Hooking, Please Wait", (uint)NewGameTextPTR);
             // Modify the game now that we are connected
             bool isHooked = Mod.InitOnMenu();
@@ -137,6 +140,8 @@ public class ArchipelagoHandler
                 HintSystem.SetMessageText("Failed To Hook", (uint)NewGameTextPTR);
             }
             EnsureBackgroundThreads();
+            scouting.Wait();
+            ScoutedLocations = scouting.Result;
             //resync here
             return true;
         }
@@ -147,6 +152,14 @@ public class ArchipelagoHandler
         Game.PrintToLog(errorMessage);
         Game.PrintToLog($"Attempting reconnect...");
         return false;
+    }
+
+    // Function to build an array of all location IDs in the game for scouting purposes. 
+    private static long[] BuildLocationIds()
+    {
+        var ids = new List<long>();
+        ids.AddRange(Enumerable.Range(400000, 1030).Select(i => (long)i));
+        return [.. ids];
     }
 
     /* Tells archi want we want to do when an item is received. 
@@ -487,5 +500,4 @@ public class ArchipelagoHandler
     {
         Session.DataStorage[Scope.Slot, "map"] = MapID;
     }
-
 }

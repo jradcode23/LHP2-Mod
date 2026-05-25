@@ -1,12 +1,16 @@
+using Archipelago.MultiClient.Net.Models;
+
 namespace LHP2_Archi_Mod;
 
-public class ShopPrices
+public class Shops
 {
     private static unsafe int* GoldBrickShopBaseAddress => (int*)(Mod.BaseAddress + 0x94B13C);
     private static unsafe int* RedBrickShopBaseAddress => (int*)(Mod.BaseAddress + 0x94CEE4);
     private static unsafe int* JokeShopBaseAddress => (int*)(Mod.BaseAddress + 0x94E514);
     private static unsafe byte* SingleSlotCharacterBaseAddress => *(byte**)(Mod.BaseAddress + 0xADBF90);
     private static unsafe byte* MultiSlotCharacterBaseAddress => *(byte**)(Mod.BaseAddress + 0xAE157C);
+    private static unsafe uint ShopTextAddress => (uint)(HintSystem.HintTextBaseAddress + 0x274);
+    private static IntPtr[] OriginalJokeShopPointers = new IntPtr[19];
 
     // This helper function is used to reduce the shop prices based on what is stated in the Slot Data
     public static unsafe void SetShopPrices(int multiplier)
@@ -102,4 +106,64 @@ public class ShopPrices
             *(JokeShopBaseAddress + i * 0xB) *= multiplier;
         }
     }
+
+    public static unsafe void SetJokeShopPointers()
+    {
+        int* firstPTR = JokeShopBaseAddress + 0x8;
+        for (int i = 0; i < 19; i++)
+        {
+            OriginalJokeShopPointers[i] = new IntPtr(*(firstPTR + i * 0xB));
+        }
+        for (int i = 0; i < 19; i++)
+        {
+            Game.PrintToLog($"Original Joke Shop Pointer {i}: 0x{(nuint)OriginalJokeShopPointers[i]:X}");
+        }
+    }
+
+    public static unsafe void UpdateJokeShopPointers()
+    {
+        int* firstPTR = JokeShopBaseAddress + 0x8;
+        for (int i = 0; i < 19; i++)
+        {
+            *(firstPTR + i * 0xB) = (int)ShopTextAddress;
+        }
+    }
+
+    public static unsafe void ResetJokeShopPointers()
+    {
+        int* firstPTR = JokeShopBaseAddress + 0x8;
+        for (int i = 0; i < 19; i++)
+        {
+            *(firstPTR + i * 0xB) = (int)OriginalJokeShopPointers[i];
+        }
+    }
+
+    public static void HandleShopText(int itemSelected)
+    {
+        string message = "Unknown item";
+        if (Mod.LHP2_Archipelago == null || Mod.LHP2_Archipelago.ScoutedLocations == null)
+        {
+            return;
+        }
+
+        ScoutedItemInfo item;
+
+        try
+        {
+            item = Mod.LHP2_Archipelago!.ScoutedLocations[ArchipelagoHandler.gameOffset + itemSelected];
+            message = item.Player + "'s " + item.ItemDisplayName;
+            if (message.Length > 75)
+            {
+                message = message[..75]; // Truncate message if it exceeds selected max hint length
+            }
+            HintSystem.SetMessageText(message, ShopTextAddress);
+        }
+
+        catch (Exception ex)
+        {
+            Game.PrintToLog($"Error retrieving scouted location for ID {itemSelected}: {ex.Message}");
+            return;
+        }
+    }
+
 }
