@@ -32,6 +32,7 @@ public class Game
     public int CurrentCharID { get; private set; } = 0;
     private static readonly int[] LeakyMapIDs = [368, 374, 380, 386];
     private static readonly int[] JokeShopMapIDs = [369, 375, 383, 387];
+    private static readonly int[] KnockturnMapIDs = [367, 373, 379, 385];
     private static readonly int[] DuelingMapIDs = [44, 73, 137, 157, 207, 223, 309, 324];
     private static readonly string[] FastTravelRequests = ["Y5LOND", "Y6LOND", "Y7LOND", "Y8LOND", "Y5FOYE", "Y6FOYE", "Y7FOYE", "Y8FOYE", "Y5QUAD", "Y6QUAD", "Y7QUAD", "Y8QUAD"];
     public const int tokenOffset = 213;
@@ -180,7 +181,7 @@ public class Game
         // Change Dark Times Map Constant
         *HubHandler.DarkTimesMapConstant = 388;
 
-        Shops.SetJokeShopPointers();
+        Shops.SetShopPointers();
     }
 
     // This function turns on the N0CUT5 Cheat Code so cutscenes don't show
@@ -1130,10 +1131,15 @@ public class Game
             HubHandler.UpdateWinConText();
 
             // Joke Shop prices are set when save is loaded. So we handle that by changing it upon opening and closing that shop
-            if (JokeShopMapIDs.Contains(ShopMapID))
+            if (JokeShopMapIDs.Contains(ShopMapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleJokeSpells == 1)
             {
                 Shops.SetJokeShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
                 Shops.UpdateJokeShopPointers();
+            }
+
+            if (KnockturnMapIDs.Contains(ShopMapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleGoldBrickPurchases == 1)
+            {
+                Shops.UpdateGoldBrickPointer();
             }
         }
         else
@@ -1182,10 +1188,15 @@ public class Game
                 }
 
                 // Joke Shop prices are set when save is loaded. So we handle that by changing it upon opening and closing that shop
-                if (JokeShopMapIDs.Contains(ShopMapID))
+                if (JokeShopMapIDs.Contains(ShopMapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleJokeSpells == 1)
                 {
                     Shops.ReverseJokeShopPriceChanges(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
                     Shops.ResetJokeShopPointers();
+                }
+
+                if (KnockturnMapIDs.Contains(ShopMapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleGoldBrickPurchases == 1)
+                {
+                    Shops.ResetGoldBrickPointer();
                 }
             }
         }
@@ -1476,9 +1487,16 @@ public class Game
     public delegate void ShopItemSelected(int edx);
     private static void OnShopItemSelected(int edx)
     {
-        if (JokeShopMapIDs.Contains(Mod.GameInstance!.MapID2))
+        if (JokeShopMapIDs.Contains(Mod.GameInstance!.MapID2) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleJokeSpells == 1)
         {
             Shops.HandleShopText(edx + SpellPurchOffset + 1); // Adding 1 to account for the first spell not being used
+            return;
+        }
+
+        if (KnockturnMapIDs.Contains(Mod.GameInstance!.MapID2) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleGoldBrickPurchases == 1)
+        {
+            Shops.HandleShopText(edx + GoldBrickPurchOffset);
+            return;
         }
     }
 

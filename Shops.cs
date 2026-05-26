@@ -10,7 +10,9 @@ public class Shops
     private static unsafe byte* SingleSlotCharacterBaseAddress => *(byte**)(Mod.BaseAddress + 0xADBF90);
     private static unsafe byte* MultiSlotCharacterBaseAddress => *(byte**)(Mod.BaseAddress + 0xAE157C);
     private static unsafe uint ShopTextAddress => (uint)(HintSystem.HintTextBaseAddress + 0x274);
+    private static unsafe int* GoldBrickShopPointerAddress => *(int**)(Mod.BaseAddress + 0xAE6E58) + 0xE0;
     private static IntPtr[] OriginalJokeShopPointers = new IntPtr[19];
+    private static IntPtr OriginalGoldBrickShopPointer;
 
     // This helper function is used to reduce the shop prices based on what is stated in the Slot Data
     public static unsafe void SetShopPrices(int multiplier)
@@ -107,17 +109,15 @@ public class Shops
         }
     }
 
-    public static unsafe void SetJokeShopPointers()
+    public static unsafe void SetShopPointers()
     {
-        int* firstPTR = JokeShopBaseAddress + 0x8;
+        int* firstJokePTR = JokeShopBaseAddress + 0x8;
         for (int i = 0; i < 19; i++)
         {
-            OriginalJokeShopPointers[i] = new IntPtr(*(firstPTR + i * 0xB));
+            OriginalJokeShopPointers[i] = new IntPtr(*(firstJokePTR + i * 0xB));
         }
-        for (int i = 0; i < 19; i++)
-        {
-            Game.PrintToLog($"Original Joke Shop Pointer {i}: 0x{(nuint)OriginalJokeShopPointers[i]:X}");
-        }
+
+        OriginalGoldBrickShopPointer = new IntPtr(*GoldBrickShopPointerAddress);
     }
 
     public static unsafe void UpdateJokeShopPointers()
@@ -136,6 +136,16 @@ public class Shops
         {
             *(firstPTR + i * 0xB) = (int)OriginalJokeShopPointers[i];
         }
+    }
+
+    public static unsafe void UpdateGoldBrickPointer()
+    {
+        *GoldBrickShopPointerAddress = (int)ShopTextAddress;
+    }
+
+    public static unsafe void ResetGoldBrickPointer()
+    {
+        *GoldBrickShopPointerAddress = (int)OriginalGoldBrickShopPointer;
     }
 
     public static void HandleShopText(int itemSelected)
