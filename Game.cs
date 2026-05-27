@@ -1014,10 +1014,7 @@ public class Game
         Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
         Mod.GameInstance!.LevelID = value;
         PrintToLog($"Level ID updated to {value}.");
-        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 2)
-        {
-            HubHandler.UpdateWinConText();
-        }
+        HubHandler.UpdateWinConText();
         if (value is >= 1 and <= 4)
         {
             HubHandler.ChangeLeakyLoadingZones(value);

@@ -181,14 +181,14 @@ public class HintSystem
     // Helper function to write the received Horcrux count to the Player 2 slot name
     public static void DisplayHorcruxCount(byte count)
     {
-        string message = $"Horcruxes Collected: {count}";
+        string message = $"Horcruxes Collected: {count}/{Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredHorcruxes}";
         SetMessageText(message, PressButtonToStartTextAddress);
     }
 
     // Helper function to write the Levels Beaten to the Player 2 slot name
-    public static void DislplayLevelsBeaten(byte count)
+    public static void DisplayLevelsBeaten(byte count)
     {
-        string message = $"Levels Beaten: {count}";
+        string message = $"Levels Beaten: {count}/{Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredLevels}";
         SetMessageText(message, PressButtonToStartTextAddress);
     }
 

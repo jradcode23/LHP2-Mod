@@ -426,7 +426,7 @@ public class HubHandler
         if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 2)
         {
             byte levelsBeaten = (byte)Mod.LHP2_Archipelago!.CountLocationsCheckedInRange(450, 473);
-            HintSystem.DislplayLevelsBeaten(levelsBeaten);
+            HintSystem.DisplayLevelsBeaten(levelsBeaten);
         }
     }
 
