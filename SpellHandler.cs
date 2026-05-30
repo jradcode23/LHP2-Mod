@@ -618,6 +618,7 @@ public class SpellHandler
     // Helper function to reset all passive, active, and make spells invisible
     public static unsafe void ResetSpells()
     {
+        byte* y5GhostPtr = HubHandler.GhostPathBaseAddress + 0x20;
         try
         {
             // Reset Passive Spells
@@ -627,6 +628,10 @@ public class SpellHandler
                 {
                     byte* passivePTR = SpellBaseAddress + i;
                     *passivePTR = 0;
+                    if (i == 5 && (*y5GhostPtr & (1 << 2)) != 0 && Mod.LHP2_Archipelago!.IsLocationChecked(1007))
+                    {
+                        *passivePTR |= 1 << 6; // Unlocks DADA
+                    }
                 }
             }
             ResetActiveSpells();
@@ -642,16 +647,6 @@ public class SpellHandler
         foreach (int spellId in defaultSpells)
         {
             UnlockSpell(spellId, Mod.GameInstance!.CurrentCharID);
-        }
-
-        // Special handling for DADA
-        if (HubHandler.GhostPathBaseAddress != null)
-        {
-            byte* y5GhostPtr = HubHandler.GhostPathBaseAddress + 0x20;
-            if (Mod.LHP2_Archipelago!.IsLocationChecked(1007) && (*y5GhostPtr & (1 << 2)) != 0)
-            {
-                UnlockSpell(46, Mod.GameInstance!.CurrentCharID); // DADA
-            }
         }
 
         // Make sure that dark magic is usable if you have a character
