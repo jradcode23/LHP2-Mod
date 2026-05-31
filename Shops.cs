@@ -13,6 +13,8 @@ public class Shops
     private static unsafe int* GoldBrickShopPointerAddress => *(int**)(Mod.BaseAddress + 0xAE6E58) + 0xE0;
     private static IntPtr[] OriginalJokeShopPointers = new IntPtr[19];
     private static IntPtr OriginalGoldBrickShopPointer;
+    private static IntPtr[] RedBrickShopAddresses = new IntPtr[24];
+    private static IntPtr[] OriginalRedBrickShopPointers = new IntPtr[24];
 
     // This helper function is used to reduce the shop prices based on what is stated in the Slot Data
     public static unsafe void SetShopPrices(int multiplier)
@@ -109,6 +111,35 @@ public class Shops
         }
     }
 
+    // Set up the Red Brick shop address array since they aren't in order in memory like the other shops
+    private static void CreateRedBrickArray()
+    {
+        RedBrickShopAddresses[0] = new IntPtr((int)(Mod.BaseAddress + 0xAD9DB4));
+        RedBrickShopAddresses[1] = new IntPtr((int)(Mod.BaseAddress + 0xAD9DA4));
+        RedBrickShopAddresses[2] = new IntPtr((int)(Mod.BaseAddress + 0xAD9984));
+        RedBrickShopAddresses[3] = new IntPtr((int)(Mod.BaseAddress + 0xAD9D44));
+        RedBrickShopAddresses[4] = new IntPtr((int)(Mod.BaseAddress + 0xAD9D94));
+        RedBrickShopAddresses[5] = new IntPtr((int)(Mod.BaseAddress + 0xAD9A74));
+        RedBrickShopAddresses[6] = new IntPtr((int)(Mod.BaseAddress + 0xAD9D24));
+        RedBrickShopAddresses[7] = new IntPtr((int)(Mod.BaseAddress + 0xAD9AC4));
+        RedBrickShopAddresses[8] = new IntPtr((int)(Mod.BaseAddress + 0xAD9BB4));
+        RedBrickShopAddresses[9] = new IntPtr((int)(Mod.BaseAddress + 0xAD9BF4));
+        RedBrickShopAddresses[10] = new IntPtr((int)(Mod.BaseAddress + 0xAD9C24));
+        RedBrickShopAddresses[11] = new IntPtr((int)(Mod.BaseAddress + 0xAD9C54));
+        RedBrickShopAddresses[12] = new IntPtr((int)(Mod.BaseAddress + 0xAD9C84));
+        RedBrickShopAddresses[13] = new IntPtr((int)(Mod.BaseAddress + 0xAD9AA4));
+        RedBrickShopAddresses[14] = new IntPtr((int)(Mod.BaseAddress + 0xAD9C04));
+        RedBrickShopAddresses[15] = new IntPtr((int)(Mod.BaseAddress + 0xAD9CF4));
+        RedBrickShopAddresses[16] = new IntPtr((int)(Mod.BaseAddress + 0xAD9BA4));
+        RedBrickShopAddresses[17] = new IntPtr((int)(Mod.BaseAddress + 0xAD9A34));
+        RedBrickShopAddresses[18] = new IntPtr((int)(Mod.BaseAddress + 0xAD9A44));
+        RedBrickShopAddresses[19] = new IntPtr((int)(Mod.BaseAddress + 0xAD9A54));
+        RedBrickShopAddresses[20] = new IntPtr((int)(Mod.BaseAddress + 0xAD9D64));
+        RedBrickShopAddresses[21] = new IntPtr((int)(Mod.BaseAddress + 0xAD9D34));
+        RedBrickShopAddresses[22] = new IntPtr((int)(Mod.BaseAddress + 0xAD9B74));
+        RedBrickShopAddresses[23] = new IntPtr((int)(Mod.BaseAddress + 0xAD9C94));
+    }
+
     public static unsafe void SetShopPointers()
     {
         int* firstJokePTR = JokeShopBaseAddress + 0x8;
@@ -118,6 +149,11 @@ public class Shops
         }
 
         OriginalGoldBrickShopPointer = new IntPtr(*GoldBrickShopPointerAddress);
+        CreateRedBrickArray();
+        for (int i = 0; i < 24; i++)
+        {
+            OriginalRedBrickShopPointers[i] = new IntPtr(*(int*)RedBrickShopAddresses[i].ToPointer());
+        }
     }
 
     public static unsafe void UpdateJokeShopPointers()
@@ -146,6 +182,22 @@ public class Shops
     public static unsafe void ResetGoldBrickPointer()
     {
         *GoldBrickShopPointerAddress = (int)OriginalGoldBrickShopPointer;
+    }
+
+    public static unsafe void UpdateRedBrickPointers()
+    {
+        for (int i = 0; i < 24; i++)
+        {
+            *(int*)RedBrickShopAddresses[i].ToPointer() = (int)ShopTextAddress;
+        }
+    }
+
+    public static unsafe void ResetRedBrickPointers()
+    {
+        for (int i = 0; i < 24; i++)
+        {
+            *(int*)RedBrickShopAddresses[i].ToPointer() = (int)OriginalRedBrickShopPointers[i];
+        }
     }
 
     public static void HandleShopText(int itemSelected)

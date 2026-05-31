@@ -27,6 +27,7 @@ public class Game
     public int MapID { get; private set; } = -1;
     public int MapID2 { get; private set; } = -1; // This is used for ths shop text because it constantly prints and could cause deadlocks
     public bool PrevInShop { get; private set; } = false;
+    public bool PrevInShop2 { get; private set; } = false; // This is used for ths shop text because it constantly prints and could cause deadlocks
     public bool PrevInLevelSelect { get; private set; } = false;
     public bool PrevInMenu { get; private set; } = false;
     public int CurrentCharID { get; private set; } = 0;
@@ -1144,6 +1145,7 @@ public class Game
             lock (Mod.GameInstance!.StateLock)
             {
                 Mod.GameInstance!.PrevInShop = true;
+                Mod.GameInstance!.PrevInShop2 = true;
             }
             PrintToLog("Shop Opened");
             ResetItems();
@@ -1163,6 +1165,11 @@ public class Game
             if (KnockturnMapIDs.Contains(ShopMapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleGoldBrickPurchases == 1)
             {
                 Shops.UpdateGoldBrickPointer();
+            }
+
+            if (LeakyMapIDs.Contains(ShopMapID))
+            {
+                Shops.UpdateRedBrickPointers();
             }
         }
         else
@@ -1197,6 +1204,7 @@ public class Game
                 lock (Mod.GameInstance!.StateLock)
                 {
                     Mod.GameInstance!.PrevInShop = false;
+                    Mod.GameInstance!.PrevInShop2 = false;
                 }
                 PrintToLog("Shop Selector Closed");
 
@@ -1220,6 +1228,11 @@ public class Game
                 if (KnockturnMapIDs.Contains(ShopMapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleGoldBrickPurchases == 1)
                 {
                     Shops.ResetGoldBrickPointer();
+                }
+
+                if (LeakyMapIDs.Contains(ShopMapID))
+                {
+                    Shops.ResetRedBrickPointers();
                 }
             }
         }
@@ -1510,6 +1523,11 @@ public class Game
     public delegate void ShopItemSelected(int edx);
     private static void OnShopItemSelected(int edx)
     {
+        if (!Mod.GameInstance!.PrevInShop2)
+        {
+            return;
+        }
+
         if (JokeShopMapIDs.Contains(Mod.GameInstance!.MapID2) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleJokeSpells == 1)
         {
             Shops.HandleShopText(edx + SpellPurchOffset + 1); // Adding 1 to account for the first spell not being used
@@ -1519,6 +1537,12 @@ public class Game
         if (KnockturnMapIDs.Contains(Mod.GameInstance!.MapID2) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleGoldBrickPurchases == 1)
         {
             Shops.HandleShopText(edx + GoldBrickPurchOffset);
+            return;
+        }
+
+        if (LeakyMapIDs.Contains(Mod.GameInstance!.MapID2))
+        {
+            Shops.HandleShopText(edx + RedBrickPurchOffset);
             return;
         }
     }
