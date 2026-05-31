@@ -814,11 +814,7 @@ public class HubHandler
                     *y6GhostPtr2 |= 1 << 3; // Mark Love Hurts Story Complete
                     *y6GhostPtr2 |= 1 << 4; // Mark Felix Felicis Story Complete
                     *y6GhostPtr2 |= 1 << 5; // Mark The Horcrux and The Hand Story Complete
-                    if (Mod.LHP2_Archipelago!.IsLocationChecked(1022))
-                    {
-                        break;
-                    }
-                    Game.CheckAndReportLocation(1022);
+                    Game.CheckAndReportLocation(1022); // Send Dumbledore's Second Lesson
                     Game.CheckAndReportLocation(1023); // Send Y6 Story Complete
                     break;
                 default:

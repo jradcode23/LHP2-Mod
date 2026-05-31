@@ -333,6 +333,7 @@ public class Game
     private static IReverseWrapper<CmpUnlockedAbilities> _reverseWrapOnCmpUnlockedAbilities = default!;
     private static IReverseWrapper<SetDuelingHealth> _reverseWrapOnSetDuelingHealth = default!;
     private static IReverseWrapper<ShopItemSelected> _reverseWrapOnShopItemSelected = default!;
+    private static IReverseWrapper<StudCollected> _reverseWrapOnStudCollected = default!;
 
     // Modifying the associated assembly of our game to call our functions
     // TODO: Future proof this from game updates by implementing signature scanning
@@ -714,7 +715,32 @@ public class Game
             "popfd",
         };
         _asmHooks.Add(hooks.CreateAsmHook(shopItemSelected, (int)(Mod.BaseAddress + 0x792C3), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] studCollected =
+        {
+            "use32",
+            "push edi",
+            "push ecx",
+            "mov edi, esi",
+            "mov ecx, ebp",
+            "push ebx",
+            "push ecx",
+            "push edx",
+            "push ebp",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnStudCollected, out _reverseWrapOnStudCollected)}",
+            "mov esi, edi",
+            "mov ebp, ecx",
+            "pop ebp",
+            "pop edx",
+            "pop ecx",
+            "pop ebx",
+            "pop eax",
+            "pop edi"
+        };
+        // _asmHooks.Add(hooks.CreateAsmHook(studCollected, (int)(Mod.BaseAddress + 0x3B0AEC), AsmHookBehaviour.ExecuteFirst).Activate());
+
     }
+    // TODO:
 
     [Function(CallingConventions.Fastcall)]
     public delegate void LevelComplete();
@@ -1495,6 +1521,29 @@ public class Game
             Shops.HandleShopText(edx + GoldBrickPurchOffset);
             return;
         }
+    }
+
+    [Function([FunctionAttribute.Register.edi, FunctionAttribute.Register.eax],
+    FunctionAttribute.Register.edi, FunctionAttribute.StackCleanup.Callee)]
+    // edi is the stud value picked up and ebp is the address it is being written to
+    public delegate int StudCollected(int edi, int eax);
+    private static unsafe int OnStudCollected(int edi, int eax)
+    {
+        int* studTotalAddress = *(int**)(Mod.BaseAddress + 0xC5B600);
+        int* inLevelP1StudAddress = (int*)(Mod.BaseAddress + 0xC53E88);
+        int* inLevelP2StudAddress = (int*)(Mod.BaseAddress + 0xC53EA0);
+        PrintToLog($"Stud Total Address: 0x{(nuint)studTotalAddress:X}");
+        PrintToLog($"inLevelP1StudAddress: 0x{(nuint)inLevelP1StudAddress:X}");
+        PrintToLog($"inLevelP2StudAddress: 0x{(nuint)inLevelP2StudAddress:X}");
+        PrintToLog($"edi: 0x{edi:X}");
+        PrintToLog($"ebp: 0x{eax:X}");
+
+        if ((nuint)eax == (nuint)inLevelP1StudAddress || (nuint)eax == (nuint)inLevelP2StudAddress)
+        {
+            *studTotalAddress += edi;
+        }
+
+        return 0;
     }
 
     private static void ResetItems()
