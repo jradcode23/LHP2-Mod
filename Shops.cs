@@ -11,10 +11,13 @@ public class Shops
     private static unsafe byte* MultiSlotCharacterBaseAddress => *(byte**)(Mod.BaseAddress + 0xAE157C);
     private static unsafe uint ShopTextAddress => (uint)(HintSystem.HintTextBaseAddress + 0x274);
     private static unsafe int* GoldBrickShopPointerAddress => *(int**)(Mod.BaseAddress + 0xAE6E58) + 0xE0;
+    private static unsafe byte* CharacterPointerBaseAddress => *(byte**)(Mod.BaseAddress + 0xB06ED0);
     private static IntPtr[] OriginalJokeShopPointers = new IntPtr[19];
     private static IntPtr OriginalGoldBrickShopPointer;
     private static IntPtr[] RedBrickShopAddresses = new IntPtr[24];
     private static IntPtr[] OriginalRedBrickShopPointers = new IntPtr[24];
+
+    private static IntPtr[] OriginalCharacterPointers = new IntPtr[213];
 
     // This helper function is used to reduce the shop prices based on what is stated in the Slot Data
     public static unsafe void SetShopPrices(int multiplier)
@@ -154,6 +157,19 @@ public class Shops
         {
             OriginalRedBrickShopPointers[i] = new IntPtr(*(int*)RedBrickShopAddresses[i].ToPointer());
         }
+
+        byte* pointerAddress1 = *(byte**)(CharacterPointerBaseAddress + 0x64);
+        for (int i = 0; i < 213; i++)
+        {
+            int offset = CharacterHandler.GetCharacterByteOffset(i) + 0x70;
+            if (offset == -1)
+            {
+                continue; // Skip if no valid offset is found for this character ID
+            }
+            byte* pointerAddress2 = *(byte**)(pointerAddress1 + offset * 0x4);
+            byte* pointerAddress3 = pointerAddress2 + 0x0C;
+            OriginalCharacterPointers[i] = new IntPtr(*(int*)pointerAddress3);
+        }
     }
 
     public static unsafe void UpdateJokeShopPointers()
@@ -197,6 +213,38 @@ public class Shops
         for (int i = 0; i < 24; i++)
         {
             *(int*)RedBrickShopAddresses[i].ToPointer() = (int)OriginalRedBrickShopPointers[i];
+        }
+    }
+
+    public static unsafe void UpdateCharacterPointers()
+    {
+        byte* pointerAddress1 = *(byte**)(CharacterPointerBaseAddress + 0x64);
+        for (int i = 0; i < 213; i++)
+        {
+            int offset = CharacterHandler.GetCharacterByteOffset(i) + 0x70;
+            if (offset == -1)
+            {
+                continue; // Skip if no valid offset is found for this character ID
+            }
+            byte* pointerAddress2 = *(byte**)(pointerAddress1 + offset * 0x4);
+            byte* pointerAddress3 = pointerAddress2 + 0x0C;
+            *(int*)pointerAddress3 = (int)ShopTextAddress;
+        }
+    }
+
+    public static unsafe void ResetCharacterPointers()
+    {
+        byte* pointerAddress1 = *(byte**)(CharacterPointerBaseAddress + 0x64);
+        for (int i = 0; i < 213; i++)
+        {
+            int offset = CharacterHandler.GetCharacterByteOffset(i) + 0x70;
+            if (offset == -1)
+            {
+                continue; // Skip if no valid offset is found for this character ID
+            }
+            byte* pointerAddress2 = *(byte**)(pointerAddress1 + offset * 0x4);
+            byte* pointerAddress3 = pointerAddress2 + 0x0C;
+            *(int*)pointerAddress3 = (int)OriginalCharacterPointers[i];
         }
     }
 

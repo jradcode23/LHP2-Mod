@@ -26,6 +26,7 @@ public class Game
     public int PrevMapID { get; private set; } = -1;
     public int MapID { get; private set; } = -1;
     public int MapID2 { get; private set; } = -1; // This is used for ths shop text because it constantly prints and could cause deadlocks
+    public int MapID3 { get; private set; } = -1; // This is used for ths shop text because it constantly prints and could cause deadlocks
     public bool PrevInShop { get; private set; } = false;
     public bool PrevInShop2 { get; private set; } = false; // This is used for ths shop text because it constantly prints and could cause deadlocks
     public bool PrevInLevelSelect { get; private set; } = false;
@@ -34,6 +35,7 @@ public class Game
     private static readonly int[] LeakyMapIDs = [368, 374, 380, 386];
     private static readonly int[] JokeShopMapIDs = [369, 375, 383, 387];
     private static readonly int[] KnockturnMapIDs = [367, 373, 379, 385];
+    private static readonly int[] MadamMalkinMapIDs = [366, 372, 378, 382];
     private static readonly int[] DuelingMapIDs = [44, 73, 137, 157, 207, 223, 309, 324];
     private static readonly string[] FastTravelRequests = ["Y5LOND", "Y6LOND", "Y7LOND", "Y8LOND", "Y5FOYE", "Y6FOYE", "Y7FOYE", "Y8FOYE", "Y5QUAD", "Y6QUAD", "Y7QUAD", "Y8QUAD"];
     public const int tokenOffset = 213;
@@ -334,6 +336,7 @@ public class Game
     private static IReverseWrapper<CmpUnlockedAbilities> _reverseWrapOnCmpUnlockedAbilities = default!;
     private static IReverseWrapper<SetDuelingHealth> _reverseWrapOnSetDuelingHealth = default!;
     private static IReverseWrapper<ShopItemSelected> _reverseWrapOnShopItemSelected = default!;
+    private static IReverseWrapper<CharacterShopItemSelected> _reverseWrapOnCharacterShopItemSelected = default!;
     private static IReverseWrapper<StudCollected> _reverseWrapOnStudCollected = default!;
 
     // Modifying the associated assembly of our game to call our functions
@@ -717,6 +720,26 @@ public class Game
         };
         _asmHooks.Add(hooks.CreateAsmHook(shopItemSelected, (int)(Mod.BaseAddress + 0x792C3), AsmHookBehaviour.ExecuteFirst).Activate());
 
+        string[] characterShopItemSelected =
+        {
+            "use32",
+            "push ebx",
+            "mov ebx, esi",
+            "push eax",
+            "push ecx",
+            "push edx",
+            "push ebp",
+            "push edi",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnCharacterShopItemSelected, out _reverseWrapOnCharacterShopItemSelected)}",
+            "pop edi",
+            "pop ebp",
+            "pop edx",
+            "pop ecx",
+            "pop eax",
+            "pop ebx",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(characterShopItemSelected, (int)(Mod.BaseAddress + 0x88C0B), AsmHookBehaviour.ExecuteFirst).Activate());
+
         string[] studCollected =
         {
             "use32",
@@ -1060,6 +1083,7 @@ public class Game
             Mod.GameInstance!.PrevMapID = Mod.GameInstance!.MapID;
             Mod.GameInstance!.MapID = value;
             Mod.GameInstance!.MapID2 = value;
+            Mod.GameInstance!.MapID3 = value;
             mapID = Mod.GameInstance!.MapID;
             prevMapID = Mod.GameInstance!.PrevMapID;
         }
@@ -1171,6 +1195,11 @@ public class Game
             {
                 Shops.UpdateRedBrickPointers();
             }
+
+            if (MadamMalkinMapIDs.Contains(ShopMapID))
+            {
+                Shops.UpdateCharacterPointers();
+            }
         }
         else
         {
@@ -1233,6 +1262,11 @@ public class Game
                 if (LeakyMapIDs.Contains(ShopMapID))
                 {
                     Shops.ResetRedBrickPointers();
+                }
+
+                if (MadamMalkinMapIDs.Contains(ShopMapID))
+                {
+                    Shops.ResetCharacterPointers();
                 }
             }
         }
@@ -1544,6 +1578,22 @@ public class Game
         {
             Shops.HandleShopText(edx + RedBrickPurchOffset);
             return;
+        }
+    }
+
+    [Function([FunctionAttribute.Register.ebx],
+    FunctionAttribute.Register.ebx, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void CharacterShopItemSelected(int edx);
+    private static void OnCharacterShopItemSelected(int edx)
+    {
+        if (MadamMalkinMapIDs.Contains(Mod.GameInstance!.MapID3))
+        {
+            int item = CharacterHandler.GetLevelTokenItemID(edx);
+            if (item == -1)
+            {
+                return;
+            }
+            Shops.HandleShopText(item);
         }
     }
 
