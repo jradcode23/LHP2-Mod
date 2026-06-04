@@ -9,7 +9,7 @@ public class CharacterHandler
     private static readonly byte unlockOffset = 0xE4;
 
     // Dictionary containing all characters (by their archi ID) and their offset in the character array
-    private static readonly Dictionary<int, int> characterMap = new()
+    public static readonly Dictionary<int, int> characterMap = new()
     {
         {0, 0x3}, // Hagrid
         {1, 0xB}, // Fang
@@ -229,7 +229,7 @@ public class CharacterHandler
     // Returns the offset when searching the ID
     public static int GetCharacterByteOffset(int id)
     {
-        return characterMap[id];
+        return characterMap.TryGetValue(id, out var val) ? val : -1;
     }
 
     // Used for the character token array which is bits, takes the offset and gets the remainder
@@ -344,7 +344,7 @@ public class CharacterHandler
     {
         ushort bx = (ushort)(ID & 0xFFFF);
         bx -= 0x70; // There is a base 0x70 offset
-        Game.PrintToLog($"Level Token bx is: {bx}");
+        // Game.PrintToLog($"Token bx is: {bx}");
         var kvp = characterMap.FirstOrDefault(k => k.Value == bx);
         return kvp.Equals(default(KeyValuePair<int, int>)) ? -1 : kvp.Key;
     }

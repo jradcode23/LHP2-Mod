@@ -25,11 +25,17 @@ public class Game
     public int LevelID { get; private set; } = -1;
     public int PrevMapID { get; private set; } = -1;
     public int MapID { get; private set; } = -1;
+    public int MapID2 { get; private set; } = -1; // This is used for ths shop text because it constantly prints and could cause deadlocks
+    public int MapID3 { get; private set; } = -1; // This is used for ths shop text because it constantly prints and could cause deadlocks
     public bool PrevInShop { get; private set; } = false;
+    public bool PrevInShop2 { get; private set; } = false; // This is used for ths shop text because it constantly prints and could cause deadlocks
     public bool PrevInLevelSelect { get; private set; } = false;
     public bool PrevInMenu { get; private set; } = false;
     public int CurrentCharID { get; private set; } = 0;
     private static readonly int[] LeakyMapIDs = [368, 374, 380, 386];
+    private static readonly int[] JokeShopMapIDs = [369, 375, 383, 387];
+    private static readonly int[] KnockturnMapIDs = [367, 373, 379, 385];
+    private static readonly int[] MadamMalkinMapIDs = [366, 372, 378, 382];
     private static readonly int[] DuelingMapIDs = [44, 73, 137, 157, 207, 223, 309, 324];
     private static readonly string[] FastTravelRequests = ["Y5LOND", "Y6LOND", "Y7LOND", "Y8LOND", "Y5FOYE", "Y6FOYE", "Y7FOYE", "Y8FOYE", "Y5QUAD", "Y6QUAD", "Y7QUAD", "Y8QUAD"];
     public const int tokenOffset = 213;
@@ -171,12 +177,14 @@ public class Game
         // NOP Jump past check of spell unlocks in Specs lesson - If ability active
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x6C497, [0x90, 0x90]);
 
-        ShopPrices.SetShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
+        Shops.SetShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
 
         // NOP Code that forces to Dark Times upon save reload
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3CB61, [0x90, 0x90]);
         // Change Dark Times Map Constant
         *HubHandler.DarkTimesMapConstant = 388;
+
+        Shops.SetShopPointers();
     }
 
     // This function turns on the N0CUT5 Cheat Code so cutscenes don't show
@@ -327,6 +335,9 @@ public class Game
     private static IReverseWrapper<HandleInterruptedMessage> _reverseWrapOnHandleInterruptedMessage = default!;
     private static IReverseWrapper<CmpUnlockedAbilities> _reverseWrapOnCmpUnlockedAbilities = default!;
     private static IReverseWrapper<SetDuelingHealth> _reverseWrapOnSetDuelingHealth = default!;
+    private static IReverseWrapper<ShopItemSelected> _reverseWrapOnShopItemSelected = default!;
+    private static IReverseWrapper<CharacterShopItemSelected> _reverseWrapOnCharacterShopItemSelected = default!;
+    private static IReverseWrapper<StudCollected> _reverseWrapOnStudCollected = default!;
 
     // Modifying the associated assembly of our game to call our functions
     // TODO: Future proof this from game updates by implementing signature scanning
@@ -697,7 +708,63 @@ public class Game
             "popfd",
         };
         _asmHooks.Add(hooks.CreateAsmHook(startDuelHook, (int)(Mod.BaseAddress + 0x8C75E), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] shopItemSelected =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnShopItemSelected, out _reverseWrapOnShopItemSelected)}",
+            "popad",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(shopItemSelected, (int)(Mod.BaseAddress + 0x792C3), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] characterShopItemSelected =
+        {
+            "use32",
+            "push ebx",
+            "mov ebx, esi",
+            "push eax",
+            "push ecx",
+            "push edx",
+            "push ebp",
+            "push edi",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnCharacterShopItemSelected, out _reverseWrapOnCharacterShopItemSelected)}",
+            "pop edi",
+            "pop ebp",
+            "pop edx",
+            "pop ecx",
+            "pop eax",
+            "pop ebx",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(characterShopItemSelected, (int)(Mod.BaseAddress + 0x88C0B), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] studCollected =
+        {
+            "use32",
+            "push edi",
+            "push ecx",
+            "mov edi, esi",
+            "mov ecx, ebp",
+            "push ebx",
+            "push ecx",
+            "push edx",
+            "push ebp",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnStudCollected, out _reverseWrapOnStudCollected)}",
+            "mov esi, edi",
+            "mov ebp, ecx",
+            "pop ebp",
+            "pop edx",
+            "pop ecx",
+            "pop ebx",
+            "pop eax",
+            "pop edi"
+        };
+        // _asmHooks.Add(hooks.CreateAsmHook(studCollected, (int)(Mod.BaseAddress + 0x3B0AEC), AsmHookBehaviour.ExecuteFirst).Activate());
+
     }
+    // TODO:
 
     [Function(CallingConventions.Fastcall)]
     public delegate void LevelComplete();
@@ -997,10 +1064,7 @@ public class Game
         Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
         Mod.GameInstance!.LevelID = value;
         PrintToLog($"Level ID updated to {value}.");
-        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 2)
-        {
-            HubHandler.UpdateWinConText();
-        }
+        HubHandler.UpdateWinConText();
         if (value is >= 1 and <= 4)
         {
             HubHandler.ChangeLeakyLoadingZones(value);
@@ -1018,6 +1082,8 @@ public class Game
         {
             Mod.GameInstance!.PrevMapID = Mod.GameInstance!.MapID;
             Mod.GameInstance!.MapID = value;
+            Mod.GameInstance!.MapID2 = value;
+            Mod.GameInstance!.MapID3 = value;
             mapID = Mod.GameInstance!.MapID;
             prevMapID = Mod.GameInstance!.PrevMapID;
         }
@@ -1032,6 +1098,7 @@ public class Game
         if (LeakyMapIDs.Contains(prevMapID) && Mod.GameInstance!.LevelID is >= 1 and <= 4)
         {
             HubHandler.VerifyLondonMapIDs();
+            HubHandler.ChangeLeakyLoadingZones(Mod.GameInstance!.LevelID);
         }
 
         PrintToLog($"Map ID updated to {value}.");
@@ -1103,6 +1170,7 @@ public class Game
             lock (Mod.GameInstance!.StateLock)
             {
                 Mod.GameInstance!.PrevInShop = true;
+                Mod.GameInstance!.PrevInShop2 = true;
             }
             PrintToLog("Shop Opened");
             ResetItems();
@@ -1113,9 +1181,25 @@ public class Game
             HubHandler.UpdateWinConText();
 
             // Joke Shop prices are set when save is loaded. So we handle that by changing it upon opening and closing that shop
-            if (ShopMapID == 369 || ShopMapID == 375 || ShopMapID == 383 || ShopMapID == 387)
+            if (JokeShopMapIDs.Contains(ShopMapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleJokeSpells == 1)
             {
-                ShopPrices.SetJokeShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
+                Shops.SetJokeShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
+                Shops.UpdateJokeShopPointers();
+            }
+
+            if (KnockturnMapIDs.Contains(ShopMapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleGoldBrickPurchases == 1)
+            {
+                Shops.UpdateGoldBrickPointer();
+            }
+
+            if (LeakyMapIDs.Contains(ShopMapID))
+            {
+                Shops.UpdateRedBrickPointers();
+            }
+
+            if (MadamMalkinMapIDs.Contains(ShopMapID))
+            {
+                Shops.UpdateCharacterPointers();
             }
         }
         else
@@ -1150,6 +1234,7 @@ public class Game
                 lock (Mod.GameInstance!.StateLock)
                 {
                     Mod.GameInstance!.PrevInShop = false;
+                    Mod.GameInstance!.PrevInShop2 = false;
                 }
                 PrintToLog("Shop Selector Closed");
 
@@ -1164,9 +1249,25 @@ public class Game
                 }
 
                 // Joke Shop prices are set when save is loaded. So we handle that by changing it upon opening and closing that shop
-                if (ShopMapID == 369 || ShopMapID == 375 || ShopMapID == 383 || ShopMapID == 387)
+                if (JokeShopMapIDs.Contains(ShopMapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleJokeSpells == 1)
                 {
-                    ShopPrices.ReverseJokeShopPriceChanges(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
+                    Shops.ReverseJokeShopPriceChanges(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
+                    Shops.ResetJokeShopPointers();
+                }
+
+                if (KnockturnMapIDs.Contains(ShopMapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleGoldBrickPurchases == 1)
+                {
+                    Shops.ResetGoldBrickPointer();
+                }
+
+                if (LeakyMapIDs.Contains(ShopMapID))
+                {
+                    Shops.ResetRedBrickPointers();
+                }
+
+                if (MadamMalkinMapIDs.Contains(ShopMapID))
+                {
+                    Shops.ResetCharacterPointers();
                 }
             }
         }
@@ -1450,6 +1551,74 @@ public class Game
             ecx = (ecx & ~0xFFu) | 1u;
         }
         return ecx;
+    }
+
+    [Function([FunctionAttribute.Register.edx],
+    FunctionAttribute.Register.edx, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void ShopItemSelected(int edx);
+    private static void OnShopItemSelected(int edx)
+    {
+        if (!Mod.GameInstance!.PrevInShop2)
+        {
+            return;
+        }
+
+        if (JokeShopMapIDs.Contains(Mod.GameInstance!.MapID2) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleJokeSpells == 1)
+        {
+            Shops.HandleShopText(edx + SpellPurchOffset + 1); // Adding 1 to account for the first spell not being used
+            return;
+        }
+
+        if (KnockturnMapIDs.Contains(Mod.GameInstance!.MapID2) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleGoldBrickPurchases == 1)
+        {
+            Shops.HandleShopText(edx + GoldBrickPurchOffset);
+            return;
+        }
+
+        if (LeakyMapIDs.Contains(Mod.GameInstance!.MapID2))
+        {
+            Shops.HandleShopText(edx + RedBrickPurchOffset);
+            return;
+        }
+    }
+
+    [Function([FunctionAttribute.Register.ebx],
+    FunctionAttribute.Register.ebx, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void CharacterShopItemSelected(int edx);
+    private static void OnCharacterShopItemSelected(int edx)
+    {
+        if (MadamMalkinMapIDs.Contains(Mod.GameInstance!.MapID3))
+        {
+            int item = CharacterHandler.GetLevelTokenItemID(edx);
+            if (item == -1)
+            {
+                return;
+            }
+            Shops.HandleShopText(item);
+        }
+    }
+
+    [Function([FunctionAttribute.Register.edi, FunctionAttribute.Register.eax],
+    FunctionAttribute.Register.edi, FunctionAttribute.StackCleanup.Callee)]
+    // edi is the stud value picked up and ebp is the address it is being written to
+    public delegate int StudCollected(int edi, int eax);
+    private static unsafe int OnStudCollected(int edi, int eax)
+    {
+        int* studTotalAddress = *(int**)(Mod.BaseAddress + 0xC5B600);
+        int* inLevelP1StudAddress = (int*)(Mod.BaseAddress + 0xC53E88);
+        int* inLevelP2StudAddress = (int*)(Mod.BaseAddress + 0xC53EA0);
+        PrintToLog($"Stud Total Address: 0x{(nuint)studTotalAddress:X}");
+        PrintToLog($"inLevelP1StudAddress: 0x{(nuint)inLevelP1StudAddress:X}");
+        PrintToLog($"inLevelP2StudAddress: 0x{(nuint)inLevelP2StudAddress:X}");
+        PrintToLog($"edi: 0x{edi:X}");
+        PrintToLog($"ebp: 0x{eax:X}");
+
+        if ((nuint)eax == (nuint)inLevelP1StudAddress || (nuint)eax == (nuint)inLevelP2StudAddress)
+        {
+            *studTotalAddress += edi;
+        }
+
+        return 0;
     }
 
     private static void ResetItems()
