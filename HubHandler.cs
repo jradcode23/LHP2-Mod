@@ -504,39 +504,51 @@ public class HubHandler
         {
             case "Y5LOND":
                 *currentPTR = Y5London;
+                AdjustLeakyMapConstants(Y5London);
                 break;
             case "Y6LOND":
                 *currentPTR = Y6London;
+                AdjustLeakyMapConstants(Y6London);
                 break;
             case "Y7LOND":
                 *currentPTR = Y7London;
+                AdjustLeakyMapConstants(Y7London);
                 break;
             case "Y8LOND":
                 *currentPTR = Y8London;
+                AdjustLeakyMapConstants(Y8London);
                 break;
             case "Y5FOYE":
                 *currentPTR = Y5Foyer;
+                AdjustLeakyMapConstants(Y5Foyer);
                 break;
             case "Y6FOYE":
                 *currentPTR = Y6Foyer;
+                AdjustLeakyMapConstants(Y6Foyer);
                 break;
             case "Y7FOYE":
                 *currentPTR = Y7Foyer;
+                AdjustLeakyMapConstants(Y7Foyer);
                 break;
             case "Y8FOYE":
                 *currentPTR = Y8Foyer;
+                AdjustLeakyMapConstants(Y8Foyer);
                 break;
             case "Y5QUAD":
                 *currentPTR = Y5Quad;
+                AdjustLeakyMapConstants(Y5Quad);
                 break;
             case "Y6QUAD":
                 *currentPTR = Y6Quad;
+                AdjustLeakyMapConstants(Y6Quad);
                 break;
             case "Y7QUAD":
                 *currentPTR = Y7Quad;
+                AdjustLeakyMapConstants(Y7Quad);
                 break;
             case "Y8QUAD":
                 *currentPTR = Y8Quad;
+                AdjustLeakyMapConstants(Y8Quad);
                 break;
             default:
                 break;
@@ -545,9 +557,8 @@ public class HubHandler
 
     /*
     These following functions are used to update the Map ID Constant for Out of Retirement, The Seven Harrys, and The Thief's Downfall. In story mode, the Leaky2London loading zone is updated to send you to 1 of these 3 levels. As such, we are updating the Map Constants so that it sends the player to London instead of sending them to the level. We change all 3 of them, cause sometimes they don't transfer very well across time travelling.
-    TODO: May cause issues with fast/time travel? Wasn't seeing any in testing, but to keep an eye out
     */
-    public static unsafe void ChangeLeakyLoadingZones(int level)
+    public static void ChangeLeakyLoadingZones(int level)
     {
         ushort mapValue = level switch
         {
@@ -563,7 +574,12 @@ public class HubHandler
             Game.PrintToLog($"Could not properly adjust Leaky loading zone. Level: {level}");
             return;
         }
+        AdjustLeakyMapConstants(mapValue);
+    }
 
+    // Broken out into a separate function cause time travel wasn't always working so they need to be updated often
+    private static unsafe void AdjustLeakyMapConstants(ushort mapValue)
+    {
         *OutOfRetirementMapConstant = mapValue;
         *TheSevenHarrysMapConstant = mapValue;
         *TheThiefsDownfallMapConstant = mapValue;
@@ -591,7 +607,6 @@ public class HubHandler
     In Year 5, the game will warp you back to Hogwarts instead of having you walk back.
     This essentially locks you out of London through Quad until you have diffindo.
     To prevent all of these items from being locked behind diffindo, we clear out this warp so the player has to walk back.
-    TODO: Figure out how to make the warp work for Years 6-8 as an option for the player so they don't have to walk back if they don't want to.
     */
     public static unsafe void ClearReturnToHogwartsLocation()
     {
@@ -825,9 +840,13 @@ public class HubHandler
         // Handle Y7 Ghost Tasks
         else if (eax == (int)y7GhostPtr)
         {
-            *y7GhostPtr = 254; // Mark all Y7 Ghost Paths as Complete
-            if (dx == 4 && !Mod.LHP2_Archipelago!.IsLocationChecked(1027)) // Cafe Fight
+            if (dx == 4) // Cafe Fight
             {
+                *y7GhostPtr = 254; // Mark all Y7 Ghost Paths as Complete
+                if (Mod.LHP2_Archipelago!.IsLocationChecked(1027))
+                {
+                    return;
+                }
                 Game.CheckAndReportLocation(1027);
             }
             else

@@ -1098,6 +1098,7 @@ public class Game
         if (LeakyMapIDs.Contains(prevMapID) && Mod.GameInstance!.LevelID is >= 1 and <= 4)
         {
             HubHandler.VerifyLondonMapIDs();
+            HubHandler.ChangeLeakyLoadingZones(Mod.GameInstance!.LevelID);
         }
 
         PrintToLog($"Map ID updated to {value}.");
