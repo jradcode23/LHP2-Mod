@@ -454,13 +454,21 @@ public class HubHandler
         // Verify that the player has completed DADA banned in game before time travelling
         // The game doesn't really allow you to be in future years if DADA banned isn't completed
         byte* y5GhostPtr = GhostPathBaseAddress + 0x20;
-        if ((*y5GhostPtr & (1 << 1)) == 0)
+        if ((*y5GhostPtr & (1 << 2)) == 0)
         {
             Game.PrintToLog("Please complete DADA Banned Lesson before changing years");
             return;
         }
-        // TODO: adjust DADA to own function
-        // TODO: Check specs so player can't skip it
+        byte* y6GhostPtr = GhostPathBaseAddress + 0x34;
+        if (mapRequested == "Y6QUAD" || mapRequested == "Y6FOYE")
+        {
+            if ((*y6GhostPtr & (1 << 2)) == 0 || (*y6GhostPtr & (1 << 3)) == 0)
+            {
+                Game.PrintToLog("Please complete Specs Lesson & Arrive to Y6 Hogwarts before fast travelling to Year 6 Hogwarts.");
+                return;
+            }
+        }
+
         char yearChar = mapRequested[1];
         switch (yearChar)
         {
