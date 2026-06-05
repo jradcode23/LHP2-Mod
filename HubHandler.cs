@@ -1067,7 +1067,11 @@ public class HubHandler
             *kingsCrossAddress |= 1 << 6; // Bit 6 makes each compartment visible
             kingsCrossAddress += 0x7; // Adjust the address to each train compartment
         }
-        kingsCrossAddress += 0x72B;
+        kingsCrossAddress += 0x521;
+        *kingsCrossAddress = 255; // Resets the train position after using it
+        kingsCrossAddress += 0x8;
+        *kingsCrossAddress = 255; // Makes the train move when using it
+        kingsCrossAddress += 0x202;
         *kingsCrossAddress = 255; // Make the train appear in all years but 7
     }
 
