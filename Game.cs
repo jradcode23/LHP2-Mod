@@ -1146,6 +1146,12 @@ public class Game
             HubHandler.LoadRedBricksEnabled();
             *HubHandler.DarkTimesMapConstant = 361;
         }
+
+        // Send Polyjuice Potion Check
+        if (mapID == 168 && prevMapID == 169)
+        {
+            CheckAndReportLocation(1000); // Polyjuice Potion is unlocked after drinking it for the first time in story
+        }
     }
 
     [Function([FunctionAttribute.Register.edx],
