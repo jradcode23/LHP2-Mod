@@ -715,7 +715,7 @@ public class SpellHandler
     The game checks abilities against their static addresses instead of the minifig file
     This change makes it so it compares against the minifig file instead
     */
-    public static unsafe int CheckAbilityUnlock()
+    public static unsafe int CheckSpecsUnlock()
     {
         byte* spellArray0 = GetActiveSpellPointer();
 
@@ -729,6 +729,22 @@ public class SpellHandler
         return *spellArray4;
     }
 
+    public static int CheckPolyjuiceUnlock(int eax)
+    {
+        int value = eax;
+        if (Mod.LHP2_Archipelago!.CountItemsReceivedWithId(1000) == 0)
+        {
+            value &= ~(1 << 26);
+        }
+        else
+        {
+            value |= 1 << 26;
+        }
+        return value;
+    }
+
+
+    // Lock Dark Magic in Astronomy Tower in Y6 since certain checks don't work
     private static unsafe void AstronomyTowerLogic()
     {
         byte* darkMagic = HubHandler.HubBaseAddress + 0x19B * 4 + 2;

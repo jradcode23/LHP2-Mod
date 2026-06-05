@@ -333,7 +333,8 @@ public class Game
     private static IReverseWrapper<ChangeCharacters> _reverseWrapOnChangeCharacters = default!;
     private static IReverseWrapper<ChangeYears> _reverseWrapChangeYears = default!;
     private static IReverseWrapper<HandleInterruptedMessage> _reverseWrapOnHandleInterruptedMessage = default!;
-    private static IReverseWrapper<CmpUnlockedAbilities> _reverseWrapOnCmpUnlockedAbilities = default!;
+    private static IReverseWrapper<CheckSpecsUnlock> _reverseWrapOnCheckSpecsUnlock = default!;
+    private static IReverseWrapper<CheckPolyjuiceUnlock> _reverseWrapOnCheckPolyjuiceUnlock = default!;
     private static IReverseWrapper<SetDuelingHealth> _reverseWrapOnSetDuelingHealth = default!;
     private static IReverseWrapper<ShopItemSelected> _reverseWrapOnShopItemSelected = default!;
     private static IReverseWrapper<CharacterShopItemSelected> _reverseWrapOnCharacterShopItemSelected = default!;
@@ -660,7 +661,7 @@ public class Game
         // Walking through Loading Zone Zero Out Hint Game Code
         _asmHooks.Add(hooks.CreateAsmHook(handleInterruptedMessageHook, (int)(Mod.BaseAddress + 0x3C727B), AsmHookBehaviour.ExecuteFirst).Activate());
 
-        string[] compareAbilitiesHook =
+        string[] checkSpecsUnlockHook =
         {
             // Push and Pop all Registers except for the ECX register since we need it in our function
             "use32",
@@ -671,7 +672,7 @@ public class Game
             "push esi",
             "push edi",
             "push ebp",
-            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnCmpUnlockedAbilities, out _reverseWrapOnCmpUnlockedAbilities)}",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnCheckSpecsUnlock, out _reverseWrapOnCheckSpecsUnlock)}",
             "pop ebp",
             "pop edi",
             "pop esi",
@@ -681,11 +682,32 @@ public class Game
             "popfd",
         };
         // Specs Animation 1
-        _asmHooks.Add(hooks.CreateAsmHook(compareAbilitiesHook, (int)(Mod.BaseAddress + 0x3EEE0), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(checkSpecsUnlockHook, (int)(Mod.BaseAddress + 0x3EEE0), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
         // Specs Animation 2
-        _asmHooks.Add(hooks.CreateAsmHook(compareAbilitiesHook, (int)(Mod.BaseAddress + 0x3EF80), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(checkSpecsUnlockHook, (int)(Mod.BaseAddress + 0x3EF80), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
         // If Specs is usable of not
-        _asmHooks.Add(hooks.CreateAsmHook(compareAbilitiesHook, (int)(Mod.BaseAddress + 0x6C4AB), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(checkSpecsUnlockHook, (int)(Mod.BaseAddress + 0x6C4AB), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
+
+        string[] checkPolyjuiceUnlockHook =
+        {
+            "use32",
+            "pushfd",
+            "push ebx",
+            "push ecx",
+            "push edx",
+            "push esi",
+            "push edi",
+            "push ebp",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnCheckPolyjuiceUnlock, out _reverseWrapOnCheckPolyjuiceUnlock)}",
+            "pop ebp",
+            "pop edi",
+            "pop esi",
+            "pop edx",
+            "pop ecx",
+            "pop ebx",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(checkPolyjuiceUnlockHook, (int)(Mod.BaseAddress + 0x1BCC3), AsmHookBehaviour.ExecuteAfter).Activate());
 
         string[] startDuelHook =
         {
@@ -1524,7 +1546,7 @@ public class Game
     }
 
     [Function(CallingConventions.Fastcall)]
-    public delegate void HandleInterruptedMessage();
+    private delegate void HandleInterruptedMessage();
     private static void OnHandleInterruptedMessage()
     {
         HintSystem.HandleInterruptedMessage();
@@ -1532,10 +1554,19 @@ public class Game
 
     [Function([],
     FunctionAttribute.Register.ecx, FunctionAttribute.StackCleanup.Callee)]
-    public delegate int CmpUnlockedAbilities();
-    private static int OnCmpUnlockedAbilities()
+    private delegate int CheckSpecsUnlock();
+    private static int OnCheckSpecsUnlock()
     {
-        return SpellHandler.CheckAbilityUnlock();
+        return SpellHandler.CheckSpecsUnlock();
+    }
+
+    [Function([FunctionAttribute.Register.eax],
+    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    public delegate int CheckPolyjuiceUnlock(int eax);
+    private static int OnCheckPolyjuiceUnlock(int eax)
+    {
+        int polyjuiceArray = SpellHandler.CheckPolyjuiceUnlock(eax);
+        return polyjuiceArray;
     }
 
     [Function([FunctionAttribute.Register.ecx],
