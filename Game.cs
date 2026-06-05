@@ -279,6 +279,11 @@ public class Game
             case < 975: // Handle Red Brick Purchase
                 HubHandler.ReceivedRedBrickUnlock(ItemID - RedBrickPurchOffset);
                 break;
+            case < 1000: // Handle Spells
+                SpellHandler.UnlockSpell(ItemID - SpellPurchOffset, Mod.GameInstance!.CurrentCharID);
+                break;
+            case 1000: // Handle Delum
+                break;
             case < 1027: // Handle Spells
                 SpellHandler.UnlockSpell(ItemID - SpellPurchOffset, Mod.GameInstance!.CurrentCharID);
                 break;
