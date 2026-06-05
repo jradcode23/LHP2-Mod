@@ -1059,7 +1059,7 @@ public class Game
     [Function([FunctionAttribute.Register.eax],
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void UpdateLevel(int value);
-    private static void OnLevelChange(int value)
+    private static unsafe void OnLevelChange(int value)
     {
         Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
         Mod.GameInstance!.LevelID = value;
@@ -1068,6 +1068,11 @@ public class Game
         if (value is >= 1 and <= 4)
         {
             HubHandler.ChangeLeakyLoadingZones(value);
+        }
+        if (value == 0 || value > 4)
+        {
+            byte* freeplayFlag = (byte*)(Mod.BaseAddress + 0xC5B5DC);
+            *freeplayFlag = 1;
         }
     }
 
