@@ -1095,6 +1095,7 @@ public class Game
         if (value is >= 1 and <= 4)
         {
             HubHandler.ChangeLeakyLoadingZones(value);
+            HubHandler.UpdateMissingMapConstants(value);
         }
         if (value >= 1 && value <= 4 && (Mod.GameInstance!.PrevLevelID == 0 || Mod.GameInstance!.PrevLevelID > 4))
         {
