@@ -51,6 +51,23 @@ public class HintSystem
         }
     }
 
+    // Helper function to add a message to the front of the interrupted message queue
+    public static void AddInterruptedMessageToFront(string message, byte messageType)
+    {
+        if (string.IsNullOrEmpty(message))
+        {
+            return;
+        }
+
+        lock (queueLock)
+        {
+            if (!InterruptedMessageQueue.Any(m => m.Text == message))
+            {
+                InterruptedMessageQueue.AddFirst(new HintMessage(message, messageType));
+            }
+        }
+    }
+
     // Main function we use (in a separate thread) to print a message on screen
     public static unsafe void HandleMessages()
     {
@@ -143,15 +160,7 @@ public class HintSystem
 
         if (!string.IsNullOrEmpty(currentMessage))
         {
-            lock (queueLock)
-            {
-                // Verifies that the message isn't already in the queue
-                if (!InterruptedMessageQueue.Any(m => m.Text == currentMessage))
-                {
-                    // Adds the message to the front of the queue
-                    InterruptedMessageQueue.AddFirst(new HintMessage(currentMessage, currentMessageType));
-                }
-            }
+            AddInterruptedMessageToFront(currentMessage, currentMessageType);
         }
     }
 

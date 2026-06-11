@@ -1119,11 +1119,18 @@ public class Game
         int prevMapID;
         lock (Mod.GameInstance!.MapLock)
         {
+            prevMapID = Mod.GameInstance!.MapID; // using map ID here cause it is before the update
+        }
+        if (mapID == prevMapID)
+        {
+            HintSystem.AddInterruptedMessageToFront("This map isn't available in this year. Please time travel to access", 0);
+        }
+        lock (Mod.GameInstance!.MapLock)
+        {
             Mod.GameInstance!.PrevMapID = Mod.GameInstance!.MapID;
             Mod.GameInstance!.MapID = value;
             Mod.GameInstance!.MapID2 = value;
             Mod.GameInstance!.MapID3 = value;
-            mapID = Mod.GameInstance!.MapID;
             prevMapID = Mod.GameInstance!.PrevMapID;
         }
 
