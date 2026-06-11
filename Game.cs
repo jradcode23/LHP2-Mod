@@ -1068,7 +1068,7 @@ public class Game
         }
         if (Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleRedBricks == 2)
         {
-            PrintToLog($"Hub RB Collected but not shuffled. {mapID}");
+            PrintToLog($"Hub RB Collected but not shuffled. Map ID: {mapID}");
             return;
         }
 
