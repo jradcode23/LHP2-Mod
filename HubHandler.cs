@@ -246,6 +246,7 @@ public class HubHandler
     /// </summary>
     public static unsafe void ResetHub()
     {
+        bool shuffleRedbricks = Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleRedBricks != 2;
         foreach (var kvp in hubOffsets)
         {
             byte* ptr = HubBaseAddress + (nuint)kvp.Key;
@@ -255,8 +256,10 @@ public class HubHandler
                 Game.PrintToLog($"Hub pointer invalid at offset 0x{kvp.Key:X}");
                 continue;
             }
-
-            *ptr &= unchecked((byte)~(byte)BitMask.RedBrick);
+            if (shuffleRedbricks)
+            {
+                *ptr &= unchecked((byte)~(byte)BitMask.RedBrick);
+            }
             *ptr &= unchecked((byte)~(byte)BitMask.StudentInPeril);
         }
     }

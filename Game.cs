@@ -871,6 +871,11 @@ public class Game
     public delegate void RedBrickPurchase(int ecx);
     private static void OnRedBrickPurchase(int ecx)
     {
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleRedBricks == 1)
+        {
+            PrintToLog("Red Brick Purchase detected but red brick purchases aren't shuffled, ignoring.");
+            return;
+        }
         CheckAndReportLocation(ecx + RedBrickPurchOffset);
     }
 
@@ -1056,6 +1061,17 @@ public class Game
     public delegate void HubRB(int eax);
     private static void OnHubRB(int eax)
     {
+        int mapID;
+        lock (Mod.GameInstance!.MapLock)
+        {
+            mapID = Mod.GameInstance!.MapID;
+        }
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleRedBricks == 2)
+        {
+            PrintToLog($"Hub RB Collected but not shuffled. {mapID}");
+            return;
+        }
+
         int itemID = HubHandler.GetHubID(eax);
         if (itemID == -1)
         {
@@ -1063,11 +1079,6 @@ public class Game
             PrintToLog($"EAX is: 0x{eax:X}");
             int lookupvalue = eax * 4 + 2;
             PrintToLog($"Lookup Value should be: 0x{lookupvalue:X}");
-            int mapID;
-            lock (Mod.GameInstance!.MapLock)
-            {
-                mapID = Mod.GameInstance!.MapID;
-            }
             PrintToLog("Map ID is: " + mapID);
             return;
         }
@@ -1251,7 +1262,7 @@ public class Game
                 Shops.UpdateGoldBrickPointer();
             }
 
-            if (LeakyMapIDs.Contains(ShopMapID))
+            if (LeakyMapIDs.Contains(ShopMapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleRedBricks != 1)
             {
                 Shops.UpdateRedBrickPointers();
             }
@@ -1319,7 +1330,7 @@ public class Game
                     Shops.ResetGoldBrickPointer();
                 }
 
-                if (LeakyMapIDs.Contains(ShopMapID))
+                if (LeakyMapIDs.Contains(ShopMapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleRedBricks != 1)
                 {
                     Shops.ResetRedBrickPointers();
                 }
@@ -1644,7 +1655,7 @@ public class Game
             return;
         }
 
-        if (LeakyMapIDs.Contains(Mod.GameInstance!.MapID2))
+        if (LeakyMapIDs.Contains(Mod.GameInstance!.MapID2) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleRedBricks != 1)
         {
             Shops.HandleShopText(edx + RedBrickPurchOffset);
             return;

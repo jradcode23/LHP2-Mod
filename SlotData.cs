@@ -65,6 +65,26 @@ public class SlotData(Dictionary<string, object> slotData)
     }
 
     /// <summary>
+    /// Gets how Red Brick Shuffle is set up (0 = Purchases & Red Bricks, 1 = Red Bricks Only, 2 = Purchases Only). Returns -1 if not found or unable to convert.
+    /// </summary>
+    public int ShuffleRedBricks
+    {
+        get
+        {
+            if (SlotDataDictionary?.TryGetValue("ShuffleRedBricks", out var value) != true || value == null)
+                return -1;
+
+            if (!int.TryParse(value.ToString(), out int result))
+            {
+                Game.PrintToLog($"[SlotData] Failed to parse ShuffleRedBricks value '{value}'");
+                return -1;
+            }
+
+            return result;
+        }
+    }
+
+    /// <summary>
     /// Gets whether Joke shop spells are shuffled (0 or 1). Returns -1 if not found or unable to convert.
     /// </summary>
     public int ShuffleJokeSpells
@@ -178,6 +198,7 @@ public class SlotData(Dictionary<string, object> slotData)
         Game.PrintToLog($"EndGoal: {EndGoal}");
         Game.PrintToLog($"Required Horcruxes: {NumberOfRequiredHorcruxes}");
         Game.PrintToLog($"Required Levels: {NumberOfRequiredLevels}");
+        Game.PrintToLog($"Shuffle Red Bricks: {ShuffleRedBricks}");
         Game.PrintToLog($"Shuffle Joke Spells: {ShuffleJokeSpells}");
         Game.PrintToLog($"Shuffle Gold Brick Purchases: {ShuffleGoldBrickPurchases}");
         Game.PrintToLog($"Cheaper Shops Multiplier: {CheaperShops}");
