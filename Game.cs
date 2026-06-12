@@ -939,17 +939,22 @@ public class Game
     public delegate void HubCharacterCollected(IntPtr eax, int edx);
     private static void OnHubCharacterCollected(IntPtr eax, int edx)
     {
+        int mapID;
+        lock (Mod.GameInstance!.MapLock)
+        {
+            mapID = Mod.GameInstance!.MapID;
+        }
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleCharacterTokens == 2)
+        {
+            PrintToLog($"Hub Character Token Collected but not shuffled. Map ID: {mapID}");
+            return;
+        }
         int itemID = CharacterHandler.GetHubTokenItemID(eax, edx);
         if (itemID == -1)
         {
             PrintToLog("Error getting Level Token Item ID");
             PrintToLog($"EAX is: 0x{eax:X}");
             PrintToLog($"EDX is: 0x{edx:X}");
-            int mapID;
-            lock (Mod.GameInstance!.MapLock)
-            {
-                mapID = Mod.GameInstance!.MapID;
-            }
             PrintToLog("Map ID is: " + mapID);
             return;
         }
@@ -961,16 +966,21 @@ public class Game
     public delegate void LevelCharacterCollected(int ebx);
     private static void OnLevelCharacterCollected(int ebx)
     {
+        int mapID;
+        lock (Mod.GameInstance!.MapLock)
+        {
+            mapID = Mod.GameInstance!.MapID;
+        }
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleCharacterTokens == 2)
+        {
+            PrintToLog($"Level Character Token Collected but not shuffled. Map ID: {mapID}");
+            return;
+        }
         int itemID = CharacterHandler.GetLevelTokenItemID(ebx);
         if (itemID == -1)
         {
             PrintToLog("Error getting Level Token Item ID");
             PrintToLog($"EBX is: 0x{ebx:X}");
-            int mapID;
-            lock (Mod.GameInstance!.MapLock)
-            {
-                mapID = Mod.GameInstance!.MapID;
-            }
             PrintToLog("Map ID is: " + mapID);
             return;
         }
@@ -982,6 +992,11 @@ public class Game
     public delegate void CharacterPurchased(IntPtr ecx, int eax);
     private static void OnCharacterPurchased(IntPtr ecx, int eax)
     {
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleCharacterTokens == 1)
+        {
+            PrintToLog("Character Purchase detected but character purchases aren't shuffled, ignoring.");
+            return;
+        }
         bool prevInShop;
         int mapID;
         lock (Mod.GameInstance!.StateLock)
@@ -1267,7 +1282,7 @@ public class Game
                 Shops.UpdateRedBrickPointers();
             }
 
-            if (MadamMalkinMapIDs.Contains(ShopMapID))
+            if (MadamMalkinMapIDs.Contains(ShopMapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleCharacterTokens != 1)
             {
                 Shops.UpdateCharacterPointers();
             }
@@ -1335,7 +1350,7 @@ public class Game
                     Shops.ResetRedBrickPointers();
                 }
 
-                if (MadamMalkinMapIDs.Contains(ShopMapID))
+                if (MadamMalkinMapIDs.Contains(ShopMapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleCharacterTokens != 1)
                 {
                     Shops.ResetCharacterPointers();
                 }
@@ -1667,7 +1682,7 @@ public class Game
     public delegate void CharacterShopItemSelected(int edx);
     private static void OnCharacterShopItemSelected(int edx)
     {
-        if (MadamMalkinMapIDs.Contains(Mod.GameInstance!.MapID3))
+        if (MadamMalkinMapIDs.Contains(Mod.GameInstance!.MapID3) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleCharacterTokens != 1)
         {
             int item = CharacterHandler.GetLevelTokenItemID(edx);
             if (item == -1)
@@ -1708,7 +1723,10 @@ public class Game
         HubHandler.ResetRedBrickUnlock();
         SpellHandler.ResetSpells();
         LevelHandler.ResetLevels();
-        CharacterHandler.ResetTokens();
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleCharacterTokens != 2)
+        {
+            CharacterHandler.ResetTokens();
+        }
         CharacterHandler.ResetUnlocks();
         HubHandler.ResetHub();
     }
