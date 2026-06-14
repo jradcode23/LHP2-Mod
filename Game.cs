@@ -992,11 +992,6 @@ public class Game
     public delegate void CharacterPurchased(IntPtr ecx, int eax);
     private static void OnCharacterPurchased(IntPtr ecx, int eax)
     {
-        if (Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleCharacterTokens == 1)
-        {
-            PrintToLog("Character Purchase detected but character purchases aren't shuffled, ignoring.");
-            return;
-        }
         bool prevInShop;
         int mapID;
         lock (Mod.GameInstance!.StateLock)
@@ -1007,9 +1002,13 @@ public class Game
         {
             mapID = Mod.GameInstance!.MapID;
         }
-        if ((mapID == 366 || mapID == 372
-            || mapID == 378 || mapID == 382) && prevInShop == true) //Make sure Player is in Robe Shop
+        if (MadamMalkinMapIDs.Contains(mapID) && prevInShop == true) //Make sure Player is in Robe Shop
         {
+            if (Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleCharacterTokens == 1)
+            {
+                PrintToLog("Character Purchase detected but character purchases aren't shuffled, ignoring.");
+                return;
+            }
             int itemID = CharacterHandler.GetPurchaseCharacterID(ecx, eax);
             if (itemID == -1)
             {
