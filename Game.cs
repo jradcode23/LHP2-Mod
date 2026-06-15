@@ -1122,7 +1122,7 @@ public class Game
             HubHandler.ChangeLeakyLoadingZones(value);
             HubHandler.UpdateMissingMapConstants(value);
         }
-        if (value >= 1 && value <= 4 && (Mod.GameInstance!.PrevLevelID == 0 || Mod.GameInstance!.PrevLevelID > 4))
+        if (value >= 1 && value <= 4)
         {
             int* studTotalAddress = *(int**)(Mod.BaseAddress + 0xC5B600);
             int* inLevelP1StudAddress = (int*)(Mod.BaseAddress + 0xC53E88);
