@@ -37,6 +37,7 @@ public class Game
     private static readonly int[] KnockturnMapIDs = [367, 373, 379, 385];
     private static readonly int[] MadamMalkinMapIDs = [366, 372, 378, 382];
     private static readonly int[] DuelingMapIDs = [44, 73, 137, 157, 207, 223, 309, 324];
+    private static readonly int[] FinalLevelMapIDs = [351, 339, 334, 329, 318, 308, 246, 235, 227, 220, 217, 207, 165, 156, 152, 148, 143, 137, 82, 73, 65, 58, 51, 44];
     private static readonly string[] FastTravelRequests = ["Y5LOND", "Y6LOND", "Y7LOND", "Y8LOND", "Y5FOYE", "Y6FOYE", "Y7FOYE", "Y8FOYE", "Y5QUAD", "Y6QUAD", "Y7QUAD", "Y8QUAD"];
     public const int tokenOffset = 213;
     public const int levelOffset = 450;
@@ -343,7 +344,7 @@ public class Game
     private static IReverseWrapper<SetDuelingHealth> _reverseWrapOnSetDuelingHealth = default!;
     private static IReverseWrapper<ShopItemSelected> _reverseWrapOnShopItemSelected = default!;
     private static IReverseWrapper<CharacterShopItemSelected> _reverseWrapOnCharacterShopItemSelected = default!;
-    // private static IReverseWrapper<StudCollected> _reverseWrapOnStudCollected = default!;
+    private static IReverseWrapper<StudCollected> _reverseWrapOnStudCollected = default!;
 
     // Modifying the associated assembly of our game to call our functions
     // TODO: Future proof this from game updates by implementing signature scanning
@@ -767,29 +768,26 @@ public class Game
         };
         _asmHooks.Add(hooks.CreateAsmHook(characterShopItemSelected, (int)(Mod.BaseAddress + 0x88C0B), AsmHookBehaviour.ExecuteFirst).Activate());
 
-        // TODO: leaving in in case we ever do stud link
-        // string[] studCollected =
-        // {
-        //     "use32",
-        //     "push edi",
-        //     "push ecx",
-        //     "mov edi, esi",
-        //     "mov ecx, ebp",
-        //     "push ebx",
-        //     "push ecx",
-        //     "push edx",
-        //     "push ebp",
-        //     $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnStudCollected, out _reverseWrapOnStudCollected)}",
-        //     "mov esi, edi",
-        //     "mov ebp, ecx",
-        //     "pop ebp",
-        //     "pop edx",
-        //     "pop ecx",
-        //     "pop ebx",
-        //     "pop eax",
-        //     "pop edi"
-        // };
-        // _asmHooks.Add(hooks.CreateAsmHook(studCollected, (int)(Mod.BaseAddress + 0x3B0AEC), AsmHookBehaviour.ExecuteFirst).Activate());
+        string[] studCollected =
+        {
+            "use32",
+            "push edi",
+            "push ecx",
+            "mov edi, esi",
+            "mov ecx, ebp",
+            "push ebx",
+            "push eax",
+            "push edx",
+            "push ebp",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnStudCollected, out _reverseWrapOnStudCollected)}",
+            "pop ebp",
+            "pop edx",
+            "pop eax",
+            "pop ebx",
+            "pop ecx",
+            "pop edi"
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(studCollected, (int)(Mod.BaseAddress + 0x3B0AEC), AsmHookBehaviour.ExecuteFirst).Activate());
 
     }
 
@@ -1122,16 +1120,19 @@ public class Game
             HubHandler.ChangeLeakyLoadingZones(value);
             HubHandler.UpdateMissingMapConstants(value);
         }
-        if (value >= 1 && value <= 4)
+        if (value >= 1 && value <= 4 && (Mod.GameInstance!.PrevLevelID == 0 || Mod.GameInstance!.PrevLevelID > 4))
         {
-            int* studTotalAddress = *(int**)(Mod.BaseAddress + 0xC5B600);
-            int* inLevelP1StudAddress = (int*)(Mod.BaseAddress + 0xC53E88);
-            int* inLevelP2StudAddress = (int*)(Mod.BaseAddress + 0xC53EA0);
-            int* studValueToWriteAddress = (int*)(Mod.BaseAddress + 0xC5E408);
-            *studTotalAddress += *inLevelP1StudAddress + *inLevelP2StudAddress;
-            *inLevelP1StudAddress = 0;
-            *inLevelP2StudAddress = 0;
-            *studValueToWriteAddress = 0;
+            // Clear out the studs to write to the total so that we don't duplicate stud count
+            // ulong* studTotalAddress = *(ulong**)(Mod.BaseAddress + 0xC5B600);
+            // ulong* inLevelP1StudAddress = (ulong*)(Mod.BaseAddress + 0xC53E88);
+            // ulong* inLevelP2StudAddress = (ulong*)(Mod.BaseAddress + 0xC53EA0);
+            ulong* p1StudValueToWriteAddress = (ulong*)(Mod.BaseAddress + 0xC5E408);
+            ulong* p2StudValueToWriteAddress = (ulong*)(Mod.BaseAddress + 0xC5E410);
+            // *studTotalAddress += *inLevelP1StudAddress + *inLevelP2StudAddress;
+            // *inLevelP1StudAddress = 0;
+            // *inLevelP2StudAddress = 0;
+            *p1StudValueToWriteAddress = 0;
+            *p2StudValueToWriteAddress = 0;
         }
     }
 
@@ -1192,8 +1193,8 @@ public class Game
             CheckAndReportLocation(1000); // Polyjuice Potion is unlocked after drinking it for the first time in story
         }
 
-        // TODO: Break this out into its own function & hook. It doesn't work in the current level update hook because we switched it to run earlier so studs would work. 
-        if (Mod.GameInstance!.LevelID == 0 || Mod.GameInstance!.LevelID > 4)
+        // If you enter the level in story and complete it, there have been instances where the individual will time travel. This code makes the game think you are in freeplay upon the final map of the level. We did it on the final map because there were bugs caused (specifical in dark times) where P2 would be a story character that you couldn't control.
+        if (FinalLevelMapIDs.Contains(mapID))
         {
             byte* freeplayFlag = (byte*)(Mod.BaseAddress + 0xC5B5DC);
             *freeplayFlag = 1;
@@ -1692,29 +1693,28 @@ public class Game
         }
     }
 
-    // TODO: Leaving in in case we ever do stud link
-    // [Function([FunctionAttribute.Register.edi, FunctionAttribute.Register.eax],
-    // FunctionAttribute.Register.edi, FunctionAttribute.StackCleanup.Callee)]
-    // // edi is the stud value picked up and ebp is the address it is being written to
-    // public delegate int StudCollected(int edi, int eax);
-    // private static unsafe int OnStudCollected(int edi, int eax)
-    // {
-    //     int* studTotalAddress = *(int**)(Mod.BaseAddress + 0xC5B600);
-    //     int* inLevelP1StudAddress = (int*)(Mod.BaseAddress + 0xC53E88);
-    //     int* inLevelP2StudAddress = (int*)(Mod.BaseAddress + 0xC53EA0);
-    //     PrintToLog($"Stud Total Address: 0x{(nuint)studTotalAddress:X}");
-    //     PrintToLog($"inLevelP1StudAddress: 0x{(nuint)inLevelP1StudAddress:X}");
-    //     PrintToLog($"inLevelP2StudAddress: 0x{(nuint)inLevelP2StudAddress:X}");
-    //     PrintToLog($"edi: 0x{edi:X}");
-    //     PrintToLog($"ebp: 0x{eax:X}");
+    [Function([FunctionAttribute.Register.edi, FunctionAttribute.Register.ecx],
+    FunctionAttribute.Register.edi, FunctionAttribute.StackCleanup.Callee)]
+    // edi is the stud value picked up and ebp is the address it is being written to
+    public delegate void StudCollected(nuint edi, nuint ecx);
+    private static unsafe void OnStudCollected(nuint edi, nuint ecx)
+    {
+        nuint* studTotalAddress = *(nuint**)(Mod.BaseAddress + 0xC5B600);
+        nuint* inLevelP1StudAddress = (nuint*)(Mod.BaseAddress + 0xC53E88);
+        nuint* inLevelP2StudAddress = (nuint*)(Mod.BaseAddress + 0xC53EA0);
+        // PrintToLog($"Stud Total Address: 0x{(nuint)studTotalAddress:X}");
+        // PrintToLog($"inLevelP1StudAddress: 0x{(nuint)inLevelP1StudAddress:X}");
+        // PrintToLog($"inLevelP2StudAddress: 0x{(nuint)inLevelP2StudAddress:X}");
+        // PrintToLog($"edi: 0x{edi:X}");
+        // PrintToLog($"ecx: 0x{ecx:X}");
 
-    //     if ((nuint)eax == (nuint)inLevelP1StudAddress || (nuint)eax == (nuint)inLevelP2StudAddress)
-    //     {
-    //         *studTotalAddress += edi;
-    //     }
+        if (ecx == (nuint)inLevelP1StudAddress || ecx == (nuint)inLevelP2StudAddress)
+        {
+            *studTotalAddress += edi;
+        }
 
-    //     return 0;
-    // }
+        return;
+    }
 
     private static void ResetItems()
     {
