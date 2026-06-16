@@ -80,7 +80,7 @@ public class ArchipelagoHandler
 
 
     // something we wrong or we need to properly disconnect from the server. cleanup and re null our session
-    private void Disconnect()
+    public void Disconnect()
     {
         Game.PrintToLog("Disconnected from server and attempting to reconnect. Please do not complete any checks");
         _ = _session?.Socket.DisconnectAsync();

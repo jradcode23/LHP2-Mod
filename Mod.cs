@@ -15,7 +15,7 @@ public class Mod : ModBase // <= Do not Remove.
     private static IReloadedHooks? _hooks;
     public static ILogger? Logger;
     private readonly IMod _owner;
-    private Config? Configuration { get; set; }
+    public static Config? Configuration { get; set; }
     private readonly IModConfig _modConfig;
     public static ArchipelagoHandler? LHP2_Archipelago;
     public static Game? GameInstance;
@@ -40,8 +40,7 @@ public class Mod : ModBase // <= Do not Remove.
 
         if (Configuration == null)
             return;
-        LHP2_Archipelago = new ArchipelagoHandler(Configuration.ArchipelagoOptions.Server, Configuration.ArchipelagoOptions.Port, Configuration.ArchipelagoOptions.Slot, Configuration.ArchipelagoOptions.Password);
-        Logger.WriteLineAsync($"[LHP2.archipelago.mod] Mod Initialized with Server: {Configuration.ArchipelagoOptions.Server}, Port: {Configuration.ArchipelagoOptions.Port}, Slot: {Configuration.ArchipelagoOptions.Slot}");
+        SetUpAP(Configuration.ArchipelagoOptions.Server, Configuration.ArchipelagoOptions.Port, Configuration.ArchipelagoOptions.Slot, Configuration.ArchipelagoOptions.Password);
         Logger.WriteLineAsync($"[LHP2.archipelago.mod] Mod Version: LHP2.archipelago.mod 1.1.0 Source code");
 
         var thread1 = new Thread(start: () =>
@@ -50,7 +49,7 @@ public class Mod : ModBase // <= Do not Remove.
             {
                 if (!ArchipelagoHandler.IsConnecting && !ArchipelagoHandler.IsConnected)
                 {
-                    LHP2_Archipelago.InitConnect();
+                    LHP2_Archipelago!.InitConnect();
                 }
                 Thread.Sleep(2500);
             }
@@ -64,6 +63,14 @@ public class Mod : ModBase // <= Do not Remove.
     {
         Configuration = configuration;
         Logger!.WriteLine($"[LHP2.archipelago.mod] Config Updated: Applying");
+        LHP2_Archipelago!.Disconnect();
+        SetUpAP(Configuration.ArchipelagoOptions.Server, Configuration.ArchipelagoOptions.Port, Configuration.ArchipelagoOptions.Slot, Configuration.ArchipelagoOptions.Password);
+    }
+
+    public static void SetUpAP(string server, int port, string slot, string password)
+    {
+        LHP2_Archipelago = new ArchipelagoHandler(server, port, slot, password);
+        Logger!.WriteLineAsync($"[LHP2.archipelago.mod] Mod Initialized with Server: {server}, Port: {port}, Slot: {slot}");
     }
 
     public static bool InitOnMenu()
