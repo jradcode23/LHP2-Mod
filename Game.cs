@@ -180,6 +180,9 @@ public class Game
 
         Shops.SetShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
 
+        // NOP Code that checks to see if a cheat code has already been entered (duplicate codes)
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3A55F2, [0x90, 0x90]);
+
         // NOP Code that forces to Dark Times upon save reload
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3CB61, [0x90, 0x90]);
         // Change Dark Times Map Constant
@@ -195,7 +198,7 @@ public class Game
         nuint ptr = (nuint)(*cutsceneBaseAddress + 0xA4);
 
         // Write N0CUT5 flag to game
-        Memory.Instance.Write(ptr, (byte)0x01);
+        Memory.Instance.SafeWrite(ptr, [0x01]);
     }
 
     /* 
@@ -651,7 +654,7 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(changeYearsHook, (int)(Mod.BaseAddress + 0x3A584B), AsmHookBehaviour.ExecuteAfter).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(changeYearsHook, (int)(Mod.BaseAddress + 0x3A55F2), AsmHookBehaviour.ExecuteAfter).Activate());
 
         string[] handleInterruptedMessageHook =
         {

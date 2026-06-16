@@ -542,6 +542,8 @@ public class HubHandler
             Game.PrintToLog($"Unknown fast travel destination: {mapRequested}.");
             return;
         }
+        byte* N0CUT5CheatCodeConstant = (byte*)(Mod.BaseAddress + 0x8968A4);
+        HintSystem.SetMessageText(mapRequested, (uint)N0CUT5CheatCodeConstant);
 
         *currentPTR = mapValue;
         AdjustLeakyMapConstants(mapValue);

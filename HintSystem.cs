@@ -1,4 +1,5 @@
 using Reloaded.Memory;
+using Reloaded.Memory.Interfaces;
 using System.Collections.Concurrent;
 
 namespace LHP2_Archi_Mod;
@@ -184,7 +185,7 @@ public class HintSystem
         }
 
         // Write the message directly to memory
-        Memory.Instance.WriteRaw(hintTextPTRAddress, bytes);
+        Memory.Instance.SafeWrite(hintTextPTRAddress, bytes);
     }
 
     // Helper function to write the received Horcrux count to the Player 2 slot name
