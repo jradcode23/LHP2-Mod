@@ -31,7 +31,8 @@ public class Game
     public bool PrevInShop2 { get; private set; } = false; // This is used for ths shop text because it constantly prints and could cause deadlocks
     public bool PrevInLevelSelect { get; private set; } = false;
     public bool PrevInMenu { get; private set; } = false;
-    public int CurrentCharID { get; private set; } = 0;
+    public int CurrentP1CharID { get; private set; } = 0;
+    public int CurrentP2CharID { get; private set; } = 0;
     private static readonly int[] LeakyMapIDs = [368, 374, 380, 386];
     private static readonly int[] JokeShopMapIDs = [369, 375, 383, 387];
     private static readonly int[] KnockturnMapIDs = [367, 373, 379, 385];
@@ -284,12 +285,12 @@ public class Game
                 HubHandler.ReceivedRedBrickUnlock(ItemID - RedBrickPurchOffset);
                 break;
             case < 1000: // Handle Spells
-                SpellHandler.UnlockSpell(ItemID - SpellPurchOffset, Mod.GameInstance!.CurrentCharID);
+                SpellHandler.UnlockSpell(ItemID - SpellPurchOffset, Mod.GameInstance!.CurrentP1CharID, Mod.GameInstance!.CurrentP2CharID);
                 break;
             case 1000: // Handle Delum
                 break;
             case < 1027: // Handle Spells
-                SpellHandler.UnlockSpell(ItemID - SpellPurchOffset, Mod.GameInstance!.CurrentCharID);
+                SpellHandler.UnlockSpell(ItemID - SpellPurchOffset, Mod.GameInstance!.CurrentP1CharID, Mod.GameInstance!.CurrentP2CharID);
                 break;
             default:
                 PrintToLog($"Unknown item received: {ItemID}");
@@ -635,12 +636,15 @@ public class Game
         {
             "use32",
             "push edx",
+            "push edi",
             "mov edx, ebp",
+            "mov edi, esi",
             "pushfd",
             "pushad",
             $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnChangeCharacters, out _reverseWrapOnChangeCharacters)}",
             "popad",
             "popfd",
+            "pop edi",
             "pop edx",
         };
         _asmHooks.Add(hooks.CreateAsmHook(changeCharactersHook, (int)(Mod.BaseAddress + 0x5440EC), AsmHookBehaviour.ExecuteFirst).Activate());
@@ -1204,17 +1208,18 @@ public class Game
         }
     }
 
-    [Function([FunctionAttribute.Register.edx],
+    [Function([FunctionAttribute.Register.edx, FunctionAttribute.Register.edi],
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
-    public delegate void ChangeCharacters(int edx);
+    public delegate void ChangeCharacters(int edx, int edi);
 
-    public static unsafe void OnChangeCharacters(int edx)
+    public static unsafe void OnChangeCharacters(int edx, int edi)
     {
-        ushort* initialValue = (ushort*)(Mod.BaseAddress + 0xC5F4C4);
-        if (*initialValue == 0xFFFF)
+        ushort* initialP1Value = (ushort*)(Mod.BaseAddress + 0xC5F4C4);
+        ushort* initialP2Value = (ushort*)(Mod.BaseAddress + 0xC5F4D0);
+        if (*initialP1Value == 0xFFFF)
         {
-            PrintToLog($"Character Changed, Spell Function ran, EDX: {edx:X}");
-            Mod.GameInstance!.CurrentCharID = edx;
+            PrintToLog($"P1 Character Changed, Spell Function ran, EDX: {edx:X}");
+            Mod.GameInstance!.CurrentP1CharID = edx;
             SpellHandler.ResetSpells();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
             int currentMapID;
@@ -1224,6 +1229,22 @@ public class Game
             }
             SpellHandler.SpellMapLogic(currentMapID);
             SpellHandler.HandleSpellVisibility();
+            return;
+        }
+        if (*initialP2Value == 0xFFFF)
+        {
+            PrintToLog($"P2 Character Changed, Spell Function ran, EDX: {edx:X}");
+            Mod.GameInstance!.CurrentP2CharID = edx;
+            SpellHandler.ResetSpells();
+            Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
+            int currentMapID;
+            lock (Mod.GameInstance!.MapLock)
+            {
+                currentMapID = Mod.GameInstance!.MapID;
+            }
+            SpellHandler.SpellMapLogic(currentMapID);
+            SpellHandler.HandleSpellVisibility();
+            return;
         }
     }
 
@@ -1626,7 +1647,6 @@ public class Game
     public delegate int CheckPolyjuiceUnlock(int eax);
     private static int OnCheckPolyjuiceUnlock(int eax)
     {
-        // TODO: Add a check to make sure that DADA banned has been completed
         int polyjuiceArray = SpellHandler.CheckPolyjuiceUnlock(eax);
         return polyjuiceArray;
     }

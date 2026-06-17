@@ -428,57 +428,77 @@ public class SpellHandler
     */
     public static unsafe void HandleSpellVisibility()
     {
-        byte* spellSelectedAddress = SpellSelectedBaseAddress + 0x18;
-        byte* activeShootingSpell = ActiveShootingSpellBaseAddress + 0xED3;
-        byte* spellImage = activeShootingSpell + 0x1;
+        byte* p1SpellSelectedAddress = P1SpellSelectedBaseAddress + 0x18;
+        byte* p1ActiveShootingSpell = P1ActiveShootingSpellBaseAddress + 0xED3;
+        byte* p1SpellImage = p1ActiveShootingSpell + 0x1;
 
-        if (spellSelectedAddress == null || activeShootingSpell == null || spellImage == null)
+        byte* p2SpellSelectedAddress = p1SpellSelectedAddress + 0x4;
+        byte* p2ActiveShootingSpell = P2ActiveShootingSpellBaseAddress + 0xED3;
+        byte* p2SpellImage = p2ActiveShootingSpell + 0x1;
+
+        if (p1SpellSelectedAddress == null || p1ActiveShootingSpell == null || p1SpellImage == null)
         {
             Game.PrintToLog("One or more spell-related addresses are null. Cannot handle spell visibility.");
             return;
         }
 
-        *spellSelectedAddress = 0; // Set selected spell to 0 so that if the character change gives you a spell you don't have equipped, it won't be selected.
-        spellSelectedAddress += 0x50;
-        *spellSelectedAddress = 0; // Sets the spell that you would switch to based on spell 0
+        *p1SpellSelectedAddress = 0; // Set selected spell to 0 so that if the character change gives you a spell you don't have equipped, it won't be selected.
+        p1SpellSelectedAddress += 0x50;
+        *p1SpellSelectedAddress = 0; // Sets the spell that you would switch to based on spell 0
 
-        *activeShootingSpell = 0; // Sets active shooting spell to 0
-        *spellImage = 0; // Sets the spell image to 0
+        *p1ActiveShootingSpell = 0; // Sets active shooting spell to 0
+        *p1SpellImage = 0; // Sets the spell image to 0
+
+        *p2SpellSelectedAddress = 0; // Set selected spell to 0 so that if the character change gives you a spell you don't have equipped, it won't be selected.
+        p2SpellSelectedAddress += 0x50;
+        *p2SpellSelectedAddress = 0; // Sets the spell that you would switch to based on spell 0
+
+        *p2ActiveShootingSpell = 0; // Sets active shooting spell to 0
+        *p2SpellImage = 0; // Sets the spell image to 0
     }
 
     private static unsafe byte* SpellBaseAddress => (byte*)(Mod.BaseAddress + 0xB06AB0);
     private static unsafe byte* SpellVisibilityBaseAddress => (byte*)(Mod.BaseAddress + 0xB067C4);
-
-    public static unsafe byte* SpellSelectedBaseAddress => *(byte**)(Mod.BaseAddress + 0xC55968);
-    public static unsafe byte* ActiveShootingSpellBaseAddress => *(byte**)(Mod.BaseAddress + 0xC53930);
+    public static unsafe byte* P1SpellSelectedBaseAddress => *(byte**)(Mod.BaseAddress + 0xC55968);
+    public static unsafe byte* P1ActiveShootingSpellBaseAddress => *(byte**)(Mod.BaseAddress + 0xC53930);
+    public static unsafe byte* P2ActiveShootingSpellBaseAddress => *(byte**)(Mod.BaseAddress + 0xC53934);
 
     // This is a helper function that takes an Archi Spell ID and Character ID and unlock the spell if they have it in vanilla
-    public static void UnlockSpell(int spellId, int charID)
+    public static void UnlockSpell(int spellId, int charID1, int charID2)
     {
-        if (charID == 0 || charID == 0xFFFF)
+        if (charID1 == 0 || charID1 == 0xFFFF || charID2 == 0 || charID2 == 0xFFFF)
             return;
 
         int byteOffset = spellId / 8;
         int bitOffset = spellId % 8;
 
-        bool hasAbility = HasAbility(charID, byteOffset, bitOffset);
+        bool p1HasAbility = HasAbility(charID1, byteOffset, bitOffset);
+        bool p2HasAbility = HasAbility(charID2, byteOffset, bitOffset);
 
-        if (hasAbility)
+        UnlockPassiveSpell(byteOffset, bitOffset);
+
+        if (p1HasAbility)
         {
-            UnlockPassiveSpell(byteOffset, bitOffset);
-            UnlockActiveSpell(byteOffset, bitOffset);
+            UnlockActiveSpell(byteOffset, bitOffset, true);
 
             bool isVisible = spellId >= 20 && spellId <= 30;
             if (isVisible)
             {
-                MakeSpellVisible(spellId);
+                MakeSpellVisible(spellId, true);
             }
         }
-        else if (spellId == 26)
+
+        if (p2HasAbility)
         {
-            // Deluminator and polyjuice are tied together so making polyjuice usable by another other than ron
-            UnlockPassiveSpell(byteOffset, bitOffset);
+            UnlockActiveSpell(byteOffset, bitOffset, false);
+
+            bool isVisible = spellId >= 20 && spellId <= 30;
+            if (isVisible)
+            {
+                MakeSpellVisible(spellId, false);
+            }
         }
+
     }
 
     // Spells are stored in 2 separate bit arrays. One is static ("passive") which is later pushed to all the minifig files.
@@ -501,21 +521,15 @@ public class SpellHandler
         int byteOffset = id / 8;
         int bitOffset = id % 8;
 
-        byte* activeSpellBaseAddress = *(byte**)(Mod.BaseAddress + 0x00C53930);
-        byte* activeFirstPointer = *(byte**)(activeSpellBaseAddress + 0x1C);
-        byte* activeSecondPointer = *(byte**)(activeFirstPointer + 0xBF4);
+        byte* p1Ptr = GetP1ActiveSpellPointer();
+        byte* p2Ptr = GetP2ActiveSpellPointer();
 
-        activeSecondPointer += 0x58;
+        p1Ptr += byteOffset;
+        p2Ptr += byteOffset;
 
-        byte* ptr = activeSecondPointer + byteOffset;
 
-        if (ptr == null)
-        {
-            Game.PrintToLog("SpellBaseAddress: null pointer");
-            return;
-        }
-
-        *ptr &= unchecked((byte)~(byte)(1 << bitOffset));
+        *p1Ptr &= unchecked((byte)~(byte)(1 << bitOffset));
+        *p2Ptr &= unchecked((byte)~(byte)(1 << bitOffset));
     }
 
     // Helper function that locks a passive spell. Used when switching game states, changing characters, or in lessons
@@ -535,7 +549,7 @@ public class SpellHandler
     }
 
     // This is a helper function to make a spell on the slot wheel visible/selectable if it is unlocked
-    public static unsafe void MakeSpellVisible(int spellId)
+    public static unsafe void MakeSpellVisible(int spellId, bool player1)
     {
         if (SpellVisibilityBaseAddress == null)
         {
@@ -573,13 +587,17 @@ public class SpellHandler
             default:
                 break;
         }
-
-        byte* ptr = SpellVisibilityBaseAddress + offset * slot;
+        byte* ptr = SpellVisibilityBaseAddress;
+        if (!player1)
+        {
+            ptr += 64;
+        }
+        ptr += offset * slot;
         *ptr = 1;
     }
 
     // This is a helper function to get the pointer to the active character's spell array
-    private static unsafe byte* GetActiveSpellPointer()
+    private static unsafe byte* GetP1ActiveSpellPointer()
     {
         byte* activeSpellBaseAddress = *(byte**)(Mod.BaseAddress + 0x00C53930);
 
@@ -603,10 +621,36 @@ public class SpellHandler
         return activeSecondPointer + 0x58;
     }
 
-    // Helper function to unlock an active spell in the character's minifig file
-    public static unsafe void UnlockActiveSpell(int byteoffset, int bitOffset)
+    // This is a helper function to get the pointer to the active character's spell array
+    private static unsafe byte* GetP2ActiveSpellPointer()
     {
-        byte* ptr = GetActiveSpellPointer();
+        byte* activeSpellBaseAddress = *(byte**)(Mod.BaseAddress + 0x00C53934);
+
+        if (activeSpellBaseAddress == null)
+            return null;
+
+        byte* activeFirstPointer = *(byte**)(activeSpellBaseAddress + 0x1C);
+        if (activeFirstPointer == null)
+        {
+            Game.PrintToLog("[SpellHandler] activeFirstPointer is null");
+            return null;
+        }
+
+        byte* activeSecondPointer = *(byte**)(activeFirstPointer + 0xBF4);
+        if (activeSecondPointer == null)
+        {
+            Game.PrintToLog("[SpellHandler] activeSecondPointer is null");
+            return null;
+        }
+
+        return activeSecondPointer + 0x58;
+    }
+
+    // Helper function to unlock an active spell in the character's minifig file
+    public static unsafe void UnlockActiveSpell(int byteoffset, int bitOffset, bool player1)
+    {
+
+        byte* ptr = (player1 == true) ? GetP1ActiveSpellPointer() : GetP2ActiveSpellPointer();
 
         if (ptr == null)
             return;
@@ -646,7 +690,7 @@ public class SpellHandler
         int[] defaultSpells = [0, 20, 21, 22, 24, 25, 31, 40, 41, 42, 43, 44, 47, 48, 52, 53, 54, 55];
         foreach (int spellId in defaultSpells)
         {
-            UnlockSpell(spellId, Mod.GameInstance!.CurrentCharID);
+            UnlockSpell(spellId, Mod.GameInstance!.CurrentP1CharID, Mod.GameInstance!.CurrentP2CharID);
         }
 
         // Make sure that dark magic is usable if you have a character
@@ -664,14 +708,17 @@ public class SpellHandler
     // Helper function to lock all Active minifig spells upon changing characters, game state, or in a lesson
     public static unsafe void ResetActiveSpells()
     {
-        byte* activeSecondPointer = GetActiveSpellPointer();
-        if (activeSecondPointer == null)
+        byte* activeSecondPointer = GetP1ActiveSpellPointer();
+        byte* activeSecondPointer2 = GetP2ActiveSpellPointer();
+        if (activeSecondPointer == null || activeSecondPointer2 == null)
             return;
 
         for (int i = 0; i < 7; i++)
         {
             byte* activePTR = activeSecondPointer + i;
             *activePTR = 0;
+            byte* activePTR2 = activeSecondPointer2 + i;
+            *activePTR2 = 0;
         }
     }
 
@@ -686,11 +733,14 @@ public class SpellHandler
         }
 
         byte* ptr = SpellVisibilityBaseAddress + 8;
+        byte* ptr2 = SpellVisibilityBaseAddress + 64 + 8;
 
         for (int i = 0; i < 7; i++)
         {
             *ptr = 3;
+            *ptr2 = 3;
             ptr += 8;
+            ptr2 += 8;
         }
     }
 
@@ -714,10 +764,11 @@ public class SpellHandler
     Helper function to return the unlocked spells from the minifig file
     The game checks abilities against their static addresses instead of the minifig file
     This change makes it so it compares against the minifig file instead
+    TODO: Specs only checks P1 right now. Update it to verify who is doing it and check that specific character, though it may not matter.
     */
     public static unsafe int CheckSpecsUnlock()
     {
-        byte* spellArray0 = GetActiveSpellPointer();
+        byte* spellArray0 = GetP1ActiveSpellPointer();
 
         if (spellArray0 == null)
         {
@@ -725,14 +776,15 @@ public class SpellHandler
             return 0;
         }
         int* spellArray4 = (int*)spellArray0 + 1;
-        Game.PrintToLog($"Spell Array 4 contains {*spellArray4:X}");
+        Game.PrintToLog($"Player 1 Spell Array 4 contains {*spellArray4:X}");
         return *spellArray4;
     }
 
-    public static int CheckPolyjuiceUnlock(int eax)
+    public static unsafe int CheckPolyjuiceUnlock(int eax)
     {
+        byte* y5GhostPtr = HubHandler.GhostPathBaseAddress + 0x20;
         int value = eax;
-        if (Mod.LHP2_Archipelago!.CountItemsReceivedWithId(1000) == 0)
+        if (Mod.LHP2_Archipelago!.CountItemsReceivedWithId(1000) == 0 || !Mod.LHP2_Archipelago!.IsLocationChecked(1007) || (*y5GhostPtr & (1 << 2)) == 0)
         {
             value &= ~(1 << 26);
         }
@@ -770,7 +822,6 @@ public class SpellHandler
         {
             // DADA Banned Lesson
             case 301 when !Mod.LHP2_Archipelago!.IsLocationChecked(1007) || (*y5GhostPtr & (1 << 2)) == 0:
-                LockPassiveSpell(26); // Lock Polyjuice cause game acts weird if you use it during the lesson
                 LockPassiveSpell(46); // Ensure lesson can be beaten since game doesn't like when you already have it
                 break;
             // Thestral Flying Lesson
