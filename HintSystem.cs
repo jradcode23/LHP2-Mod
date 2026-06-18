@@ -21,8 +21,6 @@ public class HintSystem
     public static unsafe byte* HintTextBaseAddress => *(byte**)(Mod.BaseAddress + 0xB16324);
     private static unsafe uint HintTextAddress => (uint)(HintTextBaseAddress + 0xBA);
     private static unsafe uint MessagePTRValue => (uint)(((byte*)*(uint**)(Mod.BaseAddress + 0xC58388)) + 0xFFC);
-    private static unsafe byte* PressButtonToStartTextBaseAddress => *(byte**)(Mod.BaseAddress + 0xC4EBFC);
-    private static unsafe uint PressButtonToStartTextAddress => (uint)PressButtonToStartTextBaseAddress;
 
     // This is a helper function to verify if there is anything else on screen before printing a hint message.
     private static unsafe bool IsScreenEmpty()
@@ -188,18 +186,27 @@ public class HintSystem
         Memory.Instance.SafeWrite(hintTextPTRAddress, bytes);
     }
 
+    private static unsafe uint GetPausedText()
+    {
+        byte* pausedTextBaseAddress = *(byte**)(Mod.BaseAddress + 0xAE6E58);
+        byte* firstLevelPTR = *(byte**)(pausedTextBaseAddress + 0x394);
+        return (uint)firstLevelPTR;
+    }
+
     // Helper function to write the received Horcrux count to the Player 2 slot name
     public static void DisplayHorcruxCount(byte count)
     {
+        uint pausedTextPTR = GetPausedText();
         string message = $"Horcruxes Collected: {count}/{Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredHorcruxes}";
-        SetMessageText(message, PressButtonToStartTextAddress);
+        SetMessageText(message, pausedTextPTR);
     }
 
     // Helper function to write the Levels Beaten to the Player 2 slot name
     public static void DisplayLevelsBeaten(byte count)
     {
+        uint pausedTextPTR = GetPausedText();
         string message = $"Levels Beaten: {count}/{Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredLevels}";
-        SetMessageText(message, PressButtonToStartTextAddress);
+        SetMessageText(message, pausedTextPTR);
     }
 
 }
