@@ -1767,7 +1767,7 @@ public class Game
     public static void CheckWinCon()
     {
         // Defeat Voldemort
-        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 0)
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 0 && Mod.GameInstance!.PrevLevelID == 27)
         {
             int horcruxesReceived = Mod.LHP2_Archipelago!.CountItemsCheckedInRange(440, 446);
             int requiredHorcruxes = Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredHorcruxes;
@@ -1781,6 +1781,7 @@ public class Game
             {
                 Mod.LHP2_Archipelago!.Release();
             }
+            return;
         }
 
         // Levels Beaten
@@ -1798,6 +1799,7 @@ public class Game
             {
                 Mod.LHP2_Archipelago!.Release();
             }
+            return;
         }
     }
 }
