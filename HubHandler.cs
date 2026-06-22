@@ -426,79 +426,59 @@ public class HubHandler
             HintSystem.DisplayLevelsBeaten(levelsBeaten);
         }
     }
+    private static Dictionary<string, Map>? GameMaps;
+    private static unsafe ushort* Y5MapBase => *(ushort**)(Mod.BaseAddress + 0xB06914); // Y5 London
+    private static unsafe ushort* Y6MapBase => *(ushort**)(Mod.BaseAddress + 0xB06918); // Y6 London
+    private static unsafe ushort* Y7MapBase => *(ushort**)(Mod.BaseAddress + 0xB0691C); // Y7 London
+    private static unsafe ushort* Y8MapBase => *(ushort**)(Mod.BaseAddress + 0xB06920); // Y8 London
+    private static unsafe ushort* DarkTimesMapBase => *(ushort**)(Mod.BaseAddress + 0xB069AC); // Dark Times
 
-    private static unsafe ushort* DarkTimesMapBase => *(ushort**)(Mod.BaseAddress + 0xB069AC);
-    public static unsafe ushort* DarkTimesMapConstant => DarkTimesMapBase + 0x32;
-    private static unsafe ushort* OutOfRetirementMapConstant => DarkTimesMapBase - 0x1AFE;
-    private static unsafe ushort* TheSevenHarrysMapConstant => DarkTimesMapBase - 0x3C1E;
-    private static unsafe ushort* TheThiefsDownfallMapConstant => DarkTimesMapBase - 0x54CE;
-    private static unsafe ushort* Y5MapBase => *(ushort**)(Mod.BaseAddress + 0xB06914);
-    private static unsafe ushort* Y6MapBase => *(ushort**)(Mod.BaseAddress + 0xB06918);
-    private static unsafe ushort* Y7MapBase => *(ushort**)(Mod.BaseAddress + 0xB0691C);
-    private static unsafe ushort* Y8MapBase => *(ushort**)(Mod.BaseAddress + 0xB06920);
-    private static unsafe ushort* Y5LondonConstantPTR => Y5MapBase + 0x32;
-    private static unsafe ushort* Y6LondonConstantPTR => Y6MapBase + 0x32;
-    private static unsafe ushort* Y7LondonConstantPTR => Y7MapBase + 0x32;
-    private static unsafe ushort* Y8LondonConstantPTR => Y8MapBase + 0x32;
-    private static unsafe ushort* Y6LibraryConstantPTR => Y6MapBase + 0x9B0 + 0x32;
-    private static unsafe ushort* Y7LibraryConstantPTR => Y7MapBase + 0x9B0 + 0x32;
-    private static unsafe ushort* Y8LibraryConstantPTR => Y8MapBase + 0xA00 + 0x32;
-    private static unsafe ushort* Y6PotionsConstantPTR => Y6MapBase + 0x780 + 0x32;
-    private static unsafe ushort* Y7PotionsConstantPTR => Y7MapBase + 0x780 + 0x32;
-    private static unsafe ushort* Y8PotionsConstantPTR => Y8MapBase + 0x7D0 + 0x32;
-    private static unsafe ushort* Y6HogsmeadePathConstantPTR => Y6MapBase + 0xF0 + 0x32;
-    private static unsafe ushort* Y7HogsmeadePathConstantPTR => Y7MapBase + 0xF0 + 0x32;
-    private static unsafe ushort* Y8HogsmeadePathConstantPTR => Y8MapBase + 0xF0 + 0x32;
-    private static unsafe ushort* Y6AstronomyTowerConstantPTR => Y6MapBase + 0x320 + 0x32;
-    private static unsafe ushort* Y7AstronomyTowerConstantPTR => Y7MapBase + 0x690 + 0x32;
-    private static unsafe ushort* Y8AstronomyTowerConstantPTR => Y8MapBase + 0x6E0 + 0x32;
-    private static unsafe ushort* Y6RavenclawTowerConstantPTR => Y6MapBase + 0x5F0 + 0x32;
-    private static unsafe ushort* Y7RavenclawTowerConstantPTR => Y7MapBase + 0x5A0 + 0x32;
-    private static unsafe ushort* Y8RavenclawTowerConstantPTR => Y8MapBase + 0x5F0 + 0x32;
-    private static unsafe ushort* Y6AguaCharmsConstantPTR => Y6MapBase + 0x6E0 + 0x32;
-    private static unsafe ushort* Y7AguaCharmsConstantPTR => Y7MapBase + 0x6E0 + 0x32;
-    private static unsafe ushort* Y8AguaCharmsConstantPTR => Y8MapBase + 0x730 + 0x32;
-    private static unsafe ushort* Y8QuidditchConstantPTR => Y8MapBase + 0x500 + 0x32;
-    private static unsafe ushort* Y8BlackLakeConstantPTR => Y8MapBase + 0x4B0 + 0x32;
-    private static readonly ushort Y5London = 276;
-    private static readonly ushort Y6London = 173;
-    private static readonly ushort Y7London = 103;
-    private static readonly ushort Y8London = 8;
-    private static readonly ushort Y5Foyer = 306;
-    private static readonly ushort Y6Foyer = 205;
-    private static readonly ushort Y7Foyer = 135;
-    private static readonly ushort Y8Foyer = 41;
-    private static readonly ushort Y5Quad = 285;
-    private static readonly ushort Y6Quad = 184;
-    private static readonly ushort Y7Quad = 112;
-    private static readonly ushort Y8Quad = 17;
-    private static readonly ushort Y6Library = 204;
-    private static readonly ushort Y7Library = 134;
-    private static readonly ushort Y8Library = 40;
-    private static readonly ushort Y6Potions = 197;
-    private static readonly ushort Y7Potions = 127;
-    private static readonly ushort Y8Potions = 33;
-    private static readonly ushort Y5ClassLobby = 303;
-    private static readonly ushort Y6HogsmeadePath = 176;
-    private static readonly ushort Y7HogsmeadePath = 106;
-    private static readonly ushort Y8HogsmeadePath = 11;
-    private static readonly ushort Y5HogwartsPath = 282;
-    private static readonly ushort Y6AstronomyTower = 183;
-    private static readonly ushort Y7AstronomyTower = 124;
-    private static readonly ushort Y8AstronomyTower = 30;
-    private static readonly ushort Y5DivinationCourtyard = 302;
-    private static readonly ushort Y6RavenclawTower = 192;
-    private static readonly ushort Y7RavenclawTower = 121;
-    private static readonly ushort Y8RavenclawTower = 27;
-    private static readonly ushort Y5DormLobby = 298;
-    private static readonly ushort Y6AguaCharms = 195;
-    private static readonly ushort Y7AguaCharms = 125;
-    private static readonly ushort Y8AguaCharms = 31;
-    private static readonly ushort Y8Quidditch = 24;
-    private static readonly ushort Y8BlackLake = 23;
-    private static readonly ushort Y5Grounds = 296;
-    private static readonly ushort Y6Grounds = 191;
-    private static readonly ushort Y7Grounds = 120;
+    public static unsafe void InitializeGameMaps()
+    {
+        if (GameMaps != null)
+            return;
+
+        GameMaps = new Dictionary<string, Map>
+        {
+            { "Y5London", new Map("Y5London", Y5MapBase + 0x32) },
+            { "Y6London", new Map("Y6London", Y6MapBase + 0x32) },
+            { "Y7London", new Map("Y7London", Y7MapBase + 0x32) },
+            { "Y8London", new Map("Y8London", Y8MapBase + 0x32) },
+            { "Y5Foyer", new Map("Y5Foyer", Y5MapBase + 0x960 + 0x32) },
+            { "Y6Foyer", new Map("Y6Foyer", Y6MapBase + 0xA00 + 0x32) },
+            { "Y7Foyer", new Map("Y7Foyer", Y7MapBase + 0xA00 + 0x32) },
+            { "Y8Foyer", new Map("Y8Foyer", Y8MapBase + 0xA50 + 0x32) },
+            { "Y5ClassLobby", new Map("Y5ClassLobby", Y5MapBase + 0x870 + 0x32) },
+            { "Y6ClassLobby", new Map("Y6ClassLobby", Y6MapBase + 0x8C0 + 0x32) },
+            { "Y7ClassLobby", new Map("Y7ClassLobby", Y7MapBase + 0x8C0 + 0x32) },
+            { "Y8ClassLobby", new Map("Y8ClassLobby", Y8MapBase + 0x910 + 0x32) },
+            { "Y6Library", new Map("Y6Library", Y6MapBase + 0x9B0 + 0x32) },
+            { "Y7Library", new Map("Y7Library", Y7MapBase + 0x9B0 + 0x32) },
+            { "Y8Library", new Map("Y8Library", Y8MapBase + 0xA00 + 0x32) },
+            { "Y6Potions", new Map("Y6Potions", Y6MapBase + 0x780 + 0x32) },
+            { "Y7Potions", new Map("Y7Potions", Y7MapBase + 0x780 + 0x32) },
+            { "Y8Potions", new Map("Y8Potions", Y8MapBase + 0x7D0 + 0x32) },
+            { "Y6HogsmeadePath", new Map("Y6HogsmeadePath", Y6MapBase + 0xF0 + 0x32) },
+            { "Y7HogsmeadePath", new Map("Y7HogsmeadePath", Y7MapBase + 0xF0 + 0x32) },
+            { "Y8HogsmeadePath", new Map("Y8HogsmeadePath", Y8MapBase + 0xF0 + 0x32) },
+            { "Y6AstronomyTower", new Map("Y6AstronomyTower", Y6MapBase + 0x320 + 0x32) },
+            { "Y7AstronomyTower", new Map("Y7AstronomyTower", Y7MapBase + 0x690 + 0x32) },
+            { "Y8AstronomyTower", new Map("Y8AstronomyTower", Y8MapBase + 0x6E0 + 0x32) },
+            { "Y6RavenclawTower", new Map("Y6RavenclawTower", Y6MapBase + 0x5F0 + 0x32) },
+            { "Y7RavenclawTower", new Map("Y7RavenclawTower", Y7MapBase + 0x5A0 + 0x32) },
+            { "Y8RavenclawTower", new Map("Y8RavenclawTower", Y8MapBase + 0x5F0 + 0x32) },
+            { "Y6AguaCharms", new Map("Y6AguaCharms", Y6MapBase + 0x6E0 + 0x32) },
+            { "Y7AguaCharms", new Map("Y7AguaCharms", Y7MapBase + 0x6E0 + 0x32) },
+            { "Y8AguaCharms", new Map("Y8AguaCharms", Y8MapBase + 0x730 + 0x32) },
+            { "Y8Quidditch", new Map("Y8Quidditch", Y8MapBase + 0x500 + 0x32) },
+            { "Y8BlackLake", new Map("Y8BlackLake",  Y8MapBase + 0x4B0 + 0x32) },
+            { "DarkTimes", new Map("DarkTimes", DarkTimesMapBase + 0x32) },
+            { "OutOfRetirement", new Map("OutOfRetirement", DarkTimesMapBase - 0x1AFE)},
+            { "TheSevenHarrys", new Map("TheSevenHarrys", DarkTimesMapBase - 0x3C1E)},
+            { "TheThiefsDownfall", new Map("TheThiefsDownfall", DarkTimesMapBase - 0x54CE)},
+        };
+    }
+    // TODO: Grab Hogwarts Path, Grounds, Div Courtyard, and Dorm Lobby
 
     // The following function is our current implementation of how to time travel & Fast Travel back to Hogwarts.
     public static unsafe void FastTravel(string mapRequested)
@@ -530,33 +510,52 @@ public class HubHandler
 
         AdjustHubMaps(year);
 
-        ushort* currentPTR = GetCurrentLondonConstantPtr(Mod.GameInstance!.LevelID);
-        if (currentPTR == null)
+        Map? currentMap = GetCurrentLondonConstantPtr(Mod.GameInstance!.LevelID);
+        if (currentMap == null)
         {
             Game.PrintToLog($"Critical Error cannot fast travel. LevelID is: {Mod.GameInstance!.LevelID}");
             return;
         }
 
-        if (!TryGetFastTravelMapValue(mapRequested, out ushort mapValue))
+        Map? destinationMap = TryGetFastTravelMapValue(mapRequested);
+        if (destinationMap == null)
         {
             Game.PrintToLog($"Unknown fast travel destination: {mapRequested}.");
             return;
         }
+
         byte* N0CUT5CheatCodeConstant = (byte*)(Mod.BaseAddress + 0x8968A4);
         HintSystem.SetMessageText(mapRequested, (uint)N0CUT5CheatCodeConstant);
 
-        *currentPTR = mapValue;
-        AdjustLeakyMapConstants(mapValue);
+        currentMap.UpdateMap(destinationMap.MapConstant);
+        AdjustLeakyMapConstants(destinationMap.MapConstant, destinationMap.EntranceConstant);
     }
 
-    private static unsafe ushort* GetCurrentLondonConstantPtr(int levelId) => levelId switch
+    private static Map? LookUpMap(string mapKey)
     {
-        1 => Y5LondonConstantPTR,
-        2 => Y6LondonConstantPTR,
-        3 => Y7LondonConstantPTR,
-        4 => Y8LondonConstantPTR,
-        _ => null
-    };
+        return GameMaps!.TryGetValue(mapKey, out Map? map)
+        ? map
+        : null;
+    }
+
+    private static Map? GetCurrentLondonConstantPtr(int levelId)
+    {
+        string? mapKey = levelId switch
+        {
+            1 => "Y5London",
+            2 => "Y6London",
+            3 => "Y7London",
+            4 => "Y8London",
+            _ => null
+        };
+
+        if (mapKey == null || GameMaps == null)
+        {
+            return null;
+        }
+
+        return LookUpMap(mapKey);
+    }
 
     private static bool TryGetTargetYear(string mapRequested, out int year)
     {
@@ -578,26 +577,32 @@ public class HubHandler
         return year != 0;
     }
 
-    private static bool TryGetFastTravelMapValue(string mapRequested, out ushort mapValue)
+    private static Map? TryGetFastTravelMapValue(string mapRequested)
     {
-        mapValue = mapRequested switch
+
+        string? mapKey = mapRequested switch
         {
-            "Y5LOND" => Y5London,
-            "Y6LOND" => Y6London,
-            "Y7LOND" => Y7London,
-            "Y8LOND" => Y8London,
-            "Y5FOYE" => Y5Foyer,
-            "Y6FOYE" => Y6Foyer,
-            "Y7FOYE" => Y7Foyer,
-            "Y8FOYE" => Y8Foyer,
-            "Y5QUAD" => Y5Quad,
-            "Y6QUAD" => Y6Quad,
-            "Y7QUAD" => Y7Quad,
-            "Y8QUAD" => Y8Quad,
-            _ => 0
+            "Y5LOND" => "Y5London",
+            "Y6LOND" => "Y6London",
+            "Y7LOND" => "Y7London",
+            "Y8LOND" => "Y8London",
+            "Y5FOYE" => "Y5Foyer",
+            "Y6FOYE" => "Y6Foyer",
+            "Y7FOYE" => "Y7Foyer",
+            "Y8FOYE" => "Y8Foyer",
+            "Y5QUAD" => "Y5Quad",
+            "Y6QUAD" => "Y6Quad",
+            "Y7QUAD" => "Y7Quad",
+            "Y8QUAD" => "Y8Quad",
+            _ => null
         };
 
-        return mapValue != 0;
+        if (mapKey == null || GameMaps == null)
+        {
+            return null;
+        }
+
+        return LookUpMap(mapKey);
     }
 
     /*
@@ -605,122 +610,183 @@ public class HubHandler
     */
     public static void ChangeLeakyLoadingZones(int level)
     {
-        ushort mapValue = level switch
+        Map? map = level switch
         {
-            1 => Y5London,
-            2 => Y6London,
-            3 => Y7London,
-            4 => Y8London,
-            _ => 0
+            1 => LookUpMap("Y5London"),
+            2 => LookUpMap("Y6London"),
+            3 => LookUpMap("Y7London"),
+            4 => LookUpMap("Y8London"),
+            _ => null
         };
 
-        if (mapValue == 0)
+        if (map == null)
         {
             Game.PrintToLog($"Could not properly adjust Leaky loading zone. Level: {level}");
             return;
         }
-        AdjustLeakyMapConstants(mapValue);
+        AdjustLeakyMapConstants(map.MapConstant, map.EntranceConstant);
     }
 
     // Broken out into a separate function cause time travel wasn't always working so they need to be updated often
-    private static unsafe void AdjustLeakyMapConstants(ushort mapValue)
+    private static void AdjustLeakyMapConstants(ushort mapValue, byte entranceValue)
     {
-        *OutOfRetirementMapConstant = mapValue;
-        *TheSevenHarrysMapConstant = mapValue;
-        *TheThiefsDownfallMapConstant = mapValue;
-    }
+        Map? OutOfRetirement = LookUpMap("OutOfRetirement");
+        Map? TheSevenHarrys = LookUpMap("TheSevenHarrys");
+        Map? TheThiefsDownfall = LookUpMap("TheThiefsDownfall");
 
-    // This function returns the Level Map IDs back to their intended ID. Used upon level selector opening
-    public static unsafe void RestoreLeakyLoadingZones()
-    {
-        *OutOfRetirementMapConstant = 274;
-        *TheSevenHarrysMapConstant = 168;
-        *TheThiefsDownfallMapConstant = 89;
-    }
-
-    // This helper function fixes the constants if the player leaves Leaky Cualdron
-    public static unsafe void VerifyLondonMapIDs()
-    {
-        // London's Map ID in hex are 0x08, 0x67, 0xAD, 0x114
-        *Y5LondonConstantPTR = 0x114;
-        *Y6LondonConstantPTR = 0xAD;
-        *Y7LondonConstantPTR = 0x67;
-        *Y8LondonConstantPTR = 0x08;
-    }
-
-    // The missing maps will make you time travel to a different year, these next series of functions are to change the Map constants in the future years so you don't time travel.
-    public static unsafe void UpdateMissingMapConstants(int level)
-    {
-        if (level < 1 || level > 4)
+        if (OutOfRetirement == null || TheSevenHarrys == null || TheThiefsDownfall == null)
         {
+            Game.PrintToLog("One of the Level Map's is Null. Please alert a dev.");
             return;
         }
 
-        bool applyY5Overrides = level == 1;
+        OutOfRetirement.UpdateMap(mapValue);
+        OutOfRetirement.UpdateEntrance(entranceValue);
+        TheSevenHarrys.UpdateMap(mapValue);
+        TheSevenHarrys.UpdateEntrance(entranceValue);
+        TheThiefsDownfall.UpdateMap(mapValue);
+        TheThiefsDownfall.UpdateEntrance(entranceValue);
 
-        SetFutureYearMapConstants(Y6LibraryConstantPTR, Y7LibraryConstantPTR, Y8LibraryConstantPTR,
-            applyY5Overrides ? Y5Foyer : null,
-            Y6Library, Y7Library, Y8Library);
-
-        SetFutureYearMapConstants(Y6PotionsConstantPTR, Y7PotionsConstantPTR, Y8PotionsConstantPTR,
-            applyY5Overrides ? Y5ClassLobby : null,
-            Y6Potions, Y7Potions, Y8Potions);
-
-        SetFutureYearMapConstants(Y6HogsmeadePathConstantPTR, Y7HogsmeadePathConstantPTR, Y8HogsmeadePathConstantPTR,
-            applyY5Overrides ? Y5HogwartsPath : null,
-            Y6HogsmeadePath, Y7HogsmeadePath, Y8HogsmeadePath);
-
-        SetFutureYearMapConstants(Y6AstronomyTowerConstantPTR, Y7AstronomyTowerConstantPTR, Y8AstronomyTowerConstantPTR,
-            applyY5Overrides ? Y5DivinationCourtyard : null,
-            Y6AstronomyTower, Y7AstronomyTower, Y8AstronomyTower);
-
-        SetFutureYearMapConstants(Y6RavenclawTowerConstantPTR, Y7RavenclawTowerConstantPTR, Y8RavenclawTowerConstantPTR,
-            applyY5Overrides ? Y5DormLobby : null,
-            Y6RavenclawTower, Y7RavenclawTower, Y8RavenclawTower);
-
-        SetFutureYearMapConstants(Y6AguaCharmsConstantPTR, Y7AguaCharmsConstantPTR, Y8AguaCharmsConstantPTR,
-            applyY5Overrides ? Y5ClassLobby : null,
-            Y6AguaCharms, Y7AguaCharms, Y8AguaCharms);
-
-        ushort? groundsMap = level switch
-        {
-            1 => Y5Grounds,
-            2 => Y6Grounds,
-            3 => Y7Grounds,
-            _ => null
-        };
-
-        SetSingleMapConstant(Y8QuidditchConstantPTR, groundsMap, Y8Quidditch);
-        SetSingleMapConstant(Y8BlackLakeConstantPTR, groundsMap, Y8BlackLake);
     }
 
-    private static unsafe void SetFutureYearMapConstants(
-        ushort* y6Ptr,
-        ushort* y7Ptr,
-        ushort* y8Ptr,
-        ushort? mapValue,
-        ushort y6Default,
-        ushort y7Default,
-        ushort y8Default)
+    // This function returns the Level Map IDs back to their intended ID. Used upon level selector opening
+    public static void RestoreLeakyLoadingZones()
     {
-        if (mapValue.HasValue)
+        Map? OutOfRetirement = LookUpMap("OutOfRetirement");
+        Map? TheSevenHarrys = LookUpMap("TheSevenHarrys");
+        Map? TheThiefsDownfall = LookUpMap("TheThiefsDownfall");
+
+        if (OutOfRetirement == null || TheSevenHarrys == null || TheThiefsDownfall == null)
         {
-            *y6Ptr = mapValue.Value;
-            *y7Ptr = mapValue.Value;
-            *y8Ptr = mapValue.Value;
+            Game.PrintToLog("One of the Level Maps is Null. Please alert a dev.");
+            return;
         }
-        else
-        {
-            *y6Ptr = y6Default;
-            *y7Ptr = y7Default;
-            *y8Ptr = y8Default;
-        }
+
+        OutOfRetirement.RestoreMap();
+        TheSevenHarrys.RestoreMap();
+        TheThiefsDownfall.RestoreMap();
     }
 
-    private static unsafe void SetSingleMapConstant(ushort* ptr, ushort? mapValue, ushort defaultValue)
+    // This helper function fixes the constants if the player leaves Leaky Cualdron
+    public static void VerifyLondonMapIDs()
     {
-        *ptr = mapValue ?? defaultValue;
+        Map? Y5 = LookUpMap("Y5London");
+        Map? Y6 = LookUpMap("Y6London");
+        Map? Y7 = LookUpMap("Y7London");
+        Map? Y8 = LookUpMap("Y8London");
+
+        if (Y5 == null || Y6 == null || Y7 == null || Y8 == null)
+        {
+            Game.PrintToLog("One of the London Maps is Null. Please alert a dev.");
+            return;
+        }
+
+        Y5.RestoreMap();
+        Y6.RestoreMap();
+        Y7.RestoreMap();
+        Y8.RestoreMap();
+
     }
+
+    public static void UpdateDarkTimesMap()
+    {
+        Map? DarkTimes = LookUpMap("DarkTimes");
+
+        if (DarkTimes == null)
+        {
+            Game.PrintToLog("Dark Times is Null. Please Report to a dev.");
+            return;
+        }
+
+        DarkTimes.UpdateMap(388);
+    }
+
+    public static void RestoreDarkTimesMap()
+    {
+        Map? DarkTimes = LookUpMap("DarkTimes");
+
+        if (DarkTimes == null)
+        {
+            Game.PrintToLog("Dark Times is Null. Please Report to a dev.");
+            return;
+        }
+
+        DarkTimes.UpdateMap(361);
+    }
+
+    // // The missing maps will make you time travel to a different year, these next series of functions are to change the Map constants in the future years so you don't time travel.
+    // public static unsafe void UpdateMissingMapConstants(int level)
+    // {
+    //     if (level < 1 || level > 4)W
+    //     {
+    //         return;
+    //     }
+
+    //     bool applyY5Overrides = level == 1;
+
+    //     SetFutureYearMapConstants(GetMapConstantPtr("Y6Library"), GetMapConstantPtr("Y7Library"), GetMapConstantPtr("Y8Library"),
+    //         applyY5Overrides ? Y5Foyer : null,
+    //         Y6Library, Y7Library, Y8Library);
+
+    //     SetFutureYearMapConstants(GetMapConstantPtr("Y6Potions"), GetMapConstantPtr("Y7Potions"), GetMapConstantPtr("Y8Potions"),
+    //         applyY5Overrides ? Y5ClassLobby : null,
+    //         Y6Potions, Y7Potions, Y8Potions);
+
+    //     SetFutureYearMapConstants(GetMapConstantPtr("Y6HogsmeadePath"), GetMapConstantPtr("Y7HogsmeadePath"), GetMapConstantPtr("Y8HogsmeadePath"),
+    //         applyY5Overrides ? Y5HogwartsPath : null,
+    //         Y6HogsmeadePath, Y7HogsmeadePath, Y8HogsmeadePath);
+
+    //     SetFutureYearMapConstants(GetMapConstantPtr("Y6AstronomyTower"), GetMapConstantPtr("Y7AstronomyTower"), GetMapConstantPtr("Y8AstronomyTower"),
+    //         applyY5Overrides ? Y5DivinationCourtyard : null,
+    //         Y6AstronomyTower, Y7AstronomyTower, Y8AstronomyTower);
+
+    //     SetFutureYearMapConstants(GetMapConstantPtr("Y6RavenclawTower"), GetMapConstantPtr("Y7RavenclawTower"), GetMapConstantPtr("Y8RavenclawTower"),
+    //         applyY5Overrides ? Y5DormLobby : null,
+    //         Y6RavenclawTower, Y7RavenclawTower, Y8RavenclawTower);
+
+    //     SetFutureYearMapConstants(GetMapConstantPtr("Y6AguaCharms"), GetMapConstantPtr("Y7AguaCharms"), GetMapConstantPtr("Y8AguaCharms"),
+    //         applyY5Overrides ? Y5ClassLobby : null,
+    //         Y6AguaCharms, Y7AguaCharms, Y8AguaCharms);
+
+    //     ushort? groundsMap = level switch
+    //     {
+    //         1 => Y5Grounds,
+    //         2 => Y6Grounds,
+    //         3 => Y7Grounds,
+    //         _ => null
+    //     };
+
+    //     SetSingleMapConstant(GetMapConstantPtr("Y8Quidditch"), groundsMap, Y8Quidditch);
+    //     SetSingleMapConstant(GetMapConstantPtr("Y8BlackLake"), groundsMap, Y8BlackLake);
+    // }
+
+    // private static unsafe void SetFutureYearMapConstants(
+    //     ushort* y6Ptr,
+    //     ushort* y7Ptr,
+    //     ushort* y8Ptr,
+    //     ushort? mapValue,
+    //     ushort y6Default,
+    //     ushort y7Default,
+    //     ushort y8Default)
+    // {
+    //     if (mapValue.HasValue)
+    //     {
+    //         *y6Ptr = mapValue.Value;
+    //         *y7Ptr = mapValue.Value;
+    //         *y8Ptr = mapValue.Value;
+    //     }
+    //     else
+    //     {
+    //         *y6Ptr = y6Default;
+    //         *y7Ptr = y7Default;
+    //         *y8Ptr = y8Default;
+    //     }
+    // }
+
+    // private static unsafe void SetSingleMapConstant(ushort* ptr, ushort? mapValue, ushort defaultValue)
+    // {
+    //     *ptr = mapValue ?? defaultValue;
+    // }
 
     /*
     In Year 5, the game will warp you back to Hogwarts instead of having you walk back.
@@ -1304,3 +1370,36 @@ public class HubHandler
     }
 }
 
+class Map
+{
+    public string Name { get; private set; }
+    public unsafe ushort* MapConstantAddress { get; private set; }
+    public unsafe byte* EntranceConstantAddress { get; private set; }
+    public ushort MapConstant { get; private set; }
+    public byte EntranceConstant { get; private set; }
+
+    public unsafe Map(string name, ushort* baseMapConstantAddress)
+    {
+        Name = name;
+        MapConstantAddress = baseMapConstantAddress;
+        EntranceConstantAddress = (byte*)(baseMapConstantAddress + 2);
+        MapConstant = *baseMapConstantAddress;
+        EntranceConstant = *EntranceConstantAddress;
+    }
+
+    public unsafe void UpdateMap(ushort map)
+    {
+        *MapConstantAddress = map;
+    }
+
+    public unsafe void UpdateEntrance(byte entrance)
+    {
+        *EntranceConstantAddress = entrance;
+    }
+
+    public unsafe void RestoreMap()
+    {
+        *MapConstantAddress = MapConstant;
+        *EntranceConstantAddress = EntranceConstant;
+    }
+}

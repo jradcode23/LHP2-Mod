@@ -244,7 +244,7 @@ public class LevelHandler
                 break;
             // Menu
             case 402:
-                *HubHandler.DarkTimesMapConstant = 388;
+                HubHandler.UpdateDarkTimesMap();
                 break;
             default:
                 break;

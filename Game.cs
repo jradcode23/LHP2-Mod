@@ -187,7 +187,8 @@ public class Game
         // NOP Code that forces to Dark Times upon save reload
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3CB61, [0x90, 0x90]);
         // Change Dark Times Map Constant
-        *HubHandler.DarkTimesMapConstant = 388;
+        HubHandler.InitializeGameMaps();
+        HubHandler.UpdateDarkTimesMap();
 
         Shops.SetShopPointers();
     }
@@ -1125,7 +1126,7 @@ public class Game
         if (value is >= 1 and <= 4)
         {
             HubHandler.ChangeLeakyLoadingZones(value);
-            HubHandler.UpdateMissingMapConstants(value);
+            // HubHandler.UpdateMissingMapConstants(value);
         }
         if (value >= 1 && value <= 4 && (Mod.GameInstance!.PrevLevelID == 0 || Mod.GameInstance!.PrevLevelID > 4))
         {
@@ -1191,7 +1192,7 @@ public class Game
         if (prevMapID == 402)
         {
             HubHandler.LoadRedBricksEnabled();
-            *HubHandler.DarkTimesMapConstant = 361;
+            HubHandler.RestoreDarkTimesMap();
         }
 
         // Send Polyjuice Potion Check
