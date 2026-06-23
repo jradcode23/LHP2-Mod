@@ -470,6 +470,13 @@ public class HubHandler
             { "Y6AguaCharms", new Map("Y6AguaCharms", Y6MapBase + 0x6E0 + 0x32) },
             { "Y7AguaCharms", new Map("Y7AguaCharms", Y7MapBase + 0x6E0 + 0x32) },
             { "Y8AguaCharms", new Map("Y8AguaCharms", Y8MapBase + 0x730 + 0x32) },
+            { "Y5DivinationCourtyard", new Map("Y5DivinationCourtyard", Y5MapBase + 0x820 + 0x32)},
+            { "Y5DiagonAlley", new Map("Y5DiagonAlley", *(ushort**)(Mod.BaseAddress + 0xB06A30) + 0x32) },
+            { "Y5DormLobby", new Map("Y5DormLobby", Y5MapBase + 0x6E0 + 0x32)},
+            { "Y5HogwartsPath", new Map("Y5HogwartsPath", Y5MapBase + 0x1E0 + 0x32)},
+            { "Y5Grounds", new Map("Y5Grounds", Y5MapBase + 0x640 + 0x32)},
+            { "Y6Grounds", new Map("Y6Grounds", Y6MapBase + 0x5A0 + 0x32)},
+            { "Y7Grounds", new Map("Y7Grounds", Y7MapBase + 0x550 + 0x32)},
             { "Y8Quidditch", new Map("Y8Quidditch", Y8MapBase + 0x500 + 0x32) },
             { "Y8BlackLake", new Map("Y8BlackLake",  Y8MapBase + 0x4B0 + 0x32) },
             { "DarkTimes", new Map("DarkTimes", DarkTimesMapBase + 0x32) },
@@ -478,7 +485,6 @@ public class HubHandler
             { "TheThiefsDownfall", new Map("TheThiefsDownfall", DarkTimesMapBase - 0x54CE)},
         };
     }
-    // TODO: Grab Hogwarts Path, Grounds, Div Courtyard, and Dorm Lobby
 
     // The following function is our current implementation of how to time travel & Fast Travel back to Hogwarts.
     public static unsafe void FastTravel(string mapRequested)
@@ -691,14 +697,16 @@ public class HubHandler
     public static void UpdateDarkTimesMap()
     {
         Map? DarkTimes = LookUpMap("DarkTimes");
+        Map? Diagon = LookUpMap("Y5DiagonAlley");
 
-        if (DarkTimes == null)
+        if (DarkTimes == null || Diagon == null)
         {
             Game.PrintToLog("Dark Times is Null. Please Report to a dev.");
             return;
         }
 
-        DarkTimes.UpdateMap(388);
+        DarkTimes.UpdateMap(Diagon.MapConstant);
+        DarkTimes.UpdateEntrance(Diagon.EntranceConstant);
     }
 
     public static void RestoreDarkTimesMap()
@@ -711,82 +719,91 @@ public class HubHandler
             return;
         }
 
-        DarkTimes.UpdateMap(361);
+        DarkTimes.RestoreMap();
     }
 
-    // // The missing maps will make you time travel to a different year, these next series of functions are to change the Map constants in the future years so you don't time travel.
-    // public static unsafe void UpdateMissingMapConstants(int level)
-    // {
-    //     if (level < 1 || level > 4)W
-    //     {
-    //         return;
-    //     }
+    // The missing maps will make you time travel to a different year, these next series of functions are to change the Map constants in the future years so you don't time travel.
+    public static void UpdateMissingMapConstants(int level)
+    {
+        if (level < 1 || level > 4)
+        {
+            return;
+        }
 
-    //     bool applyY5Overrides = level == 1;
+        bool applyY5Overrides = level == 1;
 
-    //     SetFutureYearMapConstants(GetMapConstantPtr("Y6Library"), GetMapConstantPtr("Y7Library"), GetMapConstantPtr("Y8Library"),
-    //         applyY5Overrides ? Y5Foyer : null,
-    //         Y6Library, Y7Library, Y8Library);
+        SetFutureYearMapConstants(LookUpMap("Y6Library"), LookUpMap("Y7Library"), LookUpMap("Y8Library"),
+            applyY5Overrides ? LookUpMap("Y5Foyer") : null);
 
-    //     SetFutureYearMapConstants(GetMapConstantPtr("Y6Potions"), GetMapConstantPtr("Y7Potions"), GetMapConstantPtr("Y8Potions"),
-    //         applyY5Overrides ? Y5ClassLobby : null,
-    //         Y6Potions, Y7Potions, Y8Potions);
+        SetFutureYearMapConstants(LookUpMap("Y6Potions"), LookUpMap("Y7Potions"), LookUpMap("Y8Potions"),
+            applyY5Overrides ? LookUpMap("Y5ClassLobby") : null);
 
-    //     SetFutureYearMapConstants(GetMapConstantPtr("Y6HogsmeadePath"), GetMapConstantPtr("Y7HogsmeadePath"), GetMapConstantPtr("Y8HogsmeadePath"),
-    //         applyY5Overrides ? Y5HogwartsPath : null,
-    //         Y6HogsmeadePath, Y7HogsmeadePath, Y8HogsmeadePath);
+        SetFutureYearMapConstants(LookUpMap("Y6HogsmeadePath"), LookUpMap("Y7HogsmeadePath"), LookUpMap("Y8HogsmeadePath"), applyY5Overrides ? LookUpMap("Y5HogwartsPath") : null);
 
-    //     SetFutureYearMapConstants(GetMapConstantPtr("Y6AstronomyTower"), GetMapConstantPtr("Y7AstronomyTower"), GetMapConstantPtr("Y8AstronomyTower"),
-    //         applyY5Overrides ? Y5DivinationCourtyard : null,
-    //         Y6AstronomyTower, Y7AstronomyTower, Y8AstronomyTower);
+        SetFutureYearMapConstants(LookUpMap("Y6AstronomyTower"), LookUpMap("Y7AstronomyTower"), LookUpMap("Y8AstronomyTower"), applyY5Overrides ? LookUpMap("Y5DivinationCourtyard") : null);
 
-    //     SetFutureYearMapConstants(GetMapConstantPtr("Y6RavenclawTower"), GetMapConstantPtr("Y7RavenclawTower"), GetMapConstantPtr("Y8RavenclawTower"),
-    //         applyY5Overrides ? Y5DormLobby : null,
-    //         Y6RavenclawTower, Y7RavenclawTower, Y8RavenclawTower);
+        SetFutureYearMapConstants(LookUpMap("Y6RavenclawTower"), LookUpMap("Y7RavenclawTower"), LookUpMap("Y8RavenclawTower"), applyY5Overrides ? LookUpMap("Y5DormLobby") : null);
 
-    //     SetFutureYearMapConstants(GetMapConstantPtr("Y6AguaCharms"), GetMapConstantPtr("Y7AguaCharms"), GetMapConstantPtr("Y8AguaCharms"),
-    //         applyY5Overrides ? Y5ClassLobby : null,
-    //         Y6AguaCharms, Y7AguaCharms, Y8AguaCharms);
+        SetFutureYearMapConstants(LookUpMap("Y6AguaCharms"), LookUpMap("Y7AguaCharms"), LookUpMap("Y8AguaCharms"),
+            applyY5Overrides ? LookUpMap("Y5ClassLobby") : null);
 
-    //     ushort? groundsMap = level switch
-    //     {
-    //         1 => Y5Grounds,
-    //         2 => Y6Grounds,
-    //         3 => Y7Grounds,
-    //         _ => null
-    //     };
+        Map? groundsMap = level switch
+        {
+            1 => LookUpMap("Y5Grounds"),
+            2 => LookUpMap("Y6Grounds"),
+            3 => LookUpMap("Y7Grounds"),
+            _ => null
+        };
 
-    //     SetSingleMapConstant(GetMapConstantPtr("Y8Quidditch"), groundsMap, Y8Quidditch);
-    //     SetSingleMapConstant(GetMapConstantPtr("Y8BlackLake"), groundsMap, Y8BlackLake);
-    // }
+        SetSingleMapConstant(LookUpMap("Y8Quidditch"), groundsMap);
+        SetSingleMapConstant(LookUpMap("Y8BlackLake"), groundsMap);
+    }
 
-    // private static unsafe void SetFutureYearMapConstants(
-    //     ushort* y6Ptr,
-    //     ushort* y7Ptr,
-    //     ushort* y8Ptr,
-    //     ushort? mapValue,
-    //     ushort y6Default,
-    //     ushort y7Default,
-    //     ushort y8Default)
-    // {
-    //     if (mapValue.HasValue)
-    //     {
-    //         *y6Ptr = mapValue.Value;
-    //         *y7Ptr = mapValue.Value;
-    //         *y8Ptr = mapValue.Value;
-    //     }
-    //     else
-    //     {
-    //         *y6Ptr = y6Default;
-    //         *y7Ptr = y7Default;
-    //         *y8Ptr = y8Default;
-    //     }
-    // }
+    private static void SetFutureYearMapConstants(
+        Map? y6Map,
+        Map? y7Map,
+        Map? y8Map,
+        Map? connectedMap)
+    {
+        if (y6Map == null || y7Map == null || y8Map == null)
+        {
+            Game.PrintToLog("Cannot fix Missing Map, one or more maps are missing from the Dictionary");
+            return;
+        }
+        if (connectedMap != null)
+        {
+            y6Map.UpdateMap(connectedMap.MapConstant);
+            y6Map.UpdateEntrance(connectedMap.EntranceConstant);
+            y7Map.UpdateMap(connectedMap.MapConstant);
+            y7Map.UpdateEntrance(connectedMap.EntranceConstant);
+            y8Map.UpdateMap(connectedMap.MapConstant);
+            y8Map.UpdateEntrance(connectedMap.EntranceConstant);
+        }
+        else
+        {
+            y6Map.RestoreMap();
+            y7Map.RestoreMap();
+            y8Map.RestoreMap();
+        }
+    }
 
-    // private static unsafe void SetSingleMapConstant(ushort* ptr, ushort? mapValue, ushort defaultValue)
-    // {
-    //     *ptr = mapValue ?? defaultValue;
-    // }
+    private static void SetSingleMapConstant(Map? missingMap, Map? connectedMap)
+    {
+        if (missingMap == null)
+        {
+            Game.PrintToLog("Quidditich or Black Lake Map missing from the Dictionary");
+            return;
+        }
+        if (connectedMap != null)
+        {
+            missingMap.UpdateEntrance(connectedMap.EntranceConstant);
+            missingMap.UpdateMap(connectedMap.MapConstant);
+        }
+        else
+        {
+            missingMap.RestoreMap();
+        }
+    }
 
     /*
     In Year 5, the game will warp you back to Hogwarts instead of having you walk back.
@@ -1064,8 +1081,8 @@ public class HubHandler
         classLobbyAddress = GetHubMapAddress("ClassLobby", 0x1318); // Class Lobby
         kingsCrossAddress = GetHubMapAddress("KingsCross", 0x7B); // King's Cross
         foyerAddress = GetHubMapAddress("Foyer", 0); // Foyer
-        byte* y6GhostPtr = HubHandler.GhostPathBaseAddress + 0x34;
-        byte* y6GhostPtr2 = HubHandler.GhostPathBaseAddress + 0x35;
+        byte* y6GhostPtr = GhostPathBaseAddress + 0x34;
+        byte* y6GhostPtr2 = GhostPathBaseAddress + 0x35;
 
         AdjustLeakyCauldron();
         AdjustHogsPath();
@@ -1372,11 +1389,11 @@ public class HubHandler
 
 class Map
 {
-    public string Name { get; private set; }
-    public unsafe ushort* MapConstantAddress { get; private set; }
-    public unsafe byte* EntranceConstantAddress { get; private set; }
-    public ushort MapConstant { get; private set; }
-    public byte EntranceConstant { get; private set; }
+    public string Name { get; }
+    public unsafe ushort* MapConstantAddress { get; }
+    public unsafe byte* EntranceConstantAddress { get; }
+    public ushort MapConstant { get; }
+    public byte EntranceConstant { get; }
 
     public unsafe Map(string name, ushort* baseMapConstantAddress)
     {

@@ -125,7 +125,7 @@ public class Game
     }
 
     // After Connecting, this function reads initial game variables and NOPs code that we don't want running
-    public static unsafe void ModifyInstructions()
+    public static void ModifyInstructions()
     {
         // Read initial game values upon connecting
         Mod.GameInstance!.LevelID = Memory.Instance.Read<int>(Mod.BaseAddress + 0xADDB7C);
@@ -1126,7 +1126,7 @@ public class Game
         if (value is >= 1 and <= 4)
         {
             HubHandler.ChangeLeakyLoadingZones(value);
-            // HubHandler.UpdateMissingMapConstants(value);
+            HubHandler.UpdateMissingMapConstants(value);
         }
         if (value >= 1 && value <= 4 && (Mod.GameInstance!.PrevLevelID == 0 || Mod.GameInstance!.PrevLevelID > 4))
         {
