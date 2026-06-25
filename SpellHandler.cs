@@ -663,18 +663,29 @@ public class SpellHandler
     public static unsafe void ResetSpells()
     {
         byte* y5GhostPtr = HubHandler.GhostPathBaseAddress + 0x20;
+        int[] defaultSpells = [0, 20, 21, 22, 24, 25, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 47, 48, 52, 53, 54, 55];
+
         try
         {
-            // Reset Passive Spells
+            // Reset Spells (both passive and active) and preserve the default spell bits so they are not turned off and re-enabled separately.
             if (SpellBaseAddress != null)
             {
+                byte[] defaultPassiveSpellMask = new byte[7];
+                foreach (int spellId in defaultSpells)
+                {
+                    int byteOffset = spellId / 8;
+                    int bitOffset = spellId % 8;
+                    defaultPassiveSpellMask[byteOffset] |= (byte)(1 << bitOffset);
+                }
+
                 for (int i = 0; i < 7; i++)
                 {
                     byte* passivePTR = SpellBaseAddress + i;
-                    *passivePTR = 0;
+                    *passivePTR = defaultPassiveSpellMask[i];
                     if (i == 5 && (*y5GhostPtr & (1 << 2)) != 0 && Mod.LHP2_Archipelago!.IsLocationChecked(1007))
                     {
-                        *passivePTR |= 1 << 6; // Unlocks DADA
+                        // Unlocks DADA. We specially update this here because it will make you time travel the first time loading if not
+                        *passivePTR |= 1 << 6;
                     }
                 }
             }
@@ -686,8 +697,7 @@ public class SpellHandler
             Mod.Logger!.Write(e.ToString());
         }
 
-        // Set the Default Spells
-        int[] defaultSpells = [0, 20, 21, 22, 24, 25, 31, 40, 41, 42, 43, 44, 47, 48, 52, 53, 54, 55];
+        // Make sure that the default spells are unlocked when active spells are reset.
         foreach (int spellId in defaultSpells)
         {
             UnlockSpell(spellId, Mod.GameInstance!.CurrentP1CharID, Mod.GameInstance!.CurrentP2CharID);
@@ -708,16 +718,16 @@ public class SpellHandler
     // Helper function to lock all Active minifig spells upon changing characters, game state, or in a lesson
     public static unsafe void ResetActiveSpells()
     {
-        byte* activeSecondPointer = GetP1ActiveSpellPointer();
-        byte* activeSecondPointer2 = GetP2ActiveSpellPointer();
-        if (activeSecondPointer == null || activeSecondPointer2 == null)
+        byte* p1SpellPTR = GetP1ActiveSpellPointer();
+        byte* p2SpellPTR = GetP2ActiveSpellPointer();
+        if (p1SpellPTR == null || p2SpellPTR == null)
             return;
 
         for (int i = 0; i < 7; i++)
         {
-            byte* activePTR = activeSecondPointer + i;
+            byte* activePTR = p1SpellPTR + i;
             *activePTR = 0;
-            byte* activePTR2 = activeSecondPointer2 + i;
+            byte* activePTR2 = p2SpellPTR + i;
             *activePTR2 = 0;
         }
     }
