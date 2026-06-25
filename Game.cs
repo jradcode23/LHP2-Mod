@@ -952,7 +952,7 @@ public class Game
         }
         if (Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleCharacterTokens == 2)
         {
-            PrintToLog($"Hub Character Token Collected but not shuffled. Map ID: {mapID}");
+            PrintToLog($"Hub Character Token Collected but not shuffled. EAX: 0x{eax:X}, EDX: 0x{edx:X}, Map ID: {mapID}");
             return;
         }
         int itemID = CharacterHandler.GetHubTokenItemID(eax, edx);
