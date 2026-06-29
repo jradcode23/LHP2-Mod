@@ -805,9 +805,10 @@ public class SpellHandler
 
 
     // This function blocks the code that checks to see if WWW Boxes is unlocked so it will always remained locked
+    // TODO: probably safer to make this like specs
     public static void LockBoxes()
     {
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x71CA5, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x71CA5, [0xB9, 0x00, 0x00, 0x00, 0x00, 0x90]);
     }
 
     // Restores the code effects from the function above to original behavior.
