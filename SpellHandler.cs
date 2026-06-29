@@ -1,3 +1,5 @@
+using Reloaded.Memory;
+using Reloaded.Memory.Interfaces;
 namespace LHP2_Archi_Mod;
 
 public class SpellHandler
@@ -469,6 +471,12 @@ public class SpellHandler
         if (charID1 == 0 || charID1 == 0xFFFF || charID2 == 0 || charID2 == 0xFFFF)
             return;
 
+        if (spellId == 49)
+        {
+            UnlockBoxes();
+            return;
+        }
+
         int byteOffset = spellId / 8;
         int bitOffset = spellId % 8;
 
@@ -663,7 +671,7 @@ public class SpellHandler
     public static unsafe void ResetSpells()
     {
         byte* y5GhostPtr = HubHandler.GhostPathBaseAddress + 0x20;
-        int[] defaultSpells = [0, 20, 21, 22, 24, 25, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 47, 48, 52, 53, 54, 55];
+        int[] defaultSpells = [0, 20, 21, 22, 24, 25, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 47, 48, 49, 52, 53, 54, 55];
 
         try
         {
@@ -689,6 +697,7 @@ public class SpellHandler
                     }
                 }
             }
+            LockBoxes();
             ResetActiveSpells();
             MakeSpellsInvisible();
         }
@@ -700,6 +709,10 @@ public class SpellHandler
         // Make sure that the default spells are unlocked when active spells are reset.
         foreach (int spellId in defaultSpells)
         {
+            if (spellId == 49)
+            {
+                continue;
+            }
             UnlockSpell(spellId, Mod.GameInstance!.CurrentP1CharID, Mod.GameInstance!.CurrentP2CharID);
         }
 
@@ -788,6 +801,19 @@ public class SpellHandler
         int* spellArray4 = (int*)spellArray0 + 1;
         Game.PrintToLog($"Player 1 Spell Array 4 contains {*spellArray4:X}");
         return *spellArray4;
+    }
+
+
+    // This function blocks the code that checks to see if WWW Boxes is unlocked so it will always remained locked
+    public static void LockBoxes()
+    {
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x71CA5, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
+    }
+
+    // Restores the code effects from the function above to original behavior.
+    public static void UnlockBoxes()
+    {
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x71CA5, [0x8B, 0x0D, 0xB4, 0x6A, 0xF0, 0x00]); // harry2.exe+71CA5 - mov ecx,[harry2.exe+B06AB4] (no risk of change cause it is a static address)
     }
 
     public static unsafe int CheckPolyjuiceUnlock(int eax)

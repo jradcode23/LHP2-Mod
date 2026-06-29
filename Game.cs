@@ -191,6 +191,7 @@ public class Game
         HubHandler.UpdateDarkTimesMap();
 
         Shops.SetShopPointers();
+        SpellHandler.LockBoxes();
     }
 
     // This function turns on the N0CUT5 Cheat Code so cutscenes don't show
