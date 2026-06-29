@@ -29,6 +29,7 @@ public class HubHandler
     private static unsafe byte* classLobbyAddress = null;
     private static unsafe byte* kingsCrossAddress = null;
     private static unsafe byte* foyerAddress = null;
+    private static unsafe byte* mainCorridorAddress = null;
 
     // These are the bit flags that handle the different collectibles stored in the same memory address.
     [Flags]
@@ -1081,6 +1082,8 @@ public class HubHandler
         classLobbyAddress = GetHubMapAddress("ClassLobby", 0x1318); // Class Lobby
         kingsCrossAddress = GetHubMapAddress("KingsCross", 0x7B); // King's Cross
         foyerAddress = GetHubMapAddress("Foyer", 0); // Foyer
+        mainCorridorAddress = GetHubMapAddress("MainCorridor", 0x149D); // Main Corridor
+        byte* y5GhostPtr = GhostPathBaseAddress + 0x21;
         byte* y6GhostPtr = GhostPathBaseAddress + 0x34;
         byte* y6GhostPtr2 = GhostPathBaseAddress + 0x35;
 
@@ -1109,6 +1112,18 @@ public class HubHandler
         {
             AdjustKingsCross();
         }
+
+        // Ensure Weasley Lesson loading zone isn't active
+        if (year != 5)
+        {
+            *mainCorridorAddress &= unchecked((byte)~(1 << 0));
+        }
+
+        if (year == 5 && (*y5GhostPtr & (1 << 6)) == 0 && (*y5GhostPtr & (1 << 3)) != 0)
+        {
+            *mainCorridorAddress |= 1 << 0;
+        }
+
     }
 
     // Helper function to ensure that First Level loading zones aren't active in Leaky Cauldron
