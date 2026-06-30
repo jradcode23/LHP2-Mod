@@ -190,6 +190,9 @@ public class Game
         HubHandler.InitializeGameMaps();
         HubHandler.UpdateDarkTimesMap();
 
+        // NOP Code that checks to see if you are in Herm Bag Lesson
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x41F9E, [0x90, 0x90]);
+
         Shops.SetShopPointers();
         SpellHandler.LockBoxes();
     }
@@ -346,6 +349,7 @@ public class Game
     private static IReverseWrapper<ChangeYears> _reverseWrapChangeYears = default!;
     private static IReverseWrapper<HandleInterruptedMessage> _reverseWrapOnHandleInterruptedMessage = default!;
     private static IReverseWrapper<CheckSpecsUnlock> _reverseWrapOnCheckSpecsUnlock = default!;
+    private static IReverseWrapper<CheckHermBagUnlock> _reverseWrapHermBagUnlock = default!;
     private static IReverseWrapper<CheckPolyjuiceUnlock> _reverseWrapOnCheckPolyjuiceUnlock = default!;
     private static IReverseWrapper<SetDuelingHealth> _reverseWrapOnSetDuelingHealth = default!;
     private static IReverseWrapper<ShopItemSelected> _reverseWrapOnShopItemSelected = default!;
@@ -703,6 +707,28 @@ public class Game
         // If Specs is usable of not
         _asmHooks.Add(hooks.CreateAsmHook(checkSpecsUnlockHook, (int)(Mod.BaseAddress + 0x6C4AB), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
 
+        string[] checkHermBagUnlockHook =
+        {
+            // Push and Pop all Registers except for the ECX register since we need it in our function
+            "use32",
+            "pushfd",
+            "push eax",
+            "push ebx",
+            "push edx",
+            "push esi",
+            "push edi",
+            "push ebp",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnCheckHermBagUnlock, out _reverseWrapHermBagUnlock)}",
+            "pop ebp",
+            "pop edi",
+            "pop esi",
+            "pop edx",
+            "pop ebx",
+            "pop eax",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(checkHermBagUnlockHook, (int)(Mod.BaseAddress + 0x41FB2), AsmHookBehaviour.ExecuteAfter).Activate());
+
         string[] checkPolyjuiceUnlockHook =
         {
             "use32",
@@ -935,7 +961,6 @@ public class Game
             {
                 return; // Ignore joke spells if they aren't shuffled
             }
-
             CheckAndReportLocation(itemId);
         }
 
@@ -1120,6 +1145,10 @@ public class Game
     public delegate void UpdateLevel(int value);
     private static unsafe void OnLevelChange(int value)
     {
+        if (value == 16 && Mod.GameInstance!.PrevLevelID == Mod.GameInstance!.LevelID)
+        {
+            PrintToLog("Return to leaky did not properly update from in the Delum/Bag lesson. Please report to a dev.");
+        }
         Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
         Mod.GameInstance!.LevelID = value;
         PrintToLog($"Level ID updated to {value}.");
@@ -1428,6 +1457,11 @@ public class Game
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(RedBrickPurchOffset, MaxItemID);
             HubHandler.UpdateWinConText();
 
+            if (Mod.GameInstance!.LevelID == 16)
+            {
+                HubHandler.FixReturnToLeakyCauldron();
+            }
+
             if (Mod.GameInstance!.LevelID == 27) // Flaw in the Plan
             {
                 if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 0)
@@ -1642,6 +1676,14 @@ public class Game
     private static int OnCheckSpecsUnlock()
     {
         return SpellHandler.CheckSpecsUnlock();
+    }
+
+    [Function([],
+    FunctionAttribute.Register.ecx, FunctionAttribute.StackCleanup.Callee)]
+    private delegate int CheckHermBagUnlock();
+    private static int OnCheckHermBagUnlock()
+    {
+        return SpellHandler.CheckHermBagUnlock();
     }
 
     [Function([FunctionAttribute.Register.eax],

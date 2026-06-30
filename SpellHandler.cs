@@ -784,7 +784,7 @@ public class SpellHandler
     }
 
     /* 
-    Helper function to return the unlocked spells from the minifig file
+    Helper functions to return the unlocked spells from the minifig file
     The game checks abilities against their static addresses instead of the minifig file
     This change makes it so it compares against the minifig file instead
     TODO: Specs only checks P1 right now. Update it to verify who is doing it and check that specific character, though it may not matter.
@@ -799,13 +799,33 @@ public class SpellHandler
             return 0;
         }
         int* spellArray4 = (int*)spellArray0 + 1;
-        Game.PrintToLog($"Player 1 Spell Array 4 contains {*spellArray4:X}");
+        Game.PrintToLog($"Player 1 Specs Spell Array 4 contains {*spellArray4:X}");
+        return *spellArray4;
+    }
+
+    public static unsafe int CheckHermBagUnlock()
+    {
+        byte* spellArray0 = GetP1ActiveSpellPointer();
+
+        // The first time you complete Deluminator Lesson, the game will give hermione bag active spell (probably to complete lesson). This code is to check if AP has received the item and then if not, lock it again.
+        int bagUnlocked = Mod.LHP2_Archipelago!.CountItemsReceivedWithId(1026);
+        if (bagUnlocked == 0)
+        {
+            LockActiveSpell(51);
+        }
+
+        if (spellArray0 == null)
+        {
+            Game.PrintToLog("Active Spell Pointer Null - can't return unlocked spells");
+            return 0;
+        }
+        int* spellArray4 = (int*)spellArray0 + 1;
+        // Game.PrintToLog($"Player 1 Herm Bag Spell Array 4 contains {*spellArray4:X}");
         return *spellArray4;
     }
 
 
     // This function blocks the code that checks to see if WWW Boxes is unlocked so it will always remained locked
-    // TODO: probably safer to make this like specs
     public static void LockBoxes()
     {
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x71CA5, [0xB9, 0x00, 0x00, 0x00, 0x00, 0x90]);
@@ -888,10 +908,6 @@ public class SpellHandler
             // London when Apparition is supposed to be unlocked
             case 103 when !Mod.LHP2_Archipelago!.IsLocationChecked(1027) || (*y7GhostPtr & (1 << 2)) == 0:
                 Game.LessonReturnToHubNOP();
-                break;
-            case 165:
-                // The game disables return to leaky in vanilla so you don't miss apparition unlocked. That's not applicable for us, so we enable it once you enter the tent.
-                HubHandler.FixReturnToLeakyCauldron();
                 break;
             // Delum & Herm Bag
             // TODO: if I find a way to lock herm bag in its lesson, we will need to update this approach
