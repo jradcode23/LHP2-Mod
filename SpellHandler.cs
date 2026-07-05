@@ -523,6 +523,13 @@ public class SpellHandler
         *ptr |= (byte)(1 << bitOffset);
     }
 
+    public static void UnlockPassiveSpell(int id)
+    {
+        int byteOffset = id / 8;
+        int bitOffset = id % 8;
+        UnlockPassiveSpell(byteOffset, bitOffset);
+    }
+
     // Helper function to lock an active spell. Currently used with apparition
     public static unsafe void LockActiveSpell(int id)
     {
@@ -881,6 +888,9 @@ public class SpellHandler
             case 301 when !Mod.LHP2_Archipelago!.IsLocationChecked(1007) || (*y5GhostPtr & (1 << 2)) == 0:
                 LockPassiveSpell(46); // Ensure lesson can be beaten since game doesn't like when you already have it
                 break;
+            case 303 when (*y5GhostPtr2 & (1 << 6)) == 0 && (*y5GhostPtr2 & (1 << 3)) != 0:
+                UnlockPassiveSpell(28); // Unlock Focus since the game likes to constantly unlock it if you renter this map
+                break;
             // Thestral Flying Lesson
             case 295 when !Mod.LHP2_Archipelago!.IsLocationChecked(1008) || (*y5GhostPtr & (1 << 3)) == 0:
                 LockPassiveSpell(43); // Flying the thestral during the lesson can cause issues
@@ -893,24 +903,27 @@ public class SpellHandler
             case 196 when !Mod.LHP2_Archipelago!.IsLocationChecked(1021) || (*y6GhostPtr2 & (1 << 1)) == 0:
                 LockPassiveSpell(30); // Ensure lesson can be beaten since game doesn't like when you already have it
                 break;
+            // Draught Lesson
+            case 197 when !Mod.LHP2_Archipelago!.IsLocationChecked(1018) || (*y6GhostPtr & (1 << 4)) == 0:
+                LockPassiveSpell(42); // Lock Draught cause the cutscene can cause you to involuntarily time travel
+                break;
             // Hogsmeade Station in Y6 (Specs Lesson)
             case 179:
                 LockPassiveSpell(50); // Ensure lesson can be beaten since game doesn't like when you already have it
-                LockPassiveSpell(51); // Lock Bag cause SIP doesn't work until Y7
+                LockActiveSpell(51); // Lock Bag cause SIP doesn't work until Y7
                 break;
             // Hogsmeade Station
             case 280:
             // Hogwarts Grounds
             case 191:
             case 296:
-                LockPassiveSpell(51); // Lock Bag cause SIP doesn't work until Y7
+                LockActiveSpell(51); // Lock Bag cause SIP doesn't work until Y7
                 break;
             // London when Apparition is supposed to be unlocked
             case 103 when !Mod.LHP2_Archipelago!.IsLocationChecked(1027) || (*y7GhostPtr & (1 << 2)) == 0:
-                Game.LessonReturnToHubNOP();
+                UnlockPassiveSpell(45); // Unlock Apparition since the game doesn't like when you already have it
                 break;
             // Delum & Herm Bag
-            // TODO: if I find a way to lock herm bag in its lesson, we will need to update this approach
             case 166:
                 if (!Mod.LHP2_Archipelago!.IsLocationChecked(1001)) // Delum
                 {

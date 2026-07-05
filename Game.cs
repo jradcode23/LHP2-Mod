@@ -213,22 +213,22 @@ public class Game
     Currently only used to prevent the game from constantly showing you unlocked apparition
     WARNING: DADA, Specs, Agua, & Reducto Lessons softlock if this is enabled during those lessons
     */
-    public static void LessonReturnToHubNOP()
-    {
-        // Allows Return to Diagon Alley in Abilities Lessons (Thestral Forest) 
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x161D1, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x40F42, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
-        // Allows Return to Diagon Alley in Spell Lessons (Diffindo)
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x33355A, [0x90, 0x90]);
-    }
+    // public static void LessonReturnToHubNOP()
+    // {
+    //     // Allows Return to Diagon Alley in Abilities Lessons (Thestral Forest) 
+    //     Memory.Instance.SafeWrite(Mod.BaseAddress + 0x161D1, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
+    //     Memory.Instance.SafeWrite(Mod.BaseAddress + 0x40F42, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
+    //     // Allows Return to Diagon Alley in Spell Lessons (Diffindo)
+    //     Memory.Instance.SafeWrite(Mod.BaseAddress + 0x33355A, [0x90, 0x90]);
+    // }
 
     // Restores the code effects from the function above to original behavior.
-    public static void LessonRestoreReturnToHub()
-    {
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x161D1, [0x0F, 0x84, 0x2D, 0xFF, 0xFF, 0xFF]); // harry2.exe+161D1 - 0F84 2DFFFFFF
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x40F42, [0x0F, 0x84, 0xE3, 0x01, 0x00, 0x00]); // harry2.exe+40F42 - 0F84 E3010000        
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x33355A, [0x74, 0x03]); //harry2.exe+33355A - 74 03                
-    }
+    // public static void LessonRestoreReturnToHub()
+    // {
+    //     Memory.Instance.SafeWrite(Mod.BaseAddress + 0x161D1, [0x0F, 0x84, 0x2D, 0xFF, 0xFF, 0xFF]); // harry2.exe+161D1 - 0F84 2DFFFFFF
+    //     Memory.Instance.SafeWrite(Mod.BaseAddress + 0x40F42, [0x0F, 0x84, 0xE3, 0x01, 0x00, 0x00]); // harry2.exe+40F42 - 0F84 E3010000        
+    //     Memory.Instance.SafeWrite(Mod.BaseAddress + 0x33355A, [0x74, 0x03]); //harry2.exe+33355A - 74 03                
+    // }
 
     // Main function that handles updating the game state to match items or locations.
     public static void ManageItem(int ItemID)
@@ -1200,10 +1200,10 @@ public class Game
         }
 
         // When leaving Y7 London, ensure that Code is running as normal (disabled in Y7 London cause of apparition)
-        if (prevMapID == 103)
-        {
-            LessonRestoreReturnToHub();
-        }
+        // if (prevMapID == 103)
+        // {
+        //     LessonRestoreReturnToHub();
+        // }
 
         // When leaving Leaky & staying in Hub, we want to verify what the London ID is still correct
         if (LeakyMapIDs.Contains(prevMapID) && Mod.GameInstance!.LevelID is >= 1 and <= 4)
