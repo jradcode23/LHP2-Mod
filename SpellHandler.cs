@@ -904,9 +904,9 @@ public class SpellHandler
                 LockPassiveSpell(30); // Ensure lesson can be beaten since game doesn't like when you already have it
                 break;
             // Draught Lesson
-            case 197 when !Mod.LHP2_Archipelago!.IsLocationChecked(1018) || (*y6GhostPtr & (1 << 4)) == 0:
-                LockPassiveSpell(42); // Lock Draught cause the cutscene can cause you to involuntarily time travel
-                break;
+            // case 197 when !Mod.LHP2_Archipelago!.IsLocationChecked(1018) || (*y6GhostPtr & (1 << 4)) == 0:
+            //     LockPassiveSpell(42); // Lock Draught cause the cutscene can cause you to involuntarily time travel
+            //     break;
             // Hogsmeade Station in Y6 (Specs Lesson)
             case 179:
                 LockPassiveSpell(50); // Ensure lesson can be beaten since game doesn't like when you already have it

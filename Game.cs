@@ -193,6 +193,13 @@ public class Game
         // NOP Code that checks to see if you are in Herm Bag Lesson
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x41F9E, [0x90, 0x90]);
 
+        // NOP Code that writes spells to Minifig file
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4400D, [0x90, 0x90, 0x90]); // mov static into minifig part 1
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x44010, [0x90, 0x90, 0x90]); // mov static into minifig part 2
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x43DD5, [0x90, 0x90, 0x90]); // clears out all spells except green part 1
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x43DD8, [0x90, 0x90, 0x90]); // clears out all spells except green part 2
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x45BD1, [0xFF]); // And code that messes with green spells turning off
+
         Shops.SetShopPointers();
         SpellHandler.LockBoxes();
     }
