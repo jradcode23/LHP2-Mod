@@ -1003,12 +1003,13 @@ public class Game
         {
             mapID = Mod.GameInstance!.MapID;
         }
+        int itemID = CharacterHandler.GetLevelTokenItemID(ebx);
         if (Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleCharacterTokens == 2)
         {
             PrintToLog($"Level Character Token Collected but not shuffled. Map ID: {mapID}");
+            CharacterHandler.UnlockToken(itemID); // Unlock the token so the player can continue to progress even if they can't save and exit a level.
             return;
         }
-        int itemID = CharacterHandler.GetLevelTokenItemID(ebx);
         if (itemID == -1)
         {
             PrintToLog("Error getting Level Token Item ID");
