@@ -1080,7 +1080,6 @@ public class HubHandler
     {
         leaky2LondonAddress = GetHubMapAddress("HubLeakyCauldron", 0xB7B); // Leaky2London Loading Zone
         hogsPathAddress = GetHubMapAddress("HogsApproach", 0); // HogPath2Courtyard Loading Zone
-        wildernessAddress = GetHubMapAddress("ForestHub", 0); // Wilderness
         quadAddress = GetHubMapAddress("Quad", 0); // Quad
         hogsStatAddress = GetHubMapAddress("HogsStation", 0); //HogsStation
         classLobbyAddress = GetHubMapAddress("ClassLobby", 0x1318); // Class Lobby
@@ -1095,10 +1094,9 @@ public class HubHandler
         AdjustHogsPath();
         CompleteStartingGhostLevels();
         AdjustFoyer();
-        // If applicable, update Wilderness and Quad so tokens spawn and invisible barriers are gone
+        // If applicable, update Quad so tokens spawn
         if (year == 7 || year == 8)
         {
-            AdjustWilderness();
             AdjustQuad();
         }
         // Adjust Hogsmeade Station if the player enters it and the suitcases are still blocking the exit in other years
@@ -1179,14 +1177,16 @@ public class HubHandler
     }
 
     // Helper function to remove the invisible walls in the wilderness and make sure the Xeno token spawns
-    private static unsafe void AdjustWilderness()
+    public static unsafe void AdjustWilderness()
     {
+        wildernessAddress = GetHubMapAddress("ForestHub", 0); // Wilderness
         if (wildernessAddress == MapFlagsBaseAddress + 0x40)
         {
             Game.PrintToLog("Wilderness Save info hasn't been written yet.");
             return;
         }
         Game.PrintToLog("Updating Wilderness Flags");
+
         byte* invisibleWallFlag = wildernessAddress + 0x2905;
         Game.PrintToLog($"Address of Wilderness Invisible Wall Flag is 0x{(nuint)invisibleWallFlag:X}");
         *invisibleWallFlag &= unchecked((byte)~(1 << 2)); // Turn off the invisible wall by the rock pile
@@ -1196,6 +1196,7 @@ public class HubHandler
         *invisibleWallFlag &= unchecked((byte)~(1 << 2)); // Turn off the invisible wall by the wrecking ball  
         invisibleWallFlag += 0x03;
         *invisibleWallFlag &= unchecked((byte)~(1 << 6)); // Turn off the invisible wall by the Lake  
+
         byte* xenoTokenFlag = wildernessAddress + 0x2D8F;
         Game.PrintToLog($"Address of Wilderness Xenophilius Token Flag is 0x{(nuint)xenoTokenFlag:X}");
         *xenoTokenFlag |= 1 << 3; // Ensure the Xenophilius token spawns

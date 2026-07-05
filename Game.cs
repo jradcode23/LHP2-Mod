@@ -531,7 +531,7 @@ public class Game
             "use32",
             "pushfd",
             "pushad",
-            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnMapChange, out _reverseWrapOnMapUpdate)}",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnMapUpdate, out _reverseWrapOnMapUpdate)}",
             "popad",
             "popfd",
         };
@@ -1178,7 +1178,7 @@ public class Game
     [Function([FunctionAttribute.Register.ecx],
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void UpdateMap(int value);
-    private static unsafe void OnMapChange(int value)
+    private static unsafe void OnMapUpdate(int value)
     {
         int mapID = value;
         int prevMapID;
@@ -1224,6 +1224,12 @@ public class Game
         {
             HubHandler.LoadRedBricksEnabled();
             HubHandler.RestoreDarkTimesMap();
+        }
+
+        // Make it so upon returning to diagon, the wilderness code runs instead of having to enter the code
+        if ((mapID == 376 || mapID == 370) && (prevMapID == 99 || prevMapID == 5))
+        {
+            HubHandler.AdjustWilderness();
         }
 
         // Send Polyjuice Potion Check
