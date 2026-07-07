@@ -1153,9 +1153,10 @@ public class Game
     public delegate void UpdateLevel(int value);
     private static unsafe void OnLevelChange(int value)
     {
-        if (value == 16 && Mod.GameInstance!.PrevLevelID == Mod.GameInstance!.LevelID)
+        if (Mod.GameInstance!.LevelID == value)
         {
-            PrintToLog("Return to leaky did not properly update from in the Delum/Bag lesson. Please report to a dev.");
+            PrintToLog($"Level ID stayed the same, no update. Level ID: {value}");
+            return;
         }
         Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
         Mod.GameInstance!.LevelID = value;
