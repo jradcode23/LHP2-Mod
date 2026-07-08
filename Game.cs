@@ -1619,7 +1619,7 @@ public class Game
             return;
         }
         PrintToLog("Polyjuice Pot Closed");
-        Memory.Instance.Write<byte>((nuint)(cauldronBaseAddress + 0x68), 0); // Reset cauldron item selected to 0
+        Memory.Instance.SafeWrite((nuint)(cauldronBaseAddress + 0x68), [0x00]); // Reset cauldron item selected to 0
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);

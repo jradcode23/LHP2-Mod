@@ -7,6 +7,7 @@ public class SpellHandler
     // This is a dictionary of each playable character by their minifig ID and a bit array indicating which spells they have/don't have in vanilla.
     private static readonly Dictionary<int, byte[]> characterAbilities = new()
     {
+        {0x0065, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]}, // Rat (Transfigure)
         {0x0067, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x50]}, // Padfoot
         {0x0073, [0x01, 0x00, 0x00, 0x80, 0x00, 0x00, 0x90]}, // Hagrid
         {0x0078, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]}, // Frog (transfigured)
@@ -680,7 +681,7 @@ public class SpellHandler
     public static unsafe void ResetSpells()
     {
         byte* y5GhostPtr = HubHandler.GhostPathBaseAddress + 0x20;
-        int[] defaultSpells = [0, 20, 21, 22, 24, 25, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 47, 48, 49, 52, 53, 54, 55];
+        int[] defaultSpells = [0, 20, 21, 22, 24, 25, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 43, 44, 47, 48, 49, 52, 53, 54, 55];
 
         try
         {
@@ -905,10 +906,6 @@ public class SpellHandler
             case 196 when !Mod.LHP2_Archipelago!.IsLocationChecked(1021) || (*y6GhostPtr2 & (1 << 1)) == 0:
                 LockPassiveSpell(30); // Ensure lesson can be beaten since game doesn't like when you already have it
                 break;
-            // Draught Lesson
-            // case 197 when !Mod.LHP2_Archipelago!.IsLocationChecked(1018) || (*y6GhostPtr & (1 << 4)) == 0:
-            //     LockPassiveSpell(42); // Lock Draught cause the cutscene can cause you to involuntarily time travel
-            //     break;
             // Hogsmeade Station in Y6 (Specs Lesson)
             case 179:
                 LockPassiveSpell(50); // Ensure lesson can be beaten since game doesn't like when you already have it
