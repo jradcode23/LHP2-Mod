@@ -681,7 +681,7 @@ public class SpellHandler
     public static unsafe void ResetSpells()
     {
         byte* y5GhostPtr = HubHandler.GhostPathBaseAddress + 0x20;
-        int[] defaultSpells = [0, 20, 21, 22, 24, 25, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 43, 44, 47, 48, 49, 52, 53, 54, 55];
+        int[] defaultSpells = [0, 20, 21, 22, 24, 25, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 47, 48, 49, 52, 53, 54, 55];
 
         try
         {
@@ -905,6 +905,14 @@ public class SpellHandler
             // Reducto Lesson
             case 196 when !Mod.LHP2_Archipelago!.IsLocationChecked(1021) || (*y6GhostPtr2 & (1 << 1)) == 0:
                 LockPassiveSpell(30); // Ensure lesson can be beaten since game doesn't like when you already have it
+                break;
+            // Draught Lesson
+            case 197 when !Mod.LHP2_Archipelago!.IsLocationChecked(1018) || (*y6GhostPtr & (1 << 4)) == 0:
+                // Due to the order of operations, if this variable isn't set, the game thinks that you aren't the lesson if you enter with draught so the cauldron is closed if we lock the spell.
+                int* lessonVariable = (int*)(Mod.BaseAddress + 0x94E4D4);
+                *lessonVariable = 0x2A;
+                LockPassiveSpell(42);
+
                 break;
             // Hogsmeade Station in Y6 (Specs Lesson)
             case 179:
