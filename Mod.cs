@@ -37,11 +37,25 @@ public class Mod : ModBase // <= Do not Remove.
 
         GameInstance = new Game();
         BaseAddress = (nuint)Process.GetCurrentProcess().MainModule!.BaseAddress;
+        bool is32Bit = IntPtr.Size == 4;
 
         if (Configuration == null)
             return;
         SetUpAP(Configuration.ArchipelagoOptions.Server, Configuration.ArchipelagoOptions.Port, Configuration.ArchipelagoOptions.Slot, Configuration.ArchipelagoOptions.Password);
         Logger.WriteLineAsync($"[LHP2.archipelago.mod] Mod Version: LHP2.archipelago.mod 1.1.0 Source code");
+
+        while (true)
+        {
+            if (is32Bit)
+            {
+                break;
+            }
+            else
+            {
+                Logger.WriteLine($"[LHP2.archipelago.mod] The game is not 32 bit. This may not be the standalone game. Please report to the dev if you are playing the standalone game.");
+                Thread.Sleep(10000);
+            }
+        }
 
         var thread1 = new Thread(start: () =>
         {

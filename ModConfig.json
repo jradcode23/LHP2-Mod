@@ -21,6 +21,6 @@
   "IsUniversalMod": false,
   "ModDependencies": [ "reloaded.sharedlib.hooks" ],
   "OptionalDependencies": [],
-  "SupportedAppId": ["harry2.exe"],
+  "SupportedAppId": ["harry2.exe", "harry2.exe_dup", "harry2.exe_dup_dup"],
   "ProjectUrl": ""
 }
