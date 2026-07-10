@@ -3,6 +3,7 @@ using Reloaded.Memory.Interfaces;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Hooks.Definitions.Enums;
 using Reloaded.Hooks.Definitions.X86;
+using Archipelago.MultiClient.Net.Enums;
 using System.Numerics;
 
 namespace LHP2_Archi_Mod;
@@ -179,8 +180,6 @@ public class Game
         // NOP Jump past check of spell unlocks in Specs lesson - If ability active
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x6C497, [0x90, 0x90]);
 
-        Shops.SetShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
-
         // NOP Code that checks to see if a cheat code has already been entered (duplicate codes)
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3A55F2, [0x90, 0x90]);
 
@@ -200,6 +199,7 @@ public class Game
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x43DD8, [0x90, 0x90, 0x90]); // clears out all spells except green part 2
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x45BD1, [0xFF]); // And code that messes with green spells turning off
 
+        Shops.SetShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
         Shops.SetShopPointers();
         SpellHandler.LockBoxes();
     }
