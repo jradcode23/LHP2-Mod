@@ -82,7 +82,7 @@ public class ArchipelagoHandler
     // something we wrong or we need to properly disconnect from the server. cleanup and re null our session
     public void Disconnect()
     {
-        Game.PrintToLog("Disconnected from server and attempting to reconnect. Please do not complete any checks");
+        Game.PrintToLog("Disconnected from server and attempting to reconnect. If you close the application, checks will not be sent.");
         _ = _session?.Socket.DisconnectAsync();
         _session = null;
         IsConnected = false;
@@ -97,7 +97,7 @@ public class ArchipelagoHandler
         {
             // Check to see if Game/Menu is loaded before trying to connect, we do this to mitigate impact of null values and the game changing things later.
             Game.IsGameLoaded();
-            HintSystem.SetMessageText("Connecting", (uint)NewGameTextPTR);
+            HintSystem.SetMessageText("Connecting. Please wait.", (uint)NewGameTextPTR);
             Seed = Session.ConnectAsync()?.Result?.SeedName;
             Game.PrintToLog(Seed + Slot);
 
@@ -105,7 +105,7 @@ public class ArchipelagoHandler
                 game: GAME_NAME,
                 name: Slot,
                 itemsHandlingFlags: ItemsHandlingFlags.AllItems,
-                version: new Version(1, 0, 0),
+                version: new Version(1, 1, 0),
                 tags: [],
                 password: Password
             ).Result;

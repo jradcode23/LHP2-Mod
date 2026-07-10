@@ -11,24 +11,24 @@ namespace LHP2_Archi_Mod;
 
 public class Mod : ModBase // <= Do not Remove.
 {
-    private readonly IModLoader _modLoader;
+    // private readonly IModLoader _modLoader;
     private static IReloadedHooks? _hooks;
     public static ILogger? Logger;
-    private readonly IMod _owner;
+    // private readonly IMod _owner;
     public static Config? Configuration { get; set; }
-    private readonly IModConfig _modConfig;
+    // private readonly IModConfig _modConfig;
     public static ArchipelagoHandler? LHP2_Archipelago;
     public static Game? GameInstance;
     public static nuint BaseAddress;
 
     public Mod(ModContext context)
     {
-        _modLoader = context.ModLoader;
+        // _modLoader = context.ModLoader;
         _hooks = context.Hooks;
         Logger = context.Logger;
-        _owner = context.Owner;
+        // _owner = context.Owner;
         Configuration = context.Configuration;
-        _modConfig = context.ModConfig;
+        // _modConfig = context.ModConfig;
 
 #if DEBUG
         // Attaches debugger in debug mode; ignored in release.
@@ -40,9 +40,12 @@ public class Mod : ModBase // <= Do not Remove.
         bool is32Bit = IntPtr.Size == 4;
 
         if (Configuration == null)
+        {
+            Logger.WriteLineAsync("[LHP2.archipelago.mod] Configuration is null. Terminating Mod.");
             return;
+        }
         SetUpAP(Configuration.ArchipelagoOptions.Server, Configuration.ArchipelagoOptions.Port, Configuration.ArchipelagoOptions.Slot, Configuration.ArchipelagoOptions.Password);
-        Logger.WriteLineAsync($"[LHP2.archipelago.mod] Mod Version: LHP2.archipelago.mod 1.1.0 Source code");
+        Logger.WriteLineAsync("[LHP2.archipelago.mod] Mod Version: LHP2.archipelago.mod 1.1.0 Source code");
 
         while (true)
         {
@@ -52,7 +55,7 @@ public class Mod : ModBase // <= Do not Remove.
             }
             else
             {
-                Logger.WriteLine($"[LHP2.archipelago.mod] The game is not 32 bit. This may not be the standalone game. Please report to the dev if you are playing the standalone game.");
+                Logger.WriteLine("[LHP2.archipelago.mod] The game is not 32 bit. This may not be the standalone game. Please report to the dev if you are playing the standalone game.");
                 Thread.Sleep(10000);
             }
         }
@@ -75,10 +78,18 @@ public class Mod : ModBase // <= Do not Remove.
     #region Standard Overrides
     public override void ConfigurationUpdated(Config configuration)
     {
-        Configuration = configuration;
-        Logger!.WriteLine($"[LHP2.archipelago.mod] Config Updated: Applying");
-        LHP2_Archipelago!.Disconnect();
-        SetUpAP(Configuration.ArchipelagoOptions.Server, Configuration.ArchipelagoOptions.Port, Configuration.ArchipelagoOptions.Slot, Configuration.ArchipelagoOptions.Password);
+        if (Configuration == null)
+        {
+            Logger!.WriteLineAsync("Configuration is null, cannot update.");
+            return;
+        }
+        if (Configuration.ArchipelagoOptions.Port != configuration.ArchipelagoOptions.Port || Configuration.ArchipelagoOptions.Slot != configuration.ArchipelagoOptions.Slot)
+        {
+            Configuration = configuration;
+            Logger!.WriteLine($"[LHP2.archipelago.mod] Config Updated: Applying");
+            LHP2_Archipelago!.Disconnect();
+            SetUpAP(Configuration.ArchipelagoOptions.Server, Configuration.ArchipelagoOptions.Port, Configuration.ArchipelagoOptions.Slot, Configuration.ArchipelagoOptions.Password);
+        }
     }
 
     public static void SetUpAP(string server, int port, string slot, string password)
@@ -89,7 +100,7 @@ public class Mod : ModBase // <= Do not Remove.
 
     public static bool InitOnMenu()
     {
-        if (Mod._hooks == null)
+        if (_hooks == null)
         {
             Game.PrintToLog("Hooks are Null. Please do not proceed and report this to the Dev.");
             return false;
@@ -98,10 +109,10 @@ public class Mod : ModBase // <= Do not Remove.
         if (hookCount > 0)
         {
             Game.PrintToLog($"Hooks already set up. Count: {hookCount}, skipping setup.");
-            return true; ;
+            return true;
         }
         Game.ModifyInstructions();
-        if (Mod._hooks != null)
+        if (_hooks != null)
         {
             Game.PrintToLog("Menu loaded, setting up hooks. Please wait for hook setup before loading a save file.");
             GameInstance!.SetupHooks(Mod._hooks!);
