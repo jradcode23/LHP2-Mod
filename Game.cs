@@ -26,10 +26,21 @@ public class Game
     public int LevelID { get; private set; } = -1;
     public int PrevMapID { get; private set; } = -1;
     public int MapID { get; private set; } = -1;
+    public int MapID2 { get; private set; } = -1; // This is used for ths shop text because it constantly prints and could cause deadlocks
+    public int MapID3 { get; private set; } = -1; // This is used for ths shop text because it constantly prints and could cause deadlocks
     public bool PrevInShop { get; private set; } = false;
+    public bool PrevInShop2 { get; private set; } = false; // This is used for ths shop text because it constantly prints and could cause deadlocks
     public bool PrevInLevelSelect { get; private set; } = false;
     public bool PrevInMenu { get; private set; } = false;
-    public int CurrentCharID { get; private set; } = 0;
+    public int CurrentP1CharID { get; private set; } = 0;
+    public int CurrentP2CharID { get; private set; } = 0;
+    private static readonly int[] LeakyMapIDs = [368, 374, 380, 386];
+    private static readonly int[] JokeShopMapIDs = [369, 375, 383, 387];
+    private static readonly int[] KnockturnMapIDs = [367, 373, 379, 385];
+    private static readonly int[] MadamMalkinMapIDs = [366, 372, 378, 382];
+    private static readonly int[] DuelingMapIDs = [44, 73, 137, 157, 207, 223, 309, 324];
+    private static readonly int[] FinalLevelMapIDs = [351, 339, 334, 329, 318, 308, 246, 235, 227, 220, 217, 207, 165, 156, 152, 148, 143, 137, 82, 73, 65, 58, 51, 44];
+    private static readonly string[] FastTravelRequests = ["Y5LOND", "Y6LOND", "Y7LOND", "Y8LOND", "Y5FOYE", "Y6FOYE", "Y7FOYE", "Y8FOYE", "Y5QUAD", "Y6QUAD", "Y7QUAD", "Y8QUAD"];
     public const int tokenOffset = 213;
     public const int levelOffset = 450;
     public const int SIPOffset = 475;
@@ -120,13 +131,11 @@ public class Game
         // Read initial game values upon connecting
         Mod.GameInstance!.LevelID = Memory.Instance.Read<int>(Mod.BaseAddress + 0xADDB7C);
         int mapID;
-        int prevMapID;
         mapID = Memory.Instance.Read<int>(Mod.BaseAddress + 0xC5B374);
-        prevMapID = Mod.GameInstance!.PrevMapID;
         lock (Mod.GameInstance!.MapLock)
         {
             Mod.GameInstance!.MapID = mapID;
-            Mod.GameInstance!.PrevMapID = prevMapID;
+            Mod.GameInstance!.PrevMapID = mapID;
         }
         PrintToLog($"Initial mapID: {mapID}, Initial levelID: {Mod.GameInstance!.LevelID}");
         Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
@@ -171,7 +180,28 @@ public class Game
         // NOP Jump past check of spell unlocks in Specs lesson - If ability active
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x6C497, [0x90, 0x90]);
 
-        ShopPrices.SetShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
+        // NOP Code that checks to see if a cheat code has already been entered (duplicate codes)
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3A55F2, [0x90, 0x90]);
+
+        // NOP Code that forces to Dark Times upon save reload
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x3CB61, [0x90, 0x90]);
+        // Change Dark Times Map Constant
+        HubHandler.InitializeGameMaps();
+        HubHandler.UpdateDarkTimesMap();
+
+        // NOP Code that checks to see if you are in Herm Bag Lesson
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x41F9E, [0x90, 0x90]);
+
+        // NOP Code that writes spells to Minifig file
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x4400D, [0x90, 0x90, 0x90]); // mov static into minifig part 1
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x44010, [0x90, 0x90, 0x90]); // mov static into minifig part 2
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x43DD5, [0x90, 0x90, 0x90]); // clears out all spells except green part 1
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x43DD8, [0x90, 0x90, 0x90]); // clears out all spells except green part 2
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x45BD1, [0xFF]); // And code that messes with green spells turning off
+
+        Shops.SetShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
+        Shops.SetShopPointers();
+        SpellHandler.LockBoxes();
     }
 
     // This function turns on the N0CUT5 Cheat Code so cutscenes don't show
@@ -181,9 +211,8 @@ public class Game
         nuint ptr = (nuint)(*cutsceneBaseAddress + 0xA4);
 
         // Write N0CUT5 flag to game
-        Memory.Instance.Write(ptr, (byte)0x01);
+        Memory.Instance.SafeWrite(ptr, [0x01]);
     }
-
 
     /* 
     This function blocks the code that checks if lesson has been completed while in the lesson
@@ -191,22 +220,22 @@ public class Game
     Currently only used to prevent the game from constantly showing you unlocked apparition
     WARNING: DADA, Specs, Agua, & Reducto Lessons softlock if this is enabled during those lessons
     */
-    public static void LessonReturnToHubNOP()
-    {
-        // Allows Return to Diagon Alley in Abilities Lessons (Thestral Forest) 
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x161D1, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x40F42, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
-        // Allows Return to Diagon Alley in Spell Lessons (Diffindo)
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x33355A, [0x90, 0x90]);
-    }
+    // public static void LessonReturnToHubNOP()
+    // {
+    //     // Allows Return to Diagon Alley in Abilities Lessons (Thestral Forest) 
+    //     Memory.Instance.SafeWrite(Mod.BaseAddress + 0x161D1, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
+    //     Memory.Instance.SafeWrite(Mod.BaseAddress + 0x40F42, [0x90, 0x90, 0x90, 0x90, 0x90, 0x90]);
+    //     // Allows Return to Diagon Alley in Spell Lessons (Diffindo)
+    //     Memory.Instance.SafeWrite(Mod.BaseAddress + 0x33355A, [0x90, 0x90]);
+    // }
 
     // Restores the code effects from the function above to original behavior.
-    public static void LessonRestoreReturnToHub()
-    {
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x161D1, [0x0F, 0x84, 0x2D, 0xFF, 0xFF, 0xFF]); // harry2.exe+161D1 - 0F84 2DFFFFFF
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x40F42, [0x0F, 0x84, 0xE3, 0x01, 0x00, 0x00]); // harry2.exe+40F42 - 0F84 E3010000        
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x33355A, [0x74, 0x03]); //harry2.exe+33355A - 74 03                
-    }
+    // public static void LessonRestoreReturnToHub()
+    // {
+    //     Memory.Instance.SafeWrite(Mod.BaseAddress + 0x161D1, [0x0F, 0x84, 0x2D, 0xFF, 0xFF, 0xFF]); // harry2.exe+161D1 - 0F84 2DFFFFFF
+    //     Memory.Instance.SafeWrite(Mod.BaseAddress + 0x40F42, [0x0F, 0x84, 0xE3, 0x01, 0x00, 0x00]); // harry2.exe+40F42 - 0F84 E3010000        
+    //     Memory.Instance.SafeWrite(Mod.BaseAddress + 0x33355A, [0x74, 0x03]); //harry2.exe+33355A - 74 03                
+    // }
 
     // Main function that handles updating the game state to match items or locations.
     public static void ManageItem(int ItemID)
@@ -267,8 +296,13 @@ public class Game
             case < 975: // Handle Red Brick Purchase
                 HubHandler.ReceivedRedBrickUnlock(ItemID - RedBrickPurchOffset);
                 break;
+            case < 1000: // Handle Spells
+                SpellHandler.UnlockSpell(ItemID - SpellPurchOffset, Mod.GameInstance!.CurrentP1CharID, Mod.GameInstance!.CurrentP2CharID);
+                break;
+            case 1000: // Handle Delum
+                break;
             case < 1027: // Handle Spells
-                SpellHandler.UnlockSpell(ItemID - SpellPurchOffset, Mod.GameInstance!.CurrentCharID);
+                SpellHandler.UnlockSpell(ItemID - SpellPurchOffset, Mod.GameInstance!.CurrentP1CharID, Mod.GameInstance!.CurrentP2CharID);
                 break;
             default:
                 PrintToLog($"Unknown item received: {ItemID}");
@@ -321,7 +355,13 @@ public class Game
     private static IReverseWrapper<ChangeCharacters> _reverseWrapOnChangeCharacters = default!;
     private static IReverseWrapper<ChangeYears> _reverseWrapChangeYears = default!;
     private static IReverseWrapper<HandleInterruptedMessage> _reverseWrapOnHandleInterruptedMessage = default!;
-    private static IReverseWrapper<CmpUnlockedAbilities> _reverseWrapOnCmpUnlockedAbilities = default!;
+    private static IReverseWrapper<CheckSpecsUnlock> _reverseWrapOnCheckSpecsUnlock = default!;
+    private static IReverseWrapper<CheckHermBagUnlock> _reverseWrapHermBagUnlock = default!;
+    private static IReverseWrapper<CheckPolyjuiceUnlock> _reverseWrapOnCheckPolyjuiceUnlock = default!;
+    private static IReverseWrapper<SetDuelingHealth> _reverseWrapOnSetDuelingHealth = default!;
+    private static IReverseWrapper<ShopItemSelected> _reverseWrapOnShopItemSelected = default!;
+    private static IReverseWrapper<CharacterShopItemSelected> _reverseWrapOnCharacterShopItemSelected = default!;
+    private static IReverseWrapper<StudCollected> _reverseWrapOnStudCollected = default!;
 
     // Modifying the associated assembly of our game to call our functions
     // TODO: Future proof this from game updates by implementing signature scanning
@@ -491,14 +531,14 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(updateLevelHook, (int)(Mod.BaseAddress + 0x574661), AsmHookBehaviour.ExecuteFirst).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(updateLevelHook, (int)(Mod.BaseAddress + 0x35641B), AsmHookBehaviour.ExecuteFirst).Activate());
 
         string[] updateMapIDHook =
         {
             "use32",
             "pushfd",
             "pushad",
-            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnMapChange, out _reverseWrapOnMapUpdate)}",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnMapUpdate, out _reverseWrapOnMapUpdate)}",
             "popad",
             "popfd",
         };
@@ -609,12 +649,15 @@ public class Game
         {
             "use32",
             "push edx",
+            "push edi",
             "mov edx, ebp",
+            "mov edi, esi",
             "pushfd",
             "pushad",
             $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnChangeCharacters, out _reverseWrapOnChangeCharacters)}",
             "popad",
             "popfd",
+            "pop edi",
             "pop edx",
         };
         _asmHooks.Add(hooks.CreateAsmHook(changeCharactersHook, (int)(Mod.BaseAddress + 0x5440EC), AsmHookBehaviour.ExecuteFirst).Activate());
@@ -628,7 +671,7 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(changeYearsHook, (int)(Mod.BaseAddress + 0x3A584B), AsmHookBehaviour.ExecuteAfter).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(changeYearsHook, (int)(Mod.BaseAddress + 0x3A55F2), AsmHookBehaviour.ExecuteAfter).Activate());
 
         string[] handleInterruptedMessageHook =
         {
@@ -644,7 +687,7 @@ public class Game
         // Walking through Loading Zone Zero Out Hint Game Code
         _asmHooks.Add(hooks.CreateAsmHook(handleInterruptedMessageHook, (int)(Mod.BaseAddress + 0x3C727B), AsmHookBehaviour.ExecuteFirst).Activate());
 
-        string[] compareAbilitiesHook =
+        string[] checkSpecsUnlockHook =
         {
             // Push and Pop all Registers except for the ECX register since we need it in our function
             "use32",
@@ -655,7 +698,7 @@ public class Game
             "push esi",
             "push edi",
             "push ebp",
-            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnCmpUnlockedAbilities, out _reverseWrapOnCmpUnlockedAbilities)}",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnCheckSpecsUnlock, out _reverseWrapOnCheckSpecsUnlock)}",
             "pop ebp",
             "pop edi",
             "pop esi",
@@ -665,11 +708,129 @@ public class Game
             "popfd",
         };
         // Specs Animation 1
-        _asmHooks.Add(hooks.CreateAsmHook(compareAbilitiesHook, (int)(Mod.BaseAddress + 0x3EEE0), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(checkSpecsUnlockHook, (int)(Mod.BaseAddress + 0x3EEE0), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
         // Specs Animation 2
-        _asmHooks.Add(hooks.CreateAsmHook(compareAbilitiesHook, (int)(Mod.BaseAddress + 0x3EF80), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(checkSpecsUnlockHook, (int)(Mod.BaseAddress + 0x3EF80), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
         // If Specs is usable of not
-        _asmHooks.Add(hooks.CreateAsmHook(compareAbilitiesHook, (int)(Mod.BaseAddress + 0x6C4AB), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(checkSpecsUnlockHook, (int)(Mod.BaseAddress + 0x6C4AB), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
+
+        string[] checkHermBagUnlockHook =
+        {
+            // Push and Pop all Registers except for the ECX register since we need it in our function
+            "use32",
+            "pushfd",
+            "push eax",
+            "push ebx",
+            "push edx",
+            "push esi",
+            "push edi",
+            "push ebp",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnCheckHermBagUnlock, out _reverseWrapHermBagUnlock)}",
+            "pop ebp",
+            "pop edi",
+            "pop esi",
+            "pop edx",
+            "pop ebx",
+            "pop eax",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(checkHermBagUnlockHook, (int)(Mod.BaseAddress + 0x41FB2), AsmHookBehaviour.ExecuteAfter).Activate());
+
+        string[] checkPolyjuiceUnlockHook =
+        {
+            "use32",
+            "pushfd",
+            "push ebx",
+            "push ecx",
+            "push edx",
+            "push esi",
+            "push edi",
+            "push ebp",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnCheckPolyjuiceUnlock, out _reverseWrapOnCheckPolyjuiceUnlock)}",
+            "pop ebp",
+            "pop edi",
+            "pop esi",
+            "pop edx",
+            "pop ecx",
+            "pop ebx",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(checkPolyjuiceUnlockHook, (int)(Mod.BaseAddress + 0x1BCC3), AsmHookBehaviour.ExecuteAfter).Activate());
+
+        string[] startDuelHook =
+        {
+            // Push and Pop all Registers except for the ECX register since we need it in our function
+            "use32",
+            "pushfd",
+            "push eax",
+            "push ebx",
+            "push edx",
+            "push esi",
+            "push edi",
+            "push ebp",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnSetDuelingHealth, out _reverseWrapOnSetDuelingHealth)}",
+            "pop ebp",
+            "pop edi",
+            "pop esi",
+            "pop edx",
+            "pop ebx",
+            "pop eax",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(startDuelHook, (int)(Mod.BaseAddress + 0x8C75E), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] shopItemSelected =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnShopItemSelected, out _reverseWrapOnShopItemSelected)}",
+            "popad",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(shopItemSelected, (int)(Mod.BaseAddress + 0x792C3), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] characterShopItemSelected =
+        {
+            "use32",
+            "push ebx",
+            "mov ebx, esi",
+            "push eax",
+            "push ecx",
+            "push edx",
+            "push ebp",
+            "push edi",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnCharacterShopItemSelected, out _reverseWrapOnCharacterShopItemSelected)}",
+            "pop edi",
+            "pop ebp",
+            "pop edx",
+            "pop ecx",
+            "pop eax",
+            "pop ebx",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(characterShopItemSelected, (int)(Mod.BaseAddress + 0x88C0B), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] studCollected =
+        {
+            "use32",
+            "push edi",
+            "push ecx",
+            "mov edi, esi",
+            "mov ecx, ebp",
+            "push ebx",
+            "push eax",
+            "push edx",
+            "push ebp",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnStudCollected, out _reverseWrapOnStudCollected)}",
+            "pop ebp",
+            "pop edx",
+            "pop eax",
+            "pop ebx",
+            "pop ecx",
+            "pop edi"
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(studCollected, (int)(Mod.BaseAddress + 0x3B0AEC), AsmHookBehaviour.ExecuteFirst).Activate());
+
     }
 
     [Function(CallingConventions.Fastcall)]
@@ -688,10 +849,8 @@ public class Game
             {
                 CheckAndReportLocation(1026); // Apparition is unlocked at the end of 7 Harrys
             }
-            if (id == 23) // The Flaw in the Plan - Check win con
-            {
-                CheckWinCon();
-            }
+            CheckWinCon();
+            HubHandler.UpdateWinConText();
         }
     }
 
@@ -752,6 +911,11 @@ public class Game
     public delegate void RedBrickPurchase(int ecx);
     private static void OnRedBrickPurchase(int ecx)
     {
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleRedBricks == 1)
+        {
+            PrintToLog("Red Brick Purchase detected but red brick purchases aren't shuffled, ignoring.");
+            return;
+        }
         CheckAndReportLocation(ecx + RedBrickPurchOffset);
     }
 
@@ -804,9 +968,9 @@ public class Game
             {
                 return; // Ignore joke spells if they aren't shuffled
             }
-
             CheckAndReportLocation(itemId);
         }
+
     }
 
     [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.edx],
@@ -814,17 +978,22 @@ public class Game
     public delegate void HubCharacterCollected(IntPtr eax, int edx);
     private static void OnHubCharacterCollected(IntPtr eax, int edx)
     {
+        int mapID;
+        lock (Mod.GameInstance!.MapLock)
+        {
+            mapID = Mod.GameInstance!.MapID;
+        }
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleCharacterTokens == 2)
+        {
+            PrintToLog($"Hub Character Token Collected but not shuffled. EAX: 0x{eax:X}, EDX: 0x{edx:X}, Map ID: {mapID}");
+            return;
+        }
         int itemID = CharacterHandler.GetHubTokenItemID(eax, edx);
         if (itemID == -1)
         {
             PrintToLog("Error getting Level Token Item ID");
             PrintToLog($"EAX is: 0x{eax:X}");
             PrintToLog($"EDX is: 0x{edx:X}");
-            int mapID;
-            lock (Mod.GameInstance!.MapLock)
-            {
-                mapID = Mod.GameInstance!.MapID;
-            }
             PrintToLog("Map ID is: " + mapID);
             return;
         }
@@ -836,16 +1005,22 @@ public class Game
     public delegate void LevelCharacterCollected(int ebx);
     private static void OnLevelCharacterCollected(int ebx)
     {
+        int mapID;
+        lock (Mod.GameInstance!.MapLock)
+        {
+            mapID = Mod.GameInstance!.MapID;
+        }
         int itemID = CharacterHandler.GetLevelTokenItemID(ebx);
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleCharacterTokens == 2)
+        {
+            PrintToLog($"Level Character Token Collected but not shuffled. Map ID: {mapID}");
+            CharacterHandler.UnlockToken(itemID); // Unlock the token so the player can continue to progress even if they can't save and exit a level.
+            return;
+        }
         if (itemID == -1)
         {
             PrintToLog("Error getting Level Token Item ID");
             PrintToLog($"EBX is: 0x{ebx:X}");
-            int mapID;
-            lock (Mod.GameInstance!.MapLock)
-            {
-                mapID = Mod.GameInstance!.MapID;
-            }
             PrintToLog("Map ID is: " + mapID);
             return;
         }
@@ -867,9 +1042,13 @@ public class Game
         {
             mapID = Mod.GameInstance!.MapID;
         }
-        if ((mapID == 366 || mapID == 372
-            || mapID == 378 || mapID == 382) && prevInShop == true) //Make sure Player is in Robe Shop
+        if (MadamMalkinMapIDs.Contains(mapID) && prevInShop == true) //Make sure Player is in Robe Shop
         {
+            if (Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleCharacterTokens == 1)
+            {
+                PrintToLog("Character Purchase detected but character purchases aren't shuffled, ignoring.");
+                return;
+            }
             int itemID = CharacterHandler.GetPurchaseCharacterID(ecx, eax);
             if (itemID == -1)
             {
@@ -936,6 +1115,17 @@ public class Game
     public delegate void HubRB(int eax);
     private static void OnHubRB(int eax)
     {
+        int mapID;
+        lock (Mod.GameInstance!.MapLock)
+        {
+            mapID = Mod.GameInstance!.MapID;
+        }
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleRedBricks == 2)
+        {
+            PrintToLog($"Hub RB Collected but not shuffled. Map ID: {mapID}");
+            return;
+        }
+
         int itemID = HubHandler.GetHubID(eax);
         if (itemID == -1)
         {
@@ -943,11 +1133,6 @@ public class Game
             PrintToLog($"EAX is: 0x{eax:X}");
             int lookupvalue = eax * 4 + 2;
             PrintToLog($"Lookup Value should be: 0x{lookupvalue:X}");
-            int mapID;
-            lock (Mod.GameInstance!.MapLock)
-            {
-                mapID = Mod.GameInstance!.MapID;
-            }
             PrintToLog("Map ID is: " + mapID);
             return;
         }
@@ -966,58 +1151,121 @@ public class Game
     [Function([FunctionAttribute.Register.eax],
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void UpdateLevel(int value);
-    private static void OnLevelChange(int value)
+    private static unsafe void OnLevelChange(int value)
     {
+        if (Mod.GameInstance!.LevelID == value)
+        {
+            PrintToLog($"Level ID stayed the same, no update. Level ID: {value}");
+            return;
+        }
         Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
-        Mod.GameInstance!.LevelID = value; PrintToLog($"Level ID updated to {value}.");
+        Mod.GameInstance!.LevelID = value;
+        PrintToLog($"Level ID updated to {value}.");
+        HubHandler.UpdateWinConText();
+        if (value is >= 1 and <= 4)
+        {
+            HubHandler.ChangeLeakyLoadingZones(value);
+            HubHandler.UpdateMissingMapConstants(value);
+        }
+        if (value >= 1 && value <= 4 && (Mod.GameInstance!.PrevLevelID == 0 || Mod.GameInstance!.PrevLevelID > 4))
+        {
+            // Clear out the studs to write to the total so that we don't duplicate stud count
+            // ulong* studTotalAddress = *(ulong**)(Mod.BaseAddress + 0xC5B600);
+            // ulong* inLevelP1StudAddress = (ulong*)(Mod.BaseAddress + 0xC53E88);
+            // ulong* inLevelP2StudAddress = (ulong*)(Mod.BaseAddress + 0xC53EA0);
+            ulong* p1StudValueToWriteAddress = (ulong*)(Mod.BaseAddress + 0xC5E408);
+            ulong* p2StudValueToWriteAddress = (ulong*)(Mod.BaseAddress + 0xC5E410);
+            // *studTotalAddress += *inLevelP1StudAddress + *inLevelP2StudAddress;
+            // *inLevelP1StudAddress = 0;
+            // *inLevelP2StudAddress = 0;
+            *p1StudValueToWriteAddress = 0;
+            *p2StudValueToWriteAddress = 0;
+        }
     }
 
     [Function([FunctionAttribute.Register.ecx],
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
     public delegate void UpdateMap(int value);
-    private static void OnMapChange(int value)
+    private static unsafe void OnMapUpdate(int value)
     {
         int mapID = value;
         int prevMapID;
         lock (Mod.GameInstance!.MapLock)
         {
+            prevMapID = Mod.GameInstance!.MapID; // using map ID here cause it is before the update
+        }
+        if (mapID == prevMapID)
+        {
+            HintSystem.AddInterruptedMessageToFront("This map isn't available in this year. Please time travel to access", 0);
+        }
+        lock (Mod.GameInstance!.MapLock)
+        {
             Mod.GameInstance!.PrevMapID = Mod.GameInstance!.MapID;
             Mod.GameInstance!.MapID = value;
-            mapID = Mod.GameInstance!.MapID;
+            Mod.GameInstance!.MapID2 = value;
+            Mod.GameInstance!.MapID3 = value;
             prevMapID = Mod.GameInstance!.PrevMapID;
         }
 
         // When leaving Y7 London, ensure that Code is running as normal (disabled in Y7 London cause of apparition)
-        if (prevMapID == 103)
+        // if (prevMapID == 103)
+        // {
+        //     LessonRestoreReturnToHub();
+        // }
+
+        // When leaving Leaky & staying in Hub, we want to verify what the London ID is still correct
+        if (LeakyMapIDs.Contains(prevMapID) && Mod.GameInstance!.LevelID is >= 1 and <= 4)
         {
-            LessonRestoreReturnToHub();
+            HubHandler.VerifyLondonMapIDs();
+            HubHandler.ChangeLeakyLoadingZones(Mod.GameInstance!.LevelID);
         }
+
         PrintToLog($"Map ID updated to {value}.");
         Mod.LHP2_Archipelago!.SendMapID(value);
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
-        HubHandler.UpdateHorcruxCount();
         LevelHandler.ImplementMapLogic(value);
 
         // Load Red Bricks Enabled if Previous map was 402 (menu)
         if (prevMapID == 402)
         {
             HubHandler.LoadRedBricksEnabled();
+            HubHandler.RestoreDarkTimesMap();
+        }
+
+        // Make it so upon returning to diagon, the wilderness code runs instead of having to enter the code
+        if ((mapID == 376 || mapID == 370) && (prevMapID == 99 || prevMapID == 5))
+        {
+            HubHandler.AdjustWilderness();
+        }
+
+        // Send Polyjuice Potion Check
+        if (mapID == 168 && prevMapID == 169)
+        {
+            CheckAndReportLocation(1000); // Polyjuice Potion is unlocked after drinking it for the first time in story
+        }
+
+        // If you enter the level in story and complete it, there have been instances where the individual will time travel. This code makes the game think you are in freeplay upon the final map of the level. We did it on the final map because there were bugs caused (specifical in dark times) where P2 would be a story character that you couldn't control.
+        if (FinalLevelMapIDs.Contains(mapID))
+        {
+            byte* freeplayFlag = (byte*)(Mod.BaseAddress + 0xC5B5DC);
+            *freeplayFlag = 1;
         }
     }
 
-    [Function([FunctionAttribute.Register.edx],
+    [Function([FunctionAttribute.Register.edx, FunctionAttribute.Register.edi],
     FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
-    public delegate void ChangeCharacters(int edx);
+    public delegate void ChangeCharacters(int edx, int edi);
 
-    public static unsafe void OnChangeCharacters(int edx)
+    public static unsafe void OnChangeCharacters(int edx, int edi)
     {
-        ushort* initialValue = (ushort*)(Mod.BaseAddress + 0xC5F4C4);
-        if (*initialValue == 0xFFFF)
+        ushort* initialP1Value = (ushort*)(Mod.BaseAddress + 0xC5F4C4);
+        ushort* initialP2Value = (ushort*)(Mod.BaseAddress + 0xC5F4D0);
+        if (*initialP1Value == 0xFFFF)
         {
-            PrintToLog($"Character Changed, Spell Function ran, EDX: {edx:X}");
-            Mod.GameInstance!.CurrentCharID = edx;
+            PrintToLog($"P1 Character Changed, Spell Function ran, EDX: {edx:X}");
+            Mod.GameInstance!.CurrentP1CharID = edx;
             SpellHandler.ResetSpells();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
             int currentMapID;
@@ -1027,6 +1275,22 @@ public class Game
             }
             SpellHandler.SpellMapLogic(currentMapID);
             SpellHandler.HandleSpellVisibility();
+            return;
+        }
+        if (*initialP2Value == 0xFFFF)
+        {
+            PrintToLog($"P2 Character Changed, Spell Function ran, EDX: {edx:X}");
+            Mod.GameInstance!.CurrentP2CharID = edx;
+            SpellHandler.ResetSpells();
+            Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
+            int currentMapID;
+            lock (Mod.GameInstance!.MapLock)
+            {
+                currentMapID = Mod.GameInstance!.MapID;
+            }
+            SpellHandler.SpellMapLogic(currentMapID);
+            SpellHandler.HandleSpellVisibility();
+            return;
         }
     }
 
@@ -1052,7 +1316,8 @@ public class Game
             PrintToLog("Level Selector Opened");
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, MaxItemID);
-            HubHandler.UpdateHorcruxCount();
+            HubHandler.RestoreLeakyLoadingZones();
+            HubHandler.UpdateWinConText();
         }
 
         if (eaxBit0Set && lastNibble == 0x0C)
@@ -1060,6 +1325,7 @@ public class Game
             lock (Mod.GameInstance!.StateLock)
             {
                 Mod.GameInstance!.PrevInShop = true;
+                Mod.GameInstance!.PrevInShop2 = true;
             }
             PrintToLog("Shop Opened");
             ResetItems();
@@ -1067,12 +1333,28 @@ public class Game
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(0, tokenOffset - 1);
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(RedBrickCollectOffset, RedBrickPurchOffset - 17);
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(RedBrickPurchOffset, 1026);
-            HubHandler.UpdateHorcruxCount();
+            HubHandler.UpdateWinConText();
 
             // Joke Shop prices are set when save is loaded. So we handle that by changing it upon opening and closing that shop
-            if (ShopMapID == 369 || ShopMapID == 375 || ShopMapID == 383 || ShopMapID == 387)
+            if (JokeShopMapIDs.Contains(ShopMapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleJokeSpells == 1)
             {
-                ShopPrices.SetJokeShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
+                Shops.SetJokeShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
+                Shops.UpdateJokeShopPointers();
+            }
+
+            if (KnockturnMapIDs.Contains(ShopMapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleGoldBrickPurchases == 1)
+            {
+                Shops.UpdateGoldBrickPointer();
+            }
+
+            if (LeakyMapIDs.Contains(ShopMapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleRedBricks != 1)
+            {
+                Shops.UpdateRedBrickPointers();
+            }
+
+            if (MadamMalkinMapIDs.Contains(ShopMapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleCharacterTokens != 1)
+            {
+                Shops.UpdateCharacterPointers();
             }
         }
         else
@@ -1098,7 +1380,8 @@ public class Game
                     ResetItems();
                     Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
                     Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
-                    HubHandler.UpdateHorcruxCount();
+                    HubHandler.ChangeLeakyLoadingZones(Mod.GameInstance!.LevelID);
+                    HubHandler.UpdateWinConText();
                 }
             }
             else if (!eaxBit0Set && prevInShop)
@@ -1106,6 +1389,7 @@ public class Game
                 lock (Mod.GameInstance!.StateLock)
                 {
                     Mod.GameInstance!.PrevInShop = false;
+                    Mod.GameInstance!.PrevInShop2 = false;
                 }
                 PrintToLog("Shop Selector Closed");
 
@@ -1116,13 +1400,29 @@ public class Game
                     SpellHandler.ResetSpells();
                     Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
                     Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
-                    HubHandler.UpdateHorcruxCount();
+                    HubHandler.UpdateWinConText();
                 }
 
                 // Joke Shop prices are set when save is loaded. So we handle that by changing it upon opening and closing that shop
-                if (ShopMapID == 369 || ShopMapID == 375 || ShopMapID == 383 || ShopMapID == 387)
+                if (JokeShopMapIDs.Contains(ShopMapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleJokeSpells == 1)
                 {
-                    ShopPrices.ReverseJokeShopPriceChanges(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
+                    Shops.ReverseJokeShopPriceChanges(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
+                    Shops.ResetJokeShopPointers();
+                }
+
+                if (KnockturnMapIDs.Contains(ShopMapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleGoldBrickPurchases == 1)
+                {
+                    Shops.ResetGoldBrickPointer();
+                }
+
+                if (LeakyMapIDs.Contains(ShopMapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleRedBricks != 1)
+                {
+                    Shops.ResetRedBrickPointers();
+                }
+
+                if (MadamMalkinMapIDs.Contains(ShopMapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleCharacterTokens != 1)
+                {
+                    Shops.ResetCharacterPointers();
                 }
             }
         }
@@ -1153,7 +1453,7 @@ public class Game
 
         // Quality of life update so that players can more quickly change years
         byte* menuCheatAddress = (byte*)(Mod.BaseAddress + 0xC575E0);
-        byte[] bytes = [24, 4, 0, 17, 26, 26];
+        byte[] bytes = [24, 31, 11, 14, 13, 3]; // Y5LOND
         for (int i = 0; i < 6; i++)
         {
             Memory.Instance.Write((nuint)(menuCheatAddress + i), bytes[i]);
@@ -1170,7 +1470,12 @@ public class Game
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(0, RedBrickPurchOffset - 1);
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(RedBrickPurchOffset, MaxItemID);
-            HubHandler.UpdateHorcruxCount();
+            HubHandler.UpdateWinConText();
+
+            if (Mod.GameInstance!.LevelID == 16)
+            {
+                HubHandler.FixReturnToLeakyCauldron();
+            }
 
             if (Mod.GameInstance!.LevelID == 27) // Flaw in the Plan
             {
@@ -1190,7 +1495,7 @@ public class Game
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, MaxItemID);
             HubHandler.UpdateGoldBrickCount();
-            HubHandler.UpdateHorcruxCount();
+            HubHandler.UpdateWinConText();
             SpellHandler.UnlockAllPassiveSpells();
         }
     }
@@ -1265,7 +1570,7 @@ public class Game
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
-        HubHandler.UpdateHorcruxCount();
+        HubHandler.UpdateWinConText();
         LevelHandler.ImplementMapLogic(mapID);
         SpellHandler.SpellMapLogic(mapID);
         HubHandler.SaveRedBricksEnabled();
@@ -1304,20 +1609,20 @@ public class Game
         {
             prevInLevelSelect = Mod.GameInstance!.PrevInLevelSelect;
         }
-        if (cauldronItem != 4 || prevInLevelSelect == true) // Only trigger on opening the Polyjuice Pot
-        {
-            return;
-        }
-        PrintToLog("Polyjuice Pot Closed");
-        Memory.Instance.Write<byte>((nuint)(cauldronBaseAddress + 0x68), 0); // Reset cauldron item selected to 0
-        ResetItems();
-        Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
-        Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
         int mapID;
         lock (Mod.GameInstance!.MapLock)
         {
             mapID = Mod.GameInstance!.MapID;
         }
+        if (cauldronItem != 4 || prevInLevelSelect == true) // Only trigger on opening the Polyjuice Pot
+        {
+            return;
+        }
+        PrintToLog("Polyjuice Pot Closed");
+        Memory.Instance.SafeWrite((nuint)(cauldronBaseAddress + 0x68), [0x00]); // Reset cauldron item selected to 0
+        ResetItems();
+        Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
+        Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
         LevelHandler.ImplementMapLogic(mapID);
         SpellHandler.SpellMapLogic(mapID);
     }
@@ -1332,7 +1637,7 @@ public class Game
             mapID = Mod.GameInstance!.MapID;
         }
         // Only run in the Character Customization Room
-        if (mapID == 365 || mapID == 371 || mapID == 377 || mapID == 381)
+        if (LeakyMapIDs.Contains(mapID))
         {
             byte* menuCheatAddress = (byte*)(Mod.BaseAddress + 0xC575E0);
             char[] chars = new char[6];
@@ -1353,40 +1658,28 @@ public class Game
                     chars[i] = '_'; // Unknown character
                 }
             }
-            string yearString = new(chars);
-            PrintToLog($"Year Requested is: {yearString}");
+            string mapString = new(chars);
+            PrintToLog($"Map Requested is: {mapString}");
 
-            switch (yearString)
+            if (FastTravelRequests.Contains(mapString))
             {
-                case "YEAR05" when Mod.GameInstance!.LevelID != 1:
-                    HubHandler.SwitchYears(5);
-                    HubHandler.AdjustHubMaps(5);
-                    break;
-                case "YEAR06" when Mod.GameInstance!.LevelID != 2:
-                    HubHandler.SwitchYears(6);
-                    HubHandler.AdjustHubMaps(6);
-                    break;
-                case "YEAR07" when Mod.GameInstance!.LevelID != 3:
-                    HubHandler.SwitchYears(7);
-                    HubHandler.AdjustHubMaps(7);
-                    break;
-                case "YEAR08" when Mod.GameInstance!.LevelID != 4:
-                    HubHandler.SwitchYears(8);
-                    HubHandler.AdjustHubMaps(8);
-                    break;
-                default:
-                    break;
+                HubHandler.FastTravel(mapString);
             }
+            else
+            {
+                PrintToLog($"Unknown Map Requested: {mapString}.");
+            }
+
         }
         else
         {
-            PrintToLog("Please move to the Character Customization Room to change years.");
+            PrintToLog("Please move to the Leaky Cualdron.");
             return;
         }
     }
 
     [Function(CallingConventions.Fastcall)]
-    public delegate void HandleInterruptedMessage();
+    private delegate void HandleInterruptedMessage();
     private static void OnHandleInterruptedMessage()
     {
         HintSystem.HandleInterruptedMessage();
@@ -1394,12 +1687,116 @@ public class Game
 
     [Function([],
     FunctionAttribute.Register.ecx, FunctionAttribute.StackCleanup.Callee)]
-    public delegate int CmpUnlockedAbilities();
-    private static int OnCmpUnlockedAbilities()
+    private delegate int CheckSpecsUnlock();
+    private static int OnCheckSpecsUnlock()
     {
-        return SpellHandler.CheckAbilityUnlock();
+        return SpellHandler.CheckSpecsUnlock();
     }
 
+    [Function([],
+    FunctionAttribute.Register.ecx, FunctionAttribute.StackCleanup.Callee)]
+    private delegate int CheckHermBagUnlock();
+    private static int OnCheckHermBagUnlock()
+    {
+        return SpellHandler.CheckHermBagUnlock();
+    }
+
+    [Function([FunctionAttribute.Register.eax],
+    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    public delegate int CheckPolyjuiceUnlock(int eax);
+    private static int OnCheckPolyjuiceUnlock(int eax)
+    {
+        int polyjuiceArray = SpellHandler.CheckPolyjuiceUnlock(eax);
+        return polyjuiceArray;
+    }
+
+    [Function([FunctionAttribute.Register.ecx],
+    FunctionAttribute.Register.ecx, FunctionAttribute.StackCleanup.Callee)]
+    public delegate nuint SetDuelingHealth(nuint ecx);
+
+    private static nuint OnSetDuelingHealth(nuint ecx)
+    {
+        int mapID;
+        lock (Mod.GameInstance!.MapLock)
+        {
+            mapID = Mod.GameInstance!.MapID;
+        }
+
+        if (DuelingMapIDs.Contains(mapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.FasterDuels == 1)
+        {
+            PrintToLog("Dueling Health Set to 1");
+            ecx = (ecx & ~0xFFu) | 1u;
+        }
+        return ecx;
+    }
+
+    [Function([FunctionAttribute.Register.edx],
+    FunctionAttribute.Register.edx, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void ShopItemSelected(int edx);
+    private static void OnShopItemSelected(int edx)
+    {
+        if (!Mod.GameInstance!.PrevInShop2)
+        {
+            return;
+        }
+
+        if (JokeShopMapIDs.Contains(Mod.GameInstance!.MapID2) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleJokeSpells == 1)
+        {
+            Shops.HandleShopText(edx + SpellPurchOffset + 1); // Adding 1 to account for the first spell not being used
+            return;
+        }
+
+        if (KnockturnMapIDs.Contains(Mod.GameInstance!.MapID2) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleGoldBrickPurchases == 1)
+        {
+            Shops.HandleShopText(edx + GoldBrickPurchOffset);
+            return;
+        }
+
+        if (LeakyMapIDs.Contains(Mod.GameInstance!.MapID2) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleRedBricks != 1)
+        {
+            Shops.HandleShopText(edx + RedBrickPurchOffset);
+            return;
+        }
+    }
+
+    [Function([FunctionAttribute.Register.ebx],
+    FunctionAttribute.Register.ebx, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void CharacterShopItemSelected(int edx);
+    private static void OnCharacterShopItemSelected(int edx)
+    {
+        if (MadamMalkinMapIDs.Contains(Mod.GameInstance!.MapID3) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleCharacterTokens != 1)
+        {
+            int item = CharacterHandler.GetLevelTokenItemID(edx);
+            if (item == -1)
+            {
+                return;
+            }
+            Shops.HandleShopText(item);
+        }
+    }
+
+    [Function([FunctionAttribute.Register.edi, FunctionAttribute.Register.ecx],
+    FunctionAttribute.Register.edi, FunctionAttribute.StackCleanup.Callee)]
+    // edi is the stud value picked up and ebp is the address it is being written to
+    public delegate void StudCollected(nuint edi, nuint ecx);
+    private static unsafe void OnStudCollected(nuint edi, nuint ecx)
+    {
+        nuint* studTotalAddress = *(nuint**)(Mod.BaseAddress + 0xC5B600);
+        nuint* inLevelP1StudAddress = (nuint*)(Mod.BaseAddress + 0xC53E88);
+        nuint* inLevelP2StudAddress = (nuint*)(Mod.BaseAddress + 0xC53EA0);
+        // PrintToLog($"Stud Total Address: 0x{(nuint)studTotalAddress:X}");
+        // PrintToLog($"inLevelP1StudAddress: 0x{(nuint)inLevelP1StudAddress:X}");
+        // PrintToLog($"inLevelP2StudAddress: 0x{(nuint)inLevelP2StudAddress:X}");
+        // PrintToLog($"edi: 0x{edi:X}");
+        // PrintToLog($"ecx: 0x{ecx:X}");
+
+        if (ecx == (nuint)inLevelP1StudAddress || ecx == (nuint)inLevelP2StudAddress)
+        {
+            *studTotalAddress += edi;
+        }
+
+        return;
+    }
 
     private static void ResetItems()
     {
@@ -1407,7 +1804,10 @@ public class Game
         HubHandler.ResetRedBrickUnlock();
         SpellHandler.ResetSpells();
         LevelHandler.ResetLevels();
-        CharacterHandler.ResetTokens();
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleCharacterTokens != 2)
+        {
+            CharacterHandler.ResetTokens();
+        }
         CharacterHandler.ResetUnlocks();
         HubHandler.ResetHub();
     }
@@ -1425,7 +1825,8 @@ public class Game
 
     public static void CheckWinCon()
     {
-        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 0)
+        // Defeat Voldemort
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 0 && Mod.GameInstance!.PrevLevelID == 27)
         {
             int horcruxesReceived = Mod.LHP2_Archipelago!.CountItemsCheckedInRange(440, 446);
             int requiredHorcruxes = Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredHorcruxes;
@@ -1439,6 +1840,25 @@ public class Game
             {
                 Mod.LHP2_Archipelago!.Release();
             }
+            return;
+        }
+
+        // Levels Beaten
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 2)
+        {
+            int levelsCompleted = Mod.LHP2_Archipelago!.CountLocationsCheckedInRange(450, 473);
+            int requiredLevels = Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredLevels;
+            if (requiredLevels == -1)
+            {
+                PrintToLog("Can't Determine if the game is completed, Level slot data not available.");
+                return;
+            }
+            PrintToLog($"Player Has Completed {levelsCompleted} Levels");
+            if (levelsCompleted >= requiredLevels)
+            {
+                Mod.LHP2_Archipelago!.Release();
+            }
+            return;
         }
     }
 }

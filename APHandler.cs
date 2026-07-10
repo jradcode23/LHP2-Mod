@@ -24,6 +24,7 @@ public class ArchipelagoHandler
     private string Slot { get; set; }
     private string? Seed { get; set; }
     private string Password { get; set; }
+    public Dictionary<long, ScoutedItemInfo>? ScoutedLocations { get; private set; }
 
     public static bool IsConnected;
     public static bool IsConnecting;
@@ -79,9 +80,9 @@ public class ArchipelagoHandler
 
 
     // something we wrong or we need to properly disconnect from the server. cleanup and re null our session
-    private void Disconnect()
+    public void Disconnect()
     {
-        Game.PrintToLog("Disconnected from server and attempting to reconnect. Please do not complete any checks");
+        Game.PrintToLog("Disconnected from server and attempting to reconnect. If you close the application, checks will not be sent.");
         _ = _session?.Socket.DisconnectAsync();
         _session = null;
         IsConnected = false;
@@ -96,7 +97,7 @@ public class ArchipelagoHandler
         {
             // Check to see if Game/Menu is loaded before trying to connect, we do this to mitigate impact of null values and the game changing things later.
             Game.IsGameLoaded();
-            HintSystem.SetMessageText("Connecting", (uint)NewGameTextPTR);
+            HintSystem.SetMessageText("Connecting. Please wait.", (uint)NewGameTextPTR);
             Seed = Session.ConnectAsync()?.Result?.SeedName;
             Game.PrintToLog(Seed + Slot);
 
@@ -104,7 +105,7 @@ public class ArchipelagoHandler
                 game: GAME_NAME,
                 name: Slot,
                 itemsHandlingFlags: ItemsHandlingFlags.AllItems,
-                version: new Version(1, 0, 0),
+                version: new Version(1, 1, 0),
                 tags: [],
                 password: Password
             ).Result;
@@ -121,6 +122,8 @@ public class ArchipelagoHandler
             // Sets up slot Data
             SlotDataInstance = new(_loginSuccessful.SlotData);
             SlotDataInstance.PrintData();
+            var locationIDs = BuildLocationIds();
+            var scouting = Session.Locations.ScoutLocationsAsync(HintCreationPolicy.None, locationIDs);
             HintSystem.SetMessageText("Hooking, Please Wait", (uint)NewGameTextPTR);
             // Modify the game now that we are connected
             bool isHooked = Mod.InitOnMenu();
@@ -137,6 +140,8 @@ public class ArchipelagoHandler
                 HintSystem.SetMessageText("Failed To Hook", (uint)NewGameTextPTR);
             }
             EnsureBackgroundThreads();
+            scouting.Wait();
+            ScoutedLocations = scouting.Result;
             //resync here
             return true;
         }
@@ -147,6 +152,14 @@ public class ArchipelagoHandler
         Game.PrintToLog(errorMessage);
         Game.PrintToLog($"Attempting reconnect...");
         return false;
+    }
+
+    // Function to build an array of all location IDs in the game for scouting purposes. 
+    private static long[] BuildLocationIds()
+    {
+        var ids = new List<long>();
+        ids.AddRange(Enumerable.Range(400000, 1030).Select(i => (long)i));
+        return [.. ids];
     }
 
     /* Tells archi want we want to do when an item is received. 
@@ -210,7 +223,7 @@ public class ArchipelagoHandler
                 //Handle Horcruxes
                 if (gameID >= 440 && gameID <= 446)
                 {
-                    HubHandler.UpdateHorcruxCount();
+                    HubHandler.UpdateWinConText();
                     return;
                 }
             }
@@ -385,6 +398,17 @@ public class ArchipelagoHandler
         }
     }
 
+    // Helper Function to count how many items inbetween a certain archi ID range have been received
+    public int CountLocationsCheckedInRange(Int64 start, Int64 end)
+    {
+        lock (_locationsLock)
+        {
+            var startId = start + gameOffset;
+            var endId = end + gameOffset;
+            return Session.Locations.AllLocationsChecked.Count(location => location >= startId && location <= endId);
+        }
+    }
+
     // Helper Function to count how many items with a specific archi ID (i.e. gold brick or purple stud) have been received
     public int CountItemsReceivedWithId(Int64 gameId)
     {
@@ -430,6 +454,9 @@ public class ArchipelagoHandler
 
                 HintSystem.EnqueueMessage(itmmsg, itemFlag);
                 break;
+            case GoalLogMessage goalLogMessage:
+                HintSystem.EnqueueMessage(goalLogMessage.ToString(), 3);
+                break;
             default:
                 /* 
                 Printing all messages in case it breaks something, but don't think that will be the case.
@@ -473,5 +500,4 @@ public class ArchipelagoHandler
     {
         Session.DataStorage[Scope.Slot, "map"] = MapID;
     }
-
 }

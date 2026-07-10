@@ -1,4 +1,5 @@
 using Reloaded.Memory;
+using Reloaded.Memory.Interfaces;
 using System.Collections.Concurrent;
 
 namespace LHP2_Archi_Mod;
@@ -17,11 +18,9 @@ public class HintSystem
     private static unsafe float* hintTimerBaseAddress => (float*)(Mod.BaseAddress + 0xC5839C);
     private static unsafe uint* hintPTRBaseAddress => (uint*)(Mod.BaseAddress + 0xC5838C);
     private static unsafe byte* hintColor => (byte*)(Mod.BaseAddress + 0xC58391);
-    private static unsafe byte* HintTextBaseAddress => *(byte**)(Mod.BaseAddress + 0xB16324);
+    public static unsafe byte* HintTextBaseAddress => *(byte**)(Mod.BaseAddress + 0xB16324);
     private static unsafe uint HintTextAddress => (uint)(HintTextBaseAddress + 0xBA);
     private static unsafe uint MessagePTRValue => (uint)(((byte*)*(uint**)(Mod.BaseAddress + 0xC58388)) + 0xFFC);
-    private static unsafe byte* PressButtonToStartTextBaseAddress => *(byte**)(Mod.BaseAddress + 0xC4EBFC);
-    private static unsafe uint PressButtonToStartTextAddress => (uint)PressButtonToStartTextBaseAddress;
 
     // This is a helper function to verify if there is anything else on screen before printing a hint message.
     private static unsafe bool IsScreenEmpty()
@@ -48,6 +47,23 @@ public class HintSystem
         if (!string.IsNullOrEmpty(message))
         {
             MessageQueue.Enqueue(new HintMessage(message, messageType));
+        }
+    }
+
+    // Helper function to add a message to the front of the interrupted message queue
+    public static void AddInterruptedMessageToFront(string message, byte messageType)
+    {
+        if (string.IsNullOrEmpty(message))
+        {
+            return;
+        }
+
+        lock (queueLock)
+        {
+            if (!InterruptedMessageQueue.Any(m => m.Text == message))
+            {
+                InterruptedMessageQueue.AddFirst(new HintMessage(message, messageType));
+            }
         }
     }
 
@@ -143,15 +159,7 @@ public class HintSystem
 
         if (!string.IsNullOrEmpty(currentMessage))
         {
-            lock (queueLock)
-            {
-                // Verifies that the message isn't already in the queue
-                if (!InterruptedMessageQueue.Any(m => m.Text == currentMessage))
-                {
-                    // Adds the message to the front of the queue
-                    InterruptedMessageQueue.AddFirst(new HintMessage(currentMessage, currentMessageType));
-                }
-            }
+            AddInterruptedMessageToFront(currentMessage, currentMessageType);
         }
     }
 
@@ -175,14 +183,30 @@ public class HintSystem
         }
 
         // Write the message directly to memory
-        Memory.Instance.WriteRaw(hintTextPTRAddress, bytes);
+        Memory.Instance.SafeWrite(hintTextPTRAddress, bytes);
+    }
+
+    private static unsafe uint GetPausedText()
+    {
+        byte* pausedTextBaseAddress = *(byte**)(Mod.BaseAddress + 0xAE6E58);
+        byte* firstLevelPTR = *(byte**)(pausedTextBaseAddress + 0x394);
+        return (uint)firstLevelPTR;
     }
 
     // Helper function to write the received Horcrux count to the Player 2 slot name
     public static void DisplayHorcruxCount(byte count)
     {
-        string message = $"Horcruxes Collected: {count}";
-        SetMessageText(message, PressButtonToStartTextAddress);
+        uint pausedTextPTR = GetPausedText();
+        string message = $"Horcruxes Collected: {count}/{Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredHorcruxes}";
+        SetMessageText(message, pausedTextPTR);
+    }
+
+    // Helper function to write the Levels Beaten to the Player 2 slot name
+    public static void DisplayLevelsBeaten(byte count)
+    {
+        uint pausedTextPTR = GetPausedText();
+        string message = $"Levels Beaten: {count}/{Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredLevels}";
+        SetMessageText(message, pausedTextPTR);
     }
 
 }

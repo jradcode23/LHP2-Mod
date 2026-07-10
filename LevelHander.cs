@@ -214,8 +214,13 @@ public class LevelHandler
         bool bitSet1 = (*y5GhostPtr2 & (1 << 4)) != 0;
         bool bitSet2 = (*y5GhostPtr2 & (1 << 5)) == 0;
 
+        int mapID;
+        lock (Mod.GameInstance!.MapLock)
+        {
+            mapID = Mod.GameInstance!.MapID;
+        }
         // Marks the two levels complete after the next map change (assuming they aren't in great hall lobby)
-        if (locationChecked && bitSet1 && bitSet2 && Mod.GameInstance!.MapID != 293)
+        if (locationChecked && bitSet1 && bitSet2 && mapID != 293)
         {
             *y5GhostPtr2 |= 1 << 5; // Mark A Giant Viruoso Story Complete
             *y5GhostPtr2 |= 1 << 6; // Mark A Veiled Threat Story Complete
@@ -232,26 +237,14 @@ public class LevelHandler
                 break;
             // Leaky Cauldron
             case 368:
+            case 374:
             case 380:
             case 386:
                 MakeAllBoardsVisible();
                 break;
-            // Leaky Cauldron in Y7 - to handle the special case of first visit (to clear the 7 Harry's Loading Zone on the first visit)
-            case 374:
-                MakeAllBoardsVisible();
-                if (!HubHandler.CheckIfLeaky7Entered())
-                {
-                    Game.PrintToLog("Player has not entered Leaky2London Y7, clearing boards and setting PTR for Leaky2London Y7.");
-                    new Thread(HubHandler.CheckLeaky2LondonY7PTR).Start();
-                }
-                break;
-            // Menu & MM
-            case 366:
-            case 372:
-            case 378:
-            case 382:
+            // Menu
             case 402:
-                HubHandler.VerifyCharCustMaps();
+                HubHandler.UpdateDarkTimesMap();
                 break;
             default:
                 break;

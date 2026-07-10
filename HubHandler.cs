@@ -1,3 +1,4 @@
+using System.Reflection.Metadata;
 using System.Text;
 
 namespace LHP2_Archi_Mod;
@@ -14,8 +15,6 @@ public class HubHandler
     private static unsafe byte* PurpleCountAddress => (byte*)StudTotalBaseAddress + 0x30;
     private static unsafe byte* RedBrickSaveFileAddress => PurpleCountAddress + 0x04;
     private static unsafe byte* RedBrickEnabledAddress => (byte*)(Mod.BaseAddress + 0x94CEF3);
-    private static unsafe byte* FirstLevelMapPointer => *(byte**)(Mod.BaseAddress + 0x00B06A5C);
-    private static unsafe byte* SecondLevelMapPointer => *(byte**)(FirstLevelMapPointer + 0x44);
     public static unsafe byte* GhostPathBaseAddress => *(byte**)(Mod.BaseAddress + 0xC55F2C);
     private static unsafe byte* MapFlagsBaseAddress => *(byte**)(Mod.BaseAddress + 0xC5D5F4);
     private static unsafe byte* HogwartWarpEntranceBaseAddress => *(byte**)(Mod.BaseAddress + 0x00C4EE5C);
@@ -30,6 +29,7 @@ public class HubHandler
     private static unsafe byte* classLobbyAddress = null;
     private static unsafe byte* kingsCrossAddress = null;
     private static unsafe byte* foyerAddress = null;
+    private static unsafe byte* mainCorridorAddress = null;
 
     // These are the bit flags that handle the different collectibles stored in the same memory address.
     [Flags]
@@ -247,6 +247,7 @@ public class HubHandler
     /// </summary>
     public static unsafe void ResetHub()
     {
+        bool shuffleRedbricks = Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleRedBricks != 2;
         foreach (var kvp in hubOffsets)
         {
             byte* ptr = HubBaseAddress + (nuint)kvp.Key;
@@ -256,8 +257,10 @@ public class HubHandler
                 Game.PrintToLog($"Hub pointer invalid at offset 0x{kvp.Key:X}");
                 continue;
             }
-
-            *ptr &= unchecked((byte)~(byte)BitMask.RedBrick);
+            if (shuffleRedbricks)
+            {
+                *ptr &= unchecked((byte)~(byte)BitMask.RedBrick);
+            }
             *ptr &= unchecked((byte)~(byte)BitMask.StudentInPeril);
         }
     }
@@ -411,75 +414,406 @@ public class HubHandler
     }
 
     // This is a helper function that verifies the count of horcruxes received and updates the on screen text
-    public static void UpdateHorcruxCount()
+    public static void UpdateWinConText()
     {
-        HorcruxCount = (byte)Mod.LHP2_Archipelago!.CountItemsCheckedInRange(440, 446);
-        HintSystem.DisplayHorcruxCount(HorcruxCount);
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 0)
+        {
+            HorcruxCount = (byte)Mod.LHP2_Archipelago!.CountItemsCheckedInRange(440, 446);
+            HintSystem.DisplayHorcruxCount(HorcruxCount);
+        }
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 2)
+        {
+            byte levelsBeaten = (byte)Mod.LHP2_Archipelago!.CountLocationsCheckedInRange(450, 473);
+            HintSystem.DisplayLevelsBeaten(levelsBeaten);
+        }
+    }
+    private static Dictionary<string, Map>? GameMaps;
+    private static unsafe ushort* Y5MapBase => *(ushort**)(Mod.BaseAddress + 0xB06914); // Y5 London
+    private static unsafe ushort* Y6MapBase => *(ushort**)(Mod.BaseAddress + 0xB06918); // Y6 London
+    private static unsafe ushort* Y7MapBase => *(ushort**)(Mod.BaseAddress + 0xB0691C); // Y7 London
+    private static unsafe ushort* Y8MapBase => *(ushort**)(Mod.BaseAddress + 0xB06920); // Y8 London
+    private static unsafe ushort* DarkTimesMapBase => *(ushort**)(Mod.BaseAddress + 0xB069AC); // Dark Times
+
+    public static unsafe void InitializeGameMaps()
+    {
+        if (GameMaps != null)
+            return;
+
+        GameMaps = new Dictionary<string, Map>
+        {
+            { "Y5London", new Map("Y5London", Y5MapBase + 0x32) },
+            { "Y6London", new Map("Y6London", Y6MapBase + 0x32) },
+            { "Y7London", new Map("Y7London", Y7MapBase + 0x32) },
+            { "Y8London", new Map("Y8London", Y8MapBase + 0x32) },
+            { "Y5Foyer", new Map("Y5Foyer", Y5MapBase + 0x960 + 0x32) },
+            { "Y6Foyer", new Map("Y6Foyer", Y6MapBase + 0xA00 + 0x32) },
+            { "Y7Foyer", new Map("Y7Foyer", Y7MapBase + 0xA00 + 0x32) },
+            { "Y8Foyer", new Map("Y8Foyer", Y8MapBase + 0xA50 + 0x32) },
+            { "Y5ClassLobby", new Map("Y5ClassLobby", Y5MapBase + 0x870 + 0x32) },
+            { "Y6ClassLobby", new Map("Y6ClassLobby", Y6MapBase + 0x8C0 + 0x32) },
+            { "Y7ClassLobby", new Map("Y7ClassLobby", Y7MapBase + 0x8C0 + 0x32) },
+            { "Y8ClassLobby", new Map("Y8ClassLobby", Y8MapBase + 0x910 + 0x32) },
+            { "Y5Quad", new Map("Y5Quad", Y5MapBase + 0x2D0 + 0x32) },
+            { "Y6Quad", new Map("Y6Quad", Y6MapBase + 0x370 + 0x32) },
+            { "Y7Quad", new Map("Y7Quad", Y7MapBase + 0x2D0 + 0x32) },
+            { "Y8Quad", new Map("Y8Quad", Y8MapBase + 0x2D0 + 0x32) },
+            { "Y6Library", new Map("Y6Library", Y6MapBase + 0x9B0 + 0x32) },
+            { "Y7Library", new Map("Y7Library", Y7MapBase + 0x9B0 + 0x32) },
+            { "Y8Library", new Map("Y8Library", Y8MapBase + 0xA00 + 0x32) },
+            { "Y6Potions", new Map("Y6Potions", Y6MapBase + 0x780 + 0x32) },
+            { "Y7Potions", new Map("Y7Potions", Y7MapBase + 0x780 + 0x32) },
+            { "Y8Potions", new Map("Y8Potions", Y8MapBase + 0x7D0 + 0x32) },
+            { "Y6HogsmeadePath", new Map("Y6HogsmeadePath", Y6MapBase + 0xF0 + 0x32) },
+            { "Y7HogsmeadePath", new Map("Y7HogsmeadePath", Y7MapBase + 0xF0 + 0x32) },
+            { "Y8HogsmeadePath", new Map("Y8HogsmeadePath", Y8MapBase + 0xF0 + 0x32) },
+            { "Y6AstronomyTower", new Map("Y6AstronomyTower", Y6MapBase + 0x320 + 0x32) },
+            { "Y7AstronomyTower", new Map("Y7AstronomyTower", Y7MapBase + 0x690 + 0x32) },
+            { "Y8AstronomyTower", new Map("Y8AstronomyTower", Y8MapBase + 0x6E0 + 0x32) },
+            { "Y6RavenclawTower", new Map("Y6RavenclawTower", Y6MapBase + 0x5F0 + 0x32) },
+            { "Y7RavenclawTower", new Map("Y7RavenclawTower", Y7MapBase + 0x5A0 + 0x32) },
+            { "Y8RavenclawTower", new Map("Y8RavenclawTower", Y8MapBase + 0x5F0 + 0x32) },
+            { "Y6AguaCharms", new Map("Y6AguaCharms", Y6MapBase + 0x6E0 + 0x32) },
+            { "Y7AguaCharms", new Map("Y7AguaCharms", Y7MapBase + 0x6E0 + 0x32) },
+            { "Y8AguaCharms", new Map("Y8AguaCharms", Y8MapBase + 0x730 + 0x32) },
+            { "Y5DivinationCourtyard", new Map("Y5DivinationCourtyard", Y5MapBase + 0x820 + 0x32)},
+            { "Y5DiagonAlley", new Map("Y5DiagonAlley", *(ushort**)(Mod.BaseAddress + 0xB06A30) + 0x32) },
+            { "Y5DormLobby", new Map("Y5DormLobby", Y5MapBase + 0x6E0 + 0x32)},
+            { "Y5HogwartsPath", new Map("Y5HogwartsPath", Y5MapBase + 0x1E0 + 0x32)},
+            { "Y5Grounds", new Map("Y5Grounds", Y5MapBase + 0x640 + 0x32)},
+            { "Y6Grounds", new Map("Y6Grounds", Y6MapBase + 0x5A0 + 0x32)},
+            { "Y7Grounds", new Map("Y7Grounds", Y7MapBase + 0x550 + 0x32)},
+            { "Y8Quidditch", new Map("Y8Quidditch", Y8MapBase + 0x500 + 0x32) },
+            { "Y8BlackLake", new Map("Y8BlackLake",  Y8MapBase + 0x4B0 + 0x32) },
+            { "DarkTimes", new Map("DarkTimes", DarkTimesMapBase + 0x32) },
+            { "OutOfRetirement", new Map("OutOfRetirement", DarkTimesMapBase - 0x1AFE)},
+            { "TheSevenHarrys", new Map("TheSevenHarrys", DarkTimesMapBase - 0x3C1E)},
+            { "TheThiefsDownfall", new Map("TheThiefsDownfall", DarkTimesMapBase - 0x54CE)},
+        };
     }
 
-    /*
-    The following function is our current implementation of how to time travel.
-    We achieve this by overwriting the constant that tells the save file which map you are in.
-    The one downside to this method is that the player has to reload their save.
-    TODO: implement the "Return to Leaky Method" which changes the Return to Leaky Map ID constant
-    */
-    public static unsafe void SwitchYears(int year)
+    // The following function is our current implementation of how to time travel & Fast Travel back to Hogwarts.
+    public static unsafe void FastTravel(string mapRequested)
     {
         // Verify that the player has completed DADA banned in game before time travelling
         // The game doesn't really allow you to be in future years if DADA banned isn't completed
-        byte* y5GhostPtr = HubHandler.GhostPathBaseAddress + 0x20;
-        if ((*y5GhostPtr & (1 << 1)) == 0)
+        byte* y5GhostPtr = GhostPathBaseAddress + 0x20;
+        if ((*y5GhostPtr & (1 << 2)) == 0)
         {
             Game.PrintToLog("Please complete DADA Banned Lesson before changing years");
             return;
         }
-        // These are the addresses to the Character Customizer Room constants
-        byte* y5MapPtr = SecondLevelMapPointer + 0xF02;
-        byte* y6MapPtr = SecondLevelMapPointer + 0xA5A;
-        byte* y7MapPtr = SecondLevelMapPointer + 0x39A;
-        byte* y8MapPtr = SecondLevelMapPointer - 0x326;
 
-        // The different hub maps have different level IDs. We read the current level ID and then update the map constant as applicable.
-        switch (Mod.GameInstance!.LevelID)
+        byte* y6GhostPtr = GhostPathBaseAddress + 0x34;
+        if (mapRequested == "Y6QUAD" || mapRequested == "Y6FOYE")
         {
-            case 1:
-                *y5MapPtr = (byte)(0x30 + year);
-                break;
-            case 2:
-                *y6MapPtr = (byte)(0x30 + year);
-                break;
-            case 3:
-                *y7MapPtr = (byte)(0x30 + year);
-                break;
-            case 4:
-                *y8MapPtr = (byte)(0x30 + year);
-                break;
-            default:
-                Game.PrintToLog("Can't switch years, not in hub.");
-                break;
+            if ((*y6GhostPtr & (1 << 2)) == 0 || (*y6GhostPtr & (1 << 3)) == 0)
+            {
+                Game.PrintToLog("Please complete Specs Lesson & Arrive to Y6 Hogwarts before fast travelling to Year 6 Hogwarts.");
+                return;
+            }
+        }
+
+        if (!TryGetTargetYear(mapRequested, out int year))
+        {
+            Game.PrintToLog($"Unknown Year Requested: {mapRequested}.");
+            return;
+        }
+
+        AdjustHubMaps(year);
+
+        Map? currentMap = GetCurrentLondonConstantPtr(Mod.GameInstance!.LevelID);
+        if (currentMap == null)
+        {
+            Game.PrintToLog($"Critical Error cannot fast travel. LevelID is: {Mod.GameInstance!.LevelID}");
+            return;
+        }
+
+        Map? destinationMap = TryGetFastTravelMapValue(mapRequested);
+        if (destinationMap == null)
+        {
+            Game.PrintToLog($"Unknown fast travel destination: {mapRequested}.");
+            return;
+        }
+
+        byte* N0CUT5CheatCodeConstant = (byte*)(Mod.BaseAddress + 0x8968A4);
+        HintSystem.SetMessageText(mapRequested, (uint)N0CUT5CheatCodeConstant);
+
+        currentMap.UpdateMap(destinationMap.MapConstant);
+        AdjustLeakyMapConstants(destinationMap.MapConstant, destinationMap.EntranceConstant);
+    }
+
+    private static Map? LookUpMap(string mapKey)
+    {
+        return GameMaps!.TryGetValue(mapKey, out Map? map)
+        ? map
+        : null;
+    }
+
+    private static Map? GetCurrentLondonConstantPtr(int levelId)
+    {
+        string? mapKey = levelId switch
+        {
+            1 => "Y5London",
+            2 => "Y6London",
+            3 => "Y7London",
+            4 => "Y8London",
+            _ => null
+        };
+
+        if (mapKey == null || GameMaps == null)
+        {
+            return null;
+        }
+
+        return LookUpMap(mapKey);
+    }
+
+    private static bool TryGetTargetYear(string mapRequested, out int year)
+    {
+        year = 0;
+        if (string.IsNullOrEmpty(mapRequested) || mapRequested.Length < 2 || mapRequested[0] != 'Y')
+        {
+            return false;
+        }
+
+        year = mapRequested[1] switch
+        {
+            '5' => 5,
+            '6' => 6,
+            '7' => 7,
+            '8' => 8,
+            _ => 0
+        };
+
+        return year != 0;
+    }
+
+    private static Map? TryGetFastTravelMapValue(string mapRequested)
+    {
+
+        string? mapKey = mapRequested switch
+        {
+            "Y5LOND" => "Y5London",
+            "Y6LOND" => "Y6London",
+            "Y7LOND" => "Y7London",
+            "Y8LOND" => "Y8London",
+            "Y5FOYE" => "Y5Foyer",
+            "Y6FOYE" => "Y6Foyer",
+            "Y7FOYE" => "Y7Foyer",
+            "Y8FOYE" => "Y8Foyer",
+            "Y5QUAD" => "Y5Quad",
+            "Y6QUAD" => "Y6Quad",
+            "Y7QUAD" => "Y7Quad",
+            "Y8QUAD" => "Y8Quad",
+            _ => null
+        };
+
+        if (mapKey == null || GameMaps == null)
+        {
+            return null;
+        }
+
+        return LookUpMap(mapKey);
+    }
+
+    /*
+    These following functions are used to update the Map ID Constant for Out of Retirement, The Seven Harrys, and The Thief's Downfall. In story mode, the Leaky2London loading zone is updated to send you to 1 of these 3 levels. As such, we are updating the Map Constants so that it sends the player to London instead of sending them to the level. We change all 3 of them, cause sometimes they don't transfer very well across time travelling.
+    */
+    public static void ChangeLeakyLoadingZones(int level)
+    {
+        Map? map = level switch
+        {
+            1 => LookUpMap("Y5London"),
+            2 => LookUpMap("Y6London"),
+            3 => LookUpMap("Y7London"),
+            4 => LookUpMap("Y8London"),
+            _ => null
+        };
+
+        if (map == null)
+        {
+            Game.PrintToLog($"Could not properly adjust Leaky loading zone. Level: {level}");
+            return;
+        }
+        AdjustLeakyMapConstants(map.MapConstant, map.EntranceConstant);
+    }
+
+    // Broken out into a separate function cause time travel wasn't always working so they need to be updated often
+    private static void AdjustLeakyMapConstants(ushort mapValue, byte entranceValue)
+    {
+        Map? OutOfRetirement = LookUpMap("OutOfRetirement");
+        Map? TheSevenHarrys = LookUpMap("TheSevenHarrys");
+        Map? TheThiefsDownfall = LookUpMap("TheThiefsDownfall");
+
+        if (OutOfRetirement == null || TheSevenHarrys == null || TheThiefsDownfall == null)
+        {
+            Game.PrintToLog("One of the Level Map's is Null. Please alert a dev.");
+            return;
+        }
+
+        OutOfRetirement.UpdateMap(mapValue);
+        OutOfRetirement.UpdateEntrance(entranceValue);
+        TheSevenHarrys.UpdateMap(mapValue);
+        TheSevenHarrys.UpdateEntrance(entranceValue);
+        TheThiefsDownfall.UpdateMap(mapValue);
+        TheThiefsDownfall.UpdateEntrance(entranceValue);
+
+    }
+
+    // This function returns the Level Map IDs back to their intended ID. Used upon level selector opening
+    public static void RestoreLeakyLoadingZones()
+    {
+        Map? OutOfRetirement = LookUpMap("OutOfRetirement");
+        Map? TheSevenHarrys = LookUpMap("TheSevenHarrys");
+        Map? TheThiefsDownfall = LookUpMap("TheThiefsDownfall");
+
+        if (OutOfRetirement == null || TheSevenHarrys == null || TheThiefsDownfall == null)
+        {
+            Game.PrintToLog("One of the Level Maps is Null. Please alert a dev.");
+            return;
+        }
+
+        OutOfRetirement.RestoreMap();
+        TheSevenHarrys.RestoreMap();
+        TheThiefsDownfall.RestoreMap();
+    }
+
+    // This helper function fixes the constants if the player leaves Leaky Cualdron
+    public static void VerifyLondonMapIDs()
+    {
+        Map? Y5 = LookUpMap("Y5London");
+        Map? Y6 = LookUpMap("Y6London");
+        Map? Y7 = LookUpMap("Y7London");
+        Map? Y8 = LookUpMap("Y8London");
+
+        if (Y5 == null || Y6 == null || Y7 == null || Y8 == null)
+        {
+            Game.PrintToLog("One of the London Maps is Null. Please alert a dev.");
+            return;
+        }
+
+        Y5.RestoreMap();
+        Y6.RestoreMap();
+        Y7.RestoreMap();
+        Y8.RestoreMap();
+
+    }
+
+    public static void UpdateDarkTimesMap()
+    {
+        Map? DarkTimes = LookUpMap("DarkTimes");
+        Map? Diagon = LookUpMap("Y5DiagonAlley");
+
+        if (DarkTimes == null || Diagon == null)
+        {
+            Game.PrintToLog("Dark Times is Null. Please Report to a dev.");
+            return;
+        }
+
+        DarkTimes.UpdateMap(Diagon.MapConstant);
+        DarkTimes.UpdateEntrance(Diagon.EntranceConstant);
+    }
+
+    public static void RestoreDarkTimesMap()
+    {
+        Map? DarkTimes = LookUpMap("DarkTimes");
+
+        if (DarkTimes == null)
+        {
+            Game.PrintToLog("Dark Times is Null. Please Report to a dev.");
+            return;
+        }
+
+        DarkTimes.RestoreMap();
+    }
+
+    // The missing maps will make you time travel to a different year, these next series of functions are to change the Map constants in the future years so you don't time travel.
+    public static void UpdateMissingMapConstants(int level)
+    {
+        if (level < 1 || level > 4)
+        {
+            return;
+        }
+
+        bool applyY5Overrides = level == 1;
+
+        SetFutureYearMapConstants(LookUpMap("Y6Library"), LookUpMap("Y7Library"), LookUpMap("Y8Library"),
+            applyY5Overrides ? LookUpMap("Y5Foyer") : null);
+
+        SetFutureYearMapConstants(LookUpMap("Y6Potions"), LookUpMap("Y7Potions"), LookUpMap("Y8Potions"),
+            applyY5Overrides ? LookUpMap("Y5ClassLobby") : null);
+
+        SetFutureYearMapConstants(LookUpMap("Y6HogsmeadePath"), LookUpMap("Y7HogsmeadePath"), LookUpMap("Y8HogsmeadePath"), applyY5Overrides ? LookUpMap("Y5HogwartsPath") : null);
+
+        SetFutureYearMapConstants(LookUpMap("Y6AstronomyTower"), LookUpMap("Y7AstronomyTower"), LookUpMap("Y8AstronomyTower"), applyY5Overrides ? LookUpMap("Y5DivinationCourtyard") : null);
+
+        SetFutureYearMapConstants(LookUpMap("Y6RavenclawTower"), LookUpMap("Y7RavenclawTower"), LookUpMap("Y8RavenclawTower"), applyY5Overrides ? LookUpMap("Y5DormLobby") : null);
+
+        SetFutureYearMapConstants(LookUpMap("Y6AguaCharms"), LookUpMap("Y7AguaCharms"), LookUpMap("Y8AguaCharms"),
+            applyY5Overrides ? LookUpMap("Y5ClassLobby") : null);
+
+        Map? groundsMap = level switch
+        {
+            1 => LookUpMap("Y5Grounds"),
+            2 => LookUpMap("Y6Grounds"),
+            3 => LookUpMap("Y7Grounds"),
+            _ => null
+        };
+
+        SetSingleMapConstant(LookUpMap("Y8Quidditch"), groundsMap);
+        SetSingleMapConstant(LookUpMap("Y8BlackLake"), groundsMap);
+    }
+
+    private static void SetFutureYearMapConstants(
+        Map? y6Map,
+        Map? y7Map,
+        Map? y8Map,
+        Map? connectedMap)
+    {
+        if (y6Map == null || y7Map == null || y8Map == null)
+        {
+            Game.PrintToLog("Cannot fix Missing Map, one or more maps are missing from the Dictionary");
+            return;
+        }
+        if (connectedMap != null)
+        {
+            y6Map.UpdateMap(connectedMap.MapConstant);
+            y6Map.UpdateEntrance(connectedMap.EntranceConstant);
+            y7Map.UpdateMap(connectedMap.MapConstant);
+            y7Map.UpdateEntrance(connectedMap.EntranceConstant);
+            y8Map.UpdateMap(connectedMap.MapConstant);
+            y8Map.UpdateEntrance(connectedMap.EntranceConstant);
+        }
+        else
+        {
+            y6Map.RestoreMap();
+            y7Map.RestoreMap();
+            y8Map.RestoreMap();
         }
     }
 
-    // This helper function fixes the constants if the player is on the menu or leaves the Char Customizer Room
-    public static unsafe void VerifyCharCustMaps()
+    private static void SetSingleMapConstant(Map? missingMap, Map? connectedMap)
     {
-        // 5, 6, 7, 8 in hex are 0x35, 0x36, 0x37, 0x38
-        byte* y5MapPtr = SecondLevelMapPointer + 0xF02;
-        byte* y6MapPtr = SecondLevelMapPointer + 0xA5A;
-        byte* y7MapPtr = SecondLevelMapPointer + 0x39A;
-        byte* y8MapPtr = SecondLevelMapPointer - 0x326;
-
-        *y5MapPtr = 0x35;
-        *y6MapPtr = 0x36;
-        *y7MapPtr = 0x37;
-        *y8MapPtr = 0x38;
+        if (missingMap == null)
+        {
+            Game.PrintToLog("Quidditich or Black Lake Map missing from the Dictionary");
+            return;
+        }
+        if (connectedMap != null)
+        {
+            missingMap.UpdateEntrance(connectedMap.EntranceConstant);
+            missingMap.UpdateMap(connectedMap.MapConstant);
+        }
+        else
+        {
+            missingMap.RestoreMap();
+        }
     }
 
     /*
     In Year 5, the game will warp you back to Hogwarts instead of having you walk back.
     This essentially locks you out of London through Quad until you have diffindo.
     To prevent all of these items from being locked behind diffindo, we clear out this warp so the player has to walk back.
-    TODO: Figure out how to make the warp work for Years 6-8 as an option for the player so they don't have to walk back if they don't want to.
     */
     public static unsafe void ClearReturnToHogwartsLocation()
     {
@@ -702,11 +1036,7 @@ public class HubHandler
                     *y6GhostPtr2 |= 1 << 3; // Mark Love Hurts Story Complete
                     *y6GhostPtr2 |= 1 << 4; // Mark Felix Felicis Story Complete
                     *y6GhostPtr2 |= 1 << 5; // Mark The Horcrux and The Hand Story Complete
-                    if (Mod.LHP2_Archipelago!.IsLocationChecked(1022))
-                    {
-                        break;
-                    }
-                    Game.CheckAndReportLocation(1022);
+                    Game.CheckAndReportLocation(1022); // Send Dumbledore's Second Lesson
                     Game.CheckAndReportLocation(1023); // Send Y6 Story Complete
                     break;
                 default:
@@ -717,9 +1047,13 @@ public class HubHandler
         // Handle Y7 Ghost Tasks
         else if (eax == (int)y7GhostPtr)
         {
-            *y7GhostPtr = 254; // Mark all Y7 Ghost Paths as Complete
-            if (dx == 4 && !Mod.LHP2_Archipelago!.IsLocationChecked(1027)) // Cafe Fight
+            if (dx == 4) // Cafe Fight
             {
+                *y7GhostPtr = 254; // Mark all Y7 Ghost Paths as Complete
+                if (Mod.LHP2_Archipelago!.IsLocationChecked(1027))
+                {
+                    return;
+                }
                 Game.CheckAndReportLocation(1027);
             }
             else
@@ -746,23 +1080,23 @@ public class HubHandler
     {
         leaky2LondonAddress = GetHubMapAddress("HubLeakyCauldron", 0xB7B); // Leaky2London Loading Zone
         hogsPathAddress = GetHubMapAddress("HogsApproach", 0); // HogPath2Courtyard Loading Zone
-        wildernessAddress = GetHubMapAddress("ForestHub", 0); // Wilderness
         quadAddress = GetHubMapAddress("Quad", 0); // Quad
         hogsStatAddress = GetHubMapAddress("HogsStation", 0); //HogsStation
         classLobbyAddress = GetHubMapAddress("ClassLobby", 0x1318); // Class Lobby
         kingsCrossAddress = GetHubMapAddress("KingsCross", 0x7B); // King's Cross
         foyerAddress = GetHubMapAddress("Foyer", 0); // Foyer
-        byte* y6GhostPtr = HubHandler.GhostPathBaseAddress + 0x34;
-        byte* y6GhostPtr2 = HubHandler.GhostPathBaseAddress + 0x35;
+        mainCorridorAddress = GetHubMapAddress("MainCorridor", 0x149D); // Main Corridor
+        byte* y5GhostPtr = GhostPathBaseAddress + 0x21;
+        byte* y6GhostPtr = GhostPathBaseAddress + 0x34;
+        byte* y6GhostPtr2 = GhostPathBaseAddress + 0x35;
 
         AdjustLeakyCauldron();
         AdjustHogsPath();
         CompleteStartingGhostLevels();
         AdjustFoyer();
-        // If applicable, update Wilderness and Quad so tokens spawn and invisible barriers are gone
+        // If applicable, update Quad so tokens spawn
         if (year == 7 || year == 8)
         {
-            AdjustWilderness();
             AdjustQuad();
         }
         // Adjust Hogsmeade Station if the player enters it and the suitcases are still blocking the exit in other years
@@ -780,6 +1114,18 @@ public class HubHandler
         {
             AdjustKingsCross();
         }
+
+        // Ensure Weasley Lesson loading zone isn't active
+        if (year != 5)
+        {
+            *mainCorridorAddress &= unchecked((byte)~(1 << 0));
+        }
+
+        if (year == 5 && (*y5GhostPtr & (1 << 6)) == 0 && (*y5GhostPtr & (1 << 3)) != 0)
+        {
+            *mainCorridorAddress |= 1 << 0;
+        }
+
     }
 
     // Helper function to ensure that First Level loading zones aren't active in Leaky Cauldron
@@ -831,14 +1177,16 @@ public class HubHandler
     }
 
     // Helper function to remove the invisible walls in the wilderness and make sure the Xeno token spawns
-    private static unsafe void AdjustWilderness()
+    public static unsafe void AdjustWilderness()
     {
+        wildernessAddress = GetHubMapAddress("ForestHub", 0); // Wilderness
         if (wildernessAddress == MapFlagsBaseAddress + 0x40)
         {
             Game.PrintToLog("Wilderness Save info hasn't been written yet.");
             return;
         }
         Game.PrintToLog("Updating Wilderness Flags");
+
         byte* invisibleWallFlag = wildernessAddress + 0x2905;
         Game.PrintToLog($"Address of Wilderness Invisible Wall Flag is 0x{(nuint)invisibleWallFlag:X}");
         *invisibleWallFlag &= unchecked((byte)~(1 << 2)); // Turn off the invisible wall by the rock pile
@@ -848,6 +1196,7 @@ public class HubHandler
         *invisibleWallFlag &= unchecked((byte)~(1 << 2)); // Turn off the invisible wall by the wrecking ball  
         invisibleWallFlag += 0x03;
         *invisibleWallFlag &= unchecked((byte)~(1 << 6)); // Turn off the invisible wall by the Lake  
+
         byte* xenoTokenFlag = wildernessAddress + 0x2D8F;
         Game.PrintToLog($"Address of Wilderness Xenophilius Token Flag is 0x{(nuint)xenoTokenFlag:X}");
         *xenoTokenFlag |= 1 << 3; // Ensure the Xenophilius token spawns
@@ -871,7 +1220,6 @@ public class HubHandler
         *mcgBlackFlag |= 1 << 1; // Ensure the Token has a hitbox
     }
 
-    // TODO: missing 3 more suitcases
     // Helper function to remove the suitcases and invisible wall from Hogsmeade station if needed
     private static unsafe void AdjustHogsStat()
     {
@@ -892,7 +1240,13 @@ public class HubHandler
         *hogsStatAddress = 64; // Invisible wall 1 (side wall)
         hogsStatAddress += 7;
         *hogsStatAddress = 64; // Invisible wall 2 (front wall)
-        hogsStatAddress += 114;
+        hogsStatAddress += 5;
+        *hogsStatAddress = 225; // Small Suitcase 1
+        hogsStatAddress += 31;
+        *hogsStatAddress = 225; // Small Suitcase 2
+        hogsStatAddress += 31;
+        *hogsStatAddress = 225; // Small Suitcase 3
+        hogsStatAddress += 47;
         *hogsStatAddress &= unchecked((byte)~(1 << 2)); // Suitcase 4
         hogsStatAddress += 3;
         *hogsStatAddress &= unchecked((byte)~(1 << 6)); // Suitcase 5
@@ -927,7 +1281,11 @@ public class HubHandler
             *kingsCrossAddress |= 1 << 6; // Bit 6 makes each compartment visible
             kingsCrossAddress += 0x7; // Adjust the address to each train compartment
         }
-        kingsCrossAddress += 0x72B;
+        kingsCrossAddress += 0x521;
+        *kingsCrossAddress = 255; // Resets the train position after using it
+        kingsCrossAddress += 0x8;
+        *kingsCrossAddress = 255; // Makes the train move when using it
+        kingsCrossAddress += 0x202;
         *kingsCrossAddress = 255; // Make the train appear in all years but 7
     }
 
@@ -1047,84 +1405,38 @@ public class HubHandler
         Game.PrintToLog($"Map Flags Address for {mapName} is 0x{(nuint)returningAddress:X}");
         return returningAddress;
     }
-
-    /* 
-    Year 7 Leaky2London is a special case where no matter what I write to the save file, the loading zone is active upon first entrance.
-    This is a helper function to turn off The Seven Harrys Story Mode Loading Zone.
-    I use a pointer to the map's active loading zone in memory, however, because it is one of (if not the) last thing to be updated when loading a new map, we have to run this on a new thread the first time the player enters Y7 Leaky Cauldon.
-    */
-    public static unsafe void CheckLeaky2LondonY7PTR()
-    {
-        bool hasPTRUpdated = false; // bool variable that we use to track if the pointer address has updated
-        byte* activeLoadingZoneBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55E1C);
-        byte* loadingZoneName = activeLoadingZoneBaseAddress + 0xB14;
-        int attempts = 0;
-        while (!hasPTRUpdated)
-        {
-            string currentLoadingZone = new((sbyte*)loadingZoneName); // Read the current loading Zone name (as a string)
-            if (currentLoadingZone == "7LEAKY27LONDON") // This is the loading zone to The Seven Harrys
-            {
-                Game.PrintToLog("PTR has updated to 7LEAKY27LONDON.");
-                hasPTRUpdated = true;
-                ClearLeaky2LondonY7(0);
-            }
-            else if (currentLoadingZone == "5LONDON25HUBLEAKY") // This is the loading zone to London
-            {
-                Game.PrintToLog("PTR has updated to 5LONDON25HUBLEAKY.");
-                hasPTRUpdated = true;
-                ClearLeaky2LondonY7();
-            }
-            else
-            {
-                Game.PrintToLog($"Current PTR Loading Zone: {currentLoadingZone}, waiting for PTR to update to Leaky2London Y7.");
-                attempts++;
-                // We don't want this function to run forever (i.e. in case the player immediately turns around), so we timeout after 5 attempts or roughly 5 seconds
-                if (attempts > 5)
-                {
-                    Game.PrintToLog("Timeout reached, PTR did not update to Leaky2London Y7.");
-                    return;
-                }
-                Thread.Sleep(1000); // Try again after ~1 second
-            }
-        }
-        Game.PrintToLog("Y7 Leaky PTR Loop has finished.");
-    }
-
-    // Once the pointer is updated, we can clear out the Seven Harrys Loading Zone
-    // 1 indicates that London Loading Zone was being pointed to, 0 indicates that the Seven Harrys was
-    public static unsafe void ClearLeaky2LondonY7(int version = 1)
-    {
-        byte* ActiveLoadingZoneBaseAddress = *(byte**)(Mod.BaseAddress + 0xC55E1C);
-
-        if (ActiveLoadingZoneBaseAddress == null)
-        {
-            Game.PrintToLog("Active Loading Zone Base Address is null, can't clear Leaky2London Y7 flag.");
-            return;
-        }
-
-        byte* ptr = *(byte**)(ActiveLoadingZoneBaseAddress + 0xB10); // First Pointer
-        Game.PrintToLog($"Active Loading Zone Pointer is 0x{(nuint)ptr:X}");
-
-        if (ptr == null || (nuint)ptr == 0xB10 || (nuint)ptr == 0xB11)
-        {
-            Game.PrintToLog("Active Loading Zone Pointer is null, can't clear Leaky2London Y7 flag.");
-            return;
-        }
-        ptr += 0x7A; // Second Pointer
-        if (version == 1)
-        {
-            ptr -= 0xB10; // Loading Zone was pointing to London so adjusting back to point to the turn off the correct loading zone
-        }
-        Game.PrintToLog($"Clearing Leaky2London Y7 Flag at address 0x{(nuint)ptr:X}");
-        *ptr = 1; // Remove the Loading Zone Flag to bring to level
-    }
-
-    // This is a helper function to verify if the player has previously entered into Y7 Leaky cauldron (indicating that the loading zone update above isn't needed)
-    public static unsafe bool CheckIfLeaky7Entered()
-    {
-        byte* ptr = HubBaseAddress + 0x118A;
-        Game.PrintToLog($"Checking if Leaky Cauldron Y7 entered at address 0x{(nuint)ptr:X}, value: {*ptr}");
-        return (*ptr & (byte)BitMask.Entered) != 0;
-    }
 }
 
+class Map
+{
+    public string Name { get; }
+    public unsafe ushort* MapConstantAddress { get; }
+    public unsafe byte* EntranceConstantAddress { get; }
+    public ushort MapConstant { get; }
+    public byte EntranceConstant { get; }
+
+    public unsafe Map(string name, ushort* baseMapConstantAddress)
+    {
+        Name = name;
+        MapConstantAddress = baseMapConstantAddress;
+        EntranceConstantAddress = (byte*)(baseMapConstantAddress + 2);
+        MapConstant = *baseMapConstantAddress;
+        EntranceConstant = *EntranceConstantAddress;
+    }
+
+    public unsafe void UpdateMap(ushort map)
+    {
+        *MapConstantAddress = map;
+    }
+
+    public unsafe void UpdateEntrance(byte entrance)
+    {
+        *EntranceConstantAddress = entrance;
+    }
+
+    public unsafe void RestoreMap()
+    {
+        *MapConstantAddress = MapConstant;
+        *EntranceConstantAddress = EntranceConstant;
+    }
+}
