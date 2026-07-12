@@ -3,7 +3,6 @@ using Reloaded.Memory.Interfaces;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Hooks.Definitions.Enums;
 using Reloaded.Hooks.Definitions.X86;
-using Archipelago.MultiClient.Net.Enums;
 using System.Numerics;
 
 namespace LHP2_Archi_Mod;
@@ -850,7 +849,6 @@ public class Game
                 CheckAndReportLocation(1026); // Apparition is unlocked at the end of 7 Harrys
             }
             CheckWinCon();
-            HubHandler.UpdateWinConText();
         }
     }
 
@@ -1161,7 +1159,6 @@ public class Game
         Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
         Mod.GameInstance!.LevelID = value;
         PrintToLog($"Level ID updated to {value}.");
-        HubHandler.UpdateWinConText();
         if (value is >= 1 and <= 4)
         {
             HubHandler.ChangeLeakyLoadingZones(value);
@@ -1317,7 +1314,6 @@ public class Game
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, MaxItemID);
             HubHandler.RestoreLeakyLoadingZones();
-            HubHandler.UpdateWinConText();
         }
 
         if (eaxBit0Set && lastNibble == 0x0C)
@@ -1333,7 +1329,6 @@ public class Game
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(0, tokenOffset - 1);
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(RedBrickCollectOffset, RedBrickPurchOffset - 17);
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(RedBrickPurchOffset, 1026);
-            HubHandler.UpdateWinConText();
 
             // Joke Shop prices are set when save is loaded. So we handle that by changing it upon opening and closing that shop
             if (JokeShopMapIDs.Contains(ShopMapID) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleJokeSpells == 1)
@@ -1381,7 +1376,6 @@ public class Game
                     Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
                     Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
                     HubHandler.ChangeLeakyLoadingZones(Mod.GameInstance!.LevelID);
-                    HubHandler.UpdateWinConText();
                 }
             }
             else if (!eaxBit0Set && prevInShop)
@@ -1400,7 +1394,6 @@ public class Game
                     SpellHandler.ResetSpells();
                     Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
                     Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
-                    HubHandler.UpdateWinConText();
                 }
 
                 // Joke Shop prices are set when save is loaded. So we handle that by changing it upon opening and closing that shop
@@ -1470,7 +1463,7 @@ public class Game
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnLocations(0, RedBrickPurchOffset - 1);
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(RedBrickPurchOffset, MaxItemID);
-            HubHandler.UpdateWinConText();
+            HintSystem.UpdateWinConText();
 
             if (Mod.GameInstance!.LevelID == 16)
             {
@@ -1495,7 +1488,7 @@ public class Game
             ResetItems();
             Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, MaxItemID);
             HubHandler.UpdateGoldBrickCount();
-            HubHandler.UpdateWinConText();
+            HintSystem.UpdateWinConText();
             SpellHandler.UnlockAllPassiveSpells();
         }
     }
@@ -1570,7 +1563,7 @@ public class Game
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(SpellPurchOffset, MaxItemID);
-        HubHandler.UpdateWinConText();
+        HintSystem.RestoreWinConText();
         LevelHandler.ImplementMapLogic(mapID);
         SpellHandler.SpellMapLogic(mapID);
         HubHandler.SaveRedBricksEnabled();

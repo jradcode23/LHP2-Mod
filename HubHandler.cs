@@ -1,4 +1,3 @@
-using System.Reflection.Metadata;
 using System.Text;
 
 namespace LHP2_Archi_Mod;
@@ -376,7 +375,6 @@ public class HubHandler
     }
 
     public static byte GoldBrickCount { get; private set; } = 0;
-    public static byte HorcruxCount { get; private set; } = 0;
 
     /* 
     Instead of writing Gold Bricks to the specific location (i.e. Diagon Alley Gold Brick), we just increase the total and display the updated count.
@@ -413,20 +411,6 @@ public class HubHandler
         GoldBrickCount = 0;
     }
 
-    // This is a helper function that verifies the count of horcruxes received and updates the on screen text
-    public static void UpdateWinConText()
-    {
-        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 0)
-        {
-            HorcruxCount = (byte)Mod.LHP2_Archipelago!.CountItemsCheckedInRange(440, 446);
-            HintSystem.DisplayHorcruxCount(HorcruxCount);
-        }
-        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 2)
-        {
-            byte levelsBeaten = (byte)Mod.LHP2_Archipelago!.CountLocationsCheckedInRange(450, 473);
-            HintSystem.DisplayLevelsBeaten(levelsBeaten);
-        }
-    }
     private static Dictionary<string, Map>? GameMaps;
     private static unsafe ushort* Y5MapBase => *(ushort**)(Mod.BaseAddress + 0xB06914); // Y5 London
     private static unsafe ushort* Y6MapBase => *(ushort**)(Mod.BaseAddress + 0xB06918); // Y6 London

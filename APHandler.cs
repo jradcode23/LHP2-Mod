@@ -220,12 +220,6 @@ public class ArchipelagoHandler
                     HubHandler.HandlePurpleStud();
                     return;
                 }
-                //Handle Horcruxes
-                if (gameID >= 440 && gameID <= 446)
-                {
-                    HubHandler.UpdateWinConText();
-                    return;
-                }
             }
             // Handle Purple Stud if player isn't controllable (could be in the menu)
             if (Mod.GameInstance != null && !Game.IsPlayerControllable() && gameID == 699)

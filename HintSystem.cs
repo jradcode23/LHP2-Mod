@@ -20,6 +20,7 @@ public class HintSystem
     private static unsafe byte* hintColor => (byte*)(Mod.BaseAddress + 0xC58391);
     public static unsafe byte* HintTextBaseAddress => *(byte**)(Mod.BaseAddress + 0xB16324);
     private static unsafe uint HintTextAddress => (uint)(HintTextBaseAddress + 0xBA);
+    private static uint UseMagicAsHarry => HintTextAddress + 0x10e6;
     private static unsafe uint MessagePTRValue => (uint)(((byte*)*(uint**)(Mod.BaseAddress + 0xC58388)) + 0xFFC);
 
     // This is a helper function to verify if there is anything else on screen before printing a hint message.
@@ -186,27 +187,50 @@ public class HintSystem
         Memory.Instance.SafeWrite(hintTextPTRAddress, bytes);
     }
 
-    private static unsafe uint GetPausedText()
+    private static uint OriginalPausedAddress = 0;
+
+    // This is a helper function that verifies the count of horcruxes received and updates the on screen text
+    public static unsafe void UpdateWinConText()
     {
-        byte* pausedTextBaseAddress = *(byte**)(Mod.BaseAddress + 0xAE6E58);
-        byte* firstLevelPTR = *(byte**)(pausedTextBaseAddress + 0x394);
-        return (uint)firstLevelPTR;
+        nuint* pausedTextBaseAddress = *(nuint**)(Mod.BaseAddress + 0xAE6E58) + 0xE5;
+        if (OriginalPausedAddress == 0)
+        {
+            OriginalPausedAddress = (uint)*(byte**)pausedTextBaseAddress;
+            Game.PrintToLog($"Set OriginalPausedAddress to: 0x{(nuint)OriginalPausedAddress:X}");
+        }
+
+        *pausedTextBaseAddress = UseMagicAsHarry;
+
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 0)
+        {
+            byte HorcruxCount = (byte)Mod.LHP2_Archipelago!.CountItemsCheckedInRange(440, 446);
+            DisplayHorcruxCount(HorcruxCount);
+        }
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 2)
+        {
+            byte levelsBeaten = (byte)Mod.LHP2_Archipelago!.CountLocationsCheckedInRange(450, 473);
+            DisplayLevelsBeaten(levelsBeaten);
+        }
+    }
+
+    public static unsafe void RestoreWinConText()
+    {
+        nuint* pausedTextBaseAddress = *(nuint**)(Mod.BaseAddress + 0xAE6E58) + 0xE5;
+        *pausedTextBaseAddress = OriginalPausedAddress;
     }
 
     // Helper function to write the received Horcrux count to the Player 2 slot name
     public static void DisplayHorcruxCount(byte count)
     {
-        uint pausedTextPTR = GetPausedText();
         string message = $"Horcruxes Collected: {count}/{Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredHorcruxes}";
-        SetMessageText(message, pausedTextPTR);
+        SetMessageText(message, UseMagicAsHarry);
     }
 
     // Helper function to write the Levels Beaten to the Player 2 slot name
     public static void DisplayLevelsBeaten(byte count)
     {
-        uint pausedTextPTR = GetPausedText();
         string message = $"Levels Beaten: {count}/{Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredLevels}";
-        SetMessageText(message, pausedTextPTR);
+        SetMessageText(message, UseMagicAsHarry);
     }
 
 }
