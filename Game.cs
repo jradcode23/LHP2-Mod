@@ -1158,7 +1158,7 @@ public class Game
         }
         Mod.GameInstance!.PrevLevelID = Mod.GameInstance!.LevelID;
         Mod.GameInstance!.LevelID = value;
-        PrintToLog($"Level ID updated to {value}.");
+        PrintToLog($"Level ID updated to {value}, previous level ID is now: {Mod.GameInstance!.PrevLevelID}");
         if (value is >= 1 and <= 4)
         {
             HubHandler.ChangeLeakyLoadingZones(value);
@@ -1217,7 +1217,7 @@ public class Game
             HubHandler.ChangeLeakyLoadingZones(Mod.GameInstance!.LevelID);
         }
 
-        PrintToLog($"Map ID updated to {value}.");
+        PrintToLog($"Map ID updated to {value}, previous map ID is now: {prevMapID}");
         Mod.LHP2_Archipelago!.SendMapID(value);
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnLocations(tokenOffset, SpellPurchOffset - 1);
@@ -1818,8 +1818,11 @@ public class Game
 
     public static void CheckWinCon()
     {
+        PrintToLog("Checking Win Condition");
+        PrintToLog($"End Goal: {Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal}");
+        PrintToLog($"Prev Level ID: {Mod.GameInstance!.PrevLevelID} and Current Level ID: {Mod.GameInstance!.LevelID}");
         // Defeat Voldemort
-        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 0 && Mod.GameInstance!.PrevLevelID == 27)
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 0 && (Mod.GameInstance!.PrevLevelID == 27 || Mod.GameInstance!.LevelID == 27))
         {
             int horcruxesReceived = Mod.LHP2_Archipelago!.CountItemsCheckedInRange(440, 446);
             int requiredHorcruxes = Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredHorcruxes;
