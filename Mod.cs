@@ -45,7 +45,7 @@ public class Mod : ModBase // <= Do not Remove.
             return;
         }
         SetUpAP(Configuration.ArchipelagoOptions.Server, Configuration.ArchipelagoOptions.Port, Configuration.ArchipelagoOptions.Slot, Configuration.ArchipelagoOptions.Password);
-        Logger.WriteLineAsync("[LHP2.archipelago.mod] Mod Version: LHP2.archipelago.mod 1.1.1");
+        Logger.WriteLineAsync("[LHP2.archipelago.mod] Mod Version: LHP2.archipelago.mod 1.1.2");
 
         while (true)
         {
