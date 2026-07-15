@@ -73,7 +73,7 @@ public class Game
             if (rewriteNumber % 10 == 0)
                 PrintToLog("Waiting for menu to load");
             rewriteNumber++;
-            System.Threading.Thread.Sleep(500);
+            Thread.Sleep(500);
 
         }
     }
@@ -1768,12 +1768,49 @@ public class Game
         }
     }
 
+    [Function(CallingConventions.Cdecl)]
+    public delegate void DamagePlayer(int playerPtr, int damageTicks);
+
+    [Function(CallingConventions.Cdecl)]
+    public delegate void MudDeath(int playerPtr);
+
+    [Function(CallingConventions.Cdecl)]
+    public delegate void PlayerDeath(
+    int playerPtr,
+    uint deathType,
+    int killerPtr,
+    int flags,
+    IntPtr extraData,
+    int unk
+);
+
     [Function([FunctionAttribute.Register.edi, FunctionAttribute.Register.ecx],
     FunctionAttribute.Register.edi, FunctionAttribute.StackCleanup.Callee)]
     // edi is the stud value picked up and ebp is the address it is being written to
     public delegate void StudCollected(nuint edi, nuint ecx);
     private static unsafe void OnStudCollected(nuint edi, nuint ecx)
     {
+        IntPtr deathWrapperAddress;
+        IntPtr damagePlayerAddress;
+        IntPtr damagePlayerAddress2;
+        var damagePlayer = Mod._hooks!.CreateWrapper<DamagePlayer>((long)(Mod.BaseAddress + 0x415510), out damagePlayerAddress);
+        var damagePlayer2 = Mod._hooks!.CreateWrapper<DamagePlayer>((long)(Mod.BaseAddress + 0x416A20), out damagePlayerAddress2);
+        var mudDeath = Mod._hooks!.CreateWrapper<MudDeath>((long)(Mod.BaseAddress + 0x346650), out deathWrapperAddress);
+
+        IntPtr deathWrapperAddress2;
+        var playerDeath = Mod._hooks!.CreateWrapper<PlayerDeath>(
+            (long)(Mod.BaseAddress + 0x7f8320),
+            out deathWrapperAddress2
+        );
+
+
+
+        int playerAddress = *(int*)(Mod.BaseAddress + 0xC53930);
+        PrintToLog($"PlayerAddress: 0x{playerAddress:X}");
+        // damagePlayer2(playerAddress, 8);
+        // mudDeath(playerAddress);
+        playerDeath(playerAddress, 3, 0, 0, IntPtr.Zero, 0);
+
         nuint* studTotalAddress = *(nuint**)(Mod.BaseAddress + 0xC5B600);
         nuint* inLevelP1StudAddress = (nuint*)(Mod.BaseAddress + 0xC53E88);
         nuint* inLevelP2StudAddress = (nuint*)(Mod.BaseAddress + 0xC53EA0);

@@ -12,7 +12,7 @@ namespace LHP2_Archi_Mod;
 public class Mod : ModBase // <= Do not Remove.
 {
     // private readonly IModLoader _modLoader;
-    private static IReloadedHooks? _hooks;
+    public static IReloadedHooks? _hooks;
     public static ILogger? Logger;
     // private readonly IMod _owner;
     public static Config? Configuration { get; set; }
@@ -32,7 +32,7 @@ public class Mod : ModBase // <= Do not Remove.
 
 #if DEBUG
         // Attaches debugger in debug mode; ignored in release.
-        // Debugger.Launch();
+        Debugger.Launch();
 #endif
 
         GameInstance = new Game();
