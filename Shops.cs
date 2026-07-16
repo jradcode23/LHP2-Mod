@@ -262,9 +262,9 @@ public class Shops
         {
             item = Mod.LHP2_Archipelago!.ScoutedLocations[ArchipelagoHandler.gameOffset + itemSelected];
             message = item.Player + "'s " + item.ItemDisplayName;
-            if (message.Length > 75)
+            if (message.Length > 60)
             {
-                message = message[..75]; // Truncate message if it exceeds selected max hint length
+                message = message[..60]; // Truncate message if it exceeds selected max shop character length (seems to be 64 characters, but we leave a little buffer cause of the Gold Brick Shop adding numbers)
             }
             HintSystem.SetMessageText(message, ShopTextAddress);
         }
