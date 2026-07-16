@@ -1768,8 +1768,8 @@ public class Game
         }
     }
 
-    [Function(CallingConventions.Cdecl)]
-    public delegate void DamagePlayer(int playerPtr, int damageTicks);
+    // [Function(CallingConventions.Cdecl)]
+    // public delegate void DamagePlayer(int playerPtr, int damageTicks);
 
     // [Function(CallingConventions.Cdecl)]
     // public delegate void MudDeath(int playerPtr);
@@ -1798,10 +1798,10 @@ public class Game
     {
         int playerAddress = *(int*)(Mod.BaseAddress + 0xC53930);
         // IntPtr deathWrapperAddress;
-        IntPtr damagePlayerAddress;
-        IntPtr damagePlayerAddress2;
-        var damagePlayer = Mod._hooks!.CreateWrapper<DamagePlayer>((long)(Mod.BaseAddress + 0x415510), out damagePlayerAddress);
-        var damagePlayer2 = Mod._hooks!.CreateWrapper<DamagePlayer>((long)(Mod.BaseAddress + 0x416A20), out damagePlayerAddress2);
+        // IntPtr damagePlayerAddress;
+        // IntPtr damagePlayerAddress2;
+        // var damagePlayer = Mod._hooks!.CreateWrapper<DamagePlayer>((long)(Mod.BaseAddress + 0x415510), out damagePlayerAddress);
+        // var damagePlayer2 = Mod._hooks!.CreateWrapper<DamagePlayer>((long)(Mod.BaseAddress + 0x416A20), out damagePlayerAddress2);
         // var mudDeath = Mod._hooks!.CreateWrapper<MudDeath>((long)(Mod.BaseAddress + 0x346650), out deathWrapperAddress);
 
         // IntPtr deathWrapperAddress2;
@@ -1824,8 +1824,8 @@ public class Game
             playerControllerAction(controller, 3);
         }
 
-        uint arrayAddress = *(uint*)(Mod.BaseAddress + 0xC5E358);
-        IntPtr extraDataPtr = (IntPtr)arrayAddress;
+        // uint arrayAddress = *(uint*)(Mod.BaseAddress + 0xC5E358);
+        // IntPtr extraDataPtr = (IntPtr)arrayAddress;
 
 
 
