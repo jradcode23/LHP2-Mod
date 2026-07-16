@@ -1771,18 +1771,24 @@ public class Game
     [Function(CallingConventions.Cdecl)]
     public delegate void DamagePlayer(int playerPtr, int damageTicks);
 
-    [Function(CallingConventions.Cdecl)]
-    public delegate void MudDeath(int playerPtr);
+    // [Function(CallingConventions.Cdecl)]
+    // public delegate void MudDeath(int playerPtr);
 
-    [Function(CallingConventions.Cdecl)]
-    public delegate void PlayerDeath(
-    int playerPtr,
-    uint deathType,
-    int killerPtr,
-    int flags,
-    IntPtr extraData,
-    int unk
-);
+    // [Function(CallingConventions.Cdecl)]
+    // public delegate void PlayerDeath(
+    //     IntPtr playerPtr,   // pointer
+    //     uint deathType,   // uint
+    //     int killerPtr,   // int
+    //     int flags,       // int
+    //     IntPtr extraData,   // pointer to array
+    //     int unk          // int
+    // );
+
+    // FUN_007e1950(void* this, int param_1)
+    [Function(CallingConventions.MicrosoftThiscall)]
+    public delegate void PlayerControllerAction(IntPtr controllerPtr, int mode);
+
+
 
     [Function([FunctionAttribute.Register.edi, FunctionAttribute.Register.ecx],
     FunctionAttribute.Register.edi, FunctionAttribute.StackCleanup.Callee)]
@@ -1790,26 +1796,43 @@ public class Game
     public delegate void StudCollected(nuint edi, nuint ecx);
     private static unsafe void OnStudCollected(nuint edi, nuint ecx)
     {
-        IntPtr deathWrapperAddress;
+        int playerAddress = *(int*)(Mod.BaseAddress + 0xC53930);
+        // IntPtr deathWrapperAddress;
         IntPtr damagePlayerAddress;
         IntPtr damagePlayerAddress2;
         var damagePlayer = Mod._hooks!.CreateWrapper<DamagePlayer>((long)(Mod.BaseAddress + 0x415510), out damagePlayerAddress);
         var damagePlayer2 = Mod._hooks!.CreateWrapper<DamagePlayer>((long)(Mod.BaseAddress + 0x416A20), out damagePlayerAddress2);
-        var mudDeath = Mod._hooks!.CreateWrapper<MudDeath>((long)(Mod.BaseAddress + 0x346650), out deathWrapperAddress);
+        // var mudDeath = Mod._hooks!.CreateWrapper<MudDeath>((long)(Mod.BaseAddress + 0x346650), out deathWrapperAddress);
 
-        IntPtr deathWrapperAddress2;
-        var playerDeath = Mod._hooks!.CreateWrapper<PlayerDeath>(
-            (long)(Mod.BaseAddress + 0x7f8320),
-            out deathWrapperAddress2
+        // IntPtr deathWrapperAddress2;
+        // var playerDeath = Mod._hooks!.CreateWrapper<PlayerDeath>(
+        //     (long)(Mod.BaseAddress + 0x7f8320),
+        //     out deathWrapperAddress2
+        // );
+
+        IntPtr controllerActionAddr;
+        var playerControllerAction = Mod._hooks!.CreateWrapper<PlayerControllerAction>(
+            (long)(Mod.BaseAddress + 0x7E1950),
+            out controllerActionAddr
         );
 
+        // controller at player + 0x1748
+        IntPtr controller = *(int*)(playerAddress + 0x1748);
+        if (controller != IntPtr.Zero)
+        {
+            // trigger death animation mode 3
+            playerControllerAction(controller, 3);
+        }
+
+        uint arrayAddress = *(uint*)(Mod.BaseAddress + 0xC5E358);
+        IntPtr extraDataPtr = (IntPtr)arrayAddress;
 
 
-        int playerAddress = *(int*)(Mod.BaseAddress + 0xC53930);
+
         PrintToLog($"PlayerAddress: 0x{playerAddress:X}");
         // damagePlayer2(playerAddress, 8);
         // mudDeath(playerAddress);
-        playerDeath(playerAddress, 3, 0, 0, IntPtr.Zero, 0);
+        // playerDeath(playerAddress, 5, 0, 1, extraDataPtr, 0);
 
         nuint* studTotalAddress = *(nuint**)(Mod.BaseAddress + 0xC5B600);
         nuint* inLevelP1StudAddress = (nuint*)(Mod.BaseAddress + 0xC53E88);
