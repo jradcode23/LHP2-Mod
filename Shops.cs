@@ -262,9 +262,9 @@ public class Shops
         {
             item = Mod.LHP2_Archipelago!.ScoutedLocations[ArchipelagoHandler.gameOffset + itemSelected];
             message = item.Player + "'s " + item.ItemDisplayName;
-            if (message.Length > 75)
+            if (message.Length > 60)
             {
-                message = message[..75]; // Truncate message if it exceeds selected max hint length
+                message = message[..60]; // Truncate message if it exceeds selected max hint length
             }
             HintSystem.SetMessageText(message, ShopTextAddress);
         }
