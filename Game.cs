@@ -1771,15 +1771,41 @@ public class Game
     // [Function(CallingConventions.Cdecl)]
     // public delegate void DamagePlayer(int playerPtr, int damageTicks);
 
+    // 4 loses 20 studs, 3 loses 200, 2 loses 1000, 1 loses 2000, 0 loses none
     [Function(CallingConventions.Cdecl)]
-    public delegate void PlayerDeath(
-        IntPtr playerPtr,   // pointer
-        uint deathType,   // uint
-        int killerPtr,   // int
-        int flags,       // int
-        IntPtr extraData,   // pointer to array
-        int unk          // int
+    public delegate uint LoseStuds(int playerPtr, int type);
+
+    [Function(CallingConventions.Cdecl)]
+    public delegate void KillPLayer(
+        IntPtr playerPtr, // pointer to the player that is being killed
+        uint deathType, // I believe this is death type, looks to be 4-5
+        int unkown0, // Unkown int - looks to be 0 when called
+        int unknown1, // unkown int - looks to be 1 when called
+        IntPtr deathFlags, // pointer to array that contains all the death information & timers. Can pass 0
+        int unkown2 // Unknown in - looks to be 0 when called
     );
+
+    [Function(CallingConventions.Cdecl)]
+    public delegate void StudDropSpawner(
+    int pVar9, // Address to some object type, probably the world? (Can be seen in harry2.exe+C5E358)
+    uint fVar29, // Lower 4 digits of stud loss (game breaks it into 2 ints instead of 8 bytes)
+    uint uVar7, // Upper 4 digits of stud loss (game breaks it into 2 ints instead of 8 bytes)
+    int iVar17, // Unknown - looks to be 0 when called
+    uint uVar5, // Unknown - looks to be 0 when called
+    int iVar19, // Unknown - looks to be 0 when called
+    IntPtr pcVar18, // Unknown Array at PlayerAddress + 0xfcc
+    int puVar10, // Unknown - is a push 0
+    uint uVar26, // Unknown - Looks to be a constant 0x40000000
+    int iVar6, // Unknown - Looks to be playerAddress + 0x55
+    float fVar22, // Unkown Float - Looks to be called with a constant 1
+    float fVar20, // Unknown float - Looks to be the value at playerAddress + 0x1168
+    float fVar23, // Unkown float - Looks to be a constant 0
+    int iVar25, // Unkown int - looks to be a constant 1
+    uint uVar8, // Unkown int - looks to be a constant 0
+    byte cVar27, // Unkown Char - looks to push a constant 0
+    byte cVar2, // Unknown Char - looks to push a constant 0
+    int iVar34 // Unknown int - looks to be 0 when called
+);
 
     [Function([FunctionAttribute.Register.edi, FunctionAttribute.Register.ecx],
     FunctionAttribute.Register.edi, FunctionAttribute.StackCleanup.Callee)]
@@ -1787,28 +1813,6 @@ public class Game
     public delegate void StudCollected(nuint edi, nuint ecx);
     private static unsafe void OnStudCollected(nuint edi, nuint ecx)
     {
-        int playerAddress = *(int*)(Mod.BaseAddress + 0xC53930);
-        // IntPtr deathWrapperAddress;
-        // IntPtr damagePlayerAddress;
-        // IntPtr damagePlayerAddress2;
-        // var damagePlayer = Mod._hooks!.CreateWrapper<DamagePlayer>((long)(Mod.BaseAddress + 0x415510), out damagePlayerAddress);
-        // var damagePlayer2 = Mod._hooks!.CreateWrapper<DamagePlayer>((long)(Mod.BaseAddress + 0x416A20), out damagePlayerAddress2);
-        // var mudDeath = Mod._hooks!.CreateWrapper<MudDeath>((long)(Mod.BaseAddress + 0x346650), out deathWrapperAddress);
-
-        IntPtr deathWrapperAddress2;
-        var playerDeath = Mod._hooks!.CreateWrapper<PlayerDeath>(
-            (long)(Mod.BaseAddress + 0x3f8320),
-            out deathWrapperAddress2
-        );
-
-        uint arrayAddress = *(uint*)(Mod.BaseAddress + 0xC5E358);
-        IntPtr extraDataPtr = (IntPtr)arrayAddress;
-
-        PrintToLog($"PlayerAddress: 0x{playerAddress:X}");
-        // damagePlayer2(playerAddress, 8);
-        // mudDeath(playerAddress);
-        playerDeath(playerAddress, 6, 0, 1, 0, 0);
-
         nuint* studTotalAddress = *(nuint**)(Mod.BaseAddress + 0xC5B600);
         nuint* inLevelP1StudAddress = (nuint*)(Mod.BaseAddress + 0xC53E88);
         nuint* inLevelP2StudAddress = (nuint*)(Mod.BaseAddress + 0xC53EA0);
