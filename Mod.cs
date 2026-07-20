@@ -90,6 +90,15 @@ public class Mod : ModBase // <= Do not Remove.
             LHP2_Archipelago!.Disconnect();
             SetUpAP(Configuration.ArchipelagoOptions.Server, Configuration.ArchipelagoOptions.Port, Configuration.ArchipelagoOptions.Slot, Configuration.ArchipelagoOptions.Password);
         }
+        if (Configuration.ArchipelagoOptions.DeathLink != configuration.ArchipelagoOptions.DeathLink)
+        {
+            Configuration = configuration;
+            Logger!.WriteLine($"[LHP2.archipelago.mod] Config Updated: Death Link set to {Configuration.ArchipelagoOptions.DeathLink}");
+            string[] tags = Mod.Configuration?.ArchipelagoOptions.DeathLink == Config.DeathLinkTag.On
+                ? ["DeathLink"]
+                : Array.Empty<string>();
+            LHP2_Archipelago?.UpdateTags(tags);
+        }
     }
 
     public static void SetUpAP(string server, int port, string slot, string password)

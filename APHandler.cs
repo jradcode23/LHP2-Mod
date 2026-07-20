@@ -3,8 +3,12 @@ using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.Enums;
 using Archipelago.MultiClient.Net.Helpers;
 using Archipelago.MultiClient.Net.MessageLog.Messages;
+using Archipelago.MultiClient.Net.Packets;
 using System.Diagnostics.CodeAnalysis;
 using Archipelago.MultiClient.Net.Models;
+using LHP2_Archi_Mod.Configuration;
+using Newtonsoft.Json.Linq;
+using Archipelago.MultiClient.Net.Converters;
 
 namespace LHP2_Archi_Mod;
 
@@ -18,7 +22,7 @@ public class ArchipelagoHandler
     private LoginSuccessful? _loginSuccessful;
     public SlotData? SlotDataInstance;
     private static unsafe byte* NewGameTextPTR => *(byte**)(Mod.BaseAddress + 0xC4EB9C) + 0x32E;
-
+    public static DateTime LastDeathLinkPacketTime = DateTime.Now;
     private string Server { get; set; }
     private int Port { get; set; }
     private string Slot { get; set; }
@@ -50,7 +54,7 @@ public class ArchipelagoHandler
         _session.MessageLog.OnMessageReceived += OnMessageReceived;
         _session.Socket.SocketClosed += OnSocketClosed;
         _session.Socket.ErrorReceived += OnSessionErrorReceived;
-        // _session.Socket.PacketReceived += OnPacketReceived;
+        _session.Socket.PacketReceived += PacketReceived;
         _session.Items.ItemReceived += ItemReceived;
     }
 
@@ -101,12 +105,16 @@ public class ArchipelagoHandler
             Seed = Session.ConnectAsync()?.Result?.SeedName;
             Game.PrintToLog(Seed + Slot);
 
+            string[] tags = Mod.Configuration?.ArchipelagoOptions.DeathLink == Config.DeathLinkTag.On
+                ? ["DeathLink"]
+                : Array.Empty<string>();
+
             result = Session.LoginAsync(
                 game: GAME_NAME,
                 name: Slot,
                 itemsHandlingFlags: ItemsHandlingFlags.AllItems,
                 version: new Version(1, 1, 0),
-                tags: [],
+                tags: tags,
                 password: Password
             ).Result;
         }
@@ -493,5 +501,95 @@ public class ArchipelagoHandler
     public void SendMapID(int MapID)
     {
         Session.DataStorage[Scope.Slot, "map"] = MapID;
+    }
+
+    private string lastDeath = string.Empty;
+    public bool SendDeath()
+    {
+        if (!IsConnected || _session == null)
+        {
+            Game.PrintToLog("Not connected to Archipelago server. Cannot send DeathLink packet.");
+            return false;
+        }
+        BouncePacket packet = new BouncePacket();
+        var now = DateTime.Now;
+
+        if (now - LastDeathLinkPacketTime < TimeSpan.FromSeconds(1))
+            return false; // Prevent sending too many packets in a short time
+
+        packet.Tags = new List<string> { "DeathLink" };
+        packet.Data = new Dictionary<string, JToken>
+        {
+            { "time", now.ToUnixTimeStamp() },
+            { "source", Slot },
+        };
+
+        if (packet.Data.TryGetValue("source", out var sourceObj))
+        {
+            var source = sourceObj?.ToString() ?? "Unknown";
+
+            if (packet.Data.TryGetValue("time", out var timeObj))
+            {
+                var time = timeObj?.ToString() ?? "Unknown";
+                Game.PrintToLog(
+                    $"Sending DeathLink Packet: {source}:: with time: {time}");
+            }
+
+        }
+        _session.Socket.SendPacket(packet);
+        LastDeathLinkPacketTime = now;
+        return true;
+    }
+
+    private void PacketReceived(ArchipelagoPacketBase packet)
+    {
+        switch (packet)
+        {
+            case BouncePacket bouncePacket:
+                BouncePacketReceived(bouncePacket);
+                break;
+        }
+    }
+
+    private void BouncePacketReceived(BouncePacket packet)
+    {
+        Game.PrintToLog($"Bounce Packet Received. Configuration Death Link: {Mod.Configuration?.ArchipelagoOptions.DeathLink}");
+        if (Mod.Configuration?.ArchipelagoOptions.DeathLink == Config.DeathLinkTag.On)
+            ProcessBouncePacket(packet, "DeathLink", ref lastDeath, (source, data) =>
+                Mod.GameInstance!.Player1DeathLink?.ReceiveDeathLink(data["source"]?.ToString() ?? "Unknown"));
+    }
+
+    private static void ProcessBouncePacket(BouncePacket packet, string tag, ref string lastTime, Action<string, Dictionary<string, JToken>> handler)
+    {
+        if (!packet.Tags.Contains(tag)) return;
+        if (!packet.Data.TryGetValue("time", out var timeObj))
+            return;
+        if (lastTime == timeObj.ToString())
+            return;
+        lastTime = timeObj.ToString();
+        if (!packet.Data.TryGetValue("source", out var sourceObj))
+            return;
+        var source = sourceObj?.ToString() ?? "Unknown";
+        if (packet.Data.TryGetValue("cause", out var causeObj))
+        {
+            var cause = causeObj?.ToString() ?? "Unknown";
+            Game.PrintToLog($"Received Bounce Packet with Tag: {tag} :: {cause}");
+        }
+        handler(source, packet.Data);
+    }
+
+    public void UpdateTags(string[] tags)
+    {
+        if (!IsConnected || _session == null)
+        {
+            Game.PrintToLog("Not connected to Archipelago server. Cannot update tags.");
+            return;
+        }
+        var packet = new ConnectUpdatePacket
+        {
+            Tags = tags,
+            ItemsHandling = ItemsHandlingFlags.AllItems
+        };
+        _session.Socket.SendPacket(packet);
     }
 }

@@ -24,14 +24,14 @@ public class HintSystem
     private static unsafe uint MessagePTRValue => (uint)(((byte*)*(uint**)(Mod.BaseAddress + 0xC58388)) + 0xFFC);
 
     // This is a helper function to verify if there is anything else on screen before printing a hint message.
-    private static unsafe bool IsScreenEmpty()
+    public static unsafe bool IsScreenEmpty()
     {
         byte* screenEmptyBaseAddress = (byte*)(Mod.BaseAddress + 0xAD98D9);
         return *screenEmptyBaseAddress == 255; // 255 is the value when the screen is empty, 0 means something is on screen
     }
 
     // This is a helper function to verify if the player is Not in a Hub cutscene (i.e. umbridge breaking up the students kissing)
-    private static unsafe bool IsPlayerNotInHubCutscene()
+    public static unsafe bool IsPlayerNotInHubCutscene()
     {
         byte* hubCutSceneAddress = (byte*)(Mod.BaseAddress + 0xC5B224);
         return *hubCutSceneAddress == 0; // 48 means that the player is in a hub cutscene, 0 means they are not

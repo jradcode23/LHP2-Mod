@@ -56,6 +56,7 @@ public class Game
     public const int SpellPurchOffset = 975;
     public const int MaxItemID = 1030;
     public string PlayerName = "";
+    public DeathLink? Player1DeathLink;
 
     // Helper Function to help print to the terminal and log file with a consistent prefix
     public static void PrintToLog(string message)
@@ -125,7 +126,7 @@ public class Game
     }
 
     // After Connecting, this function reads initial game variables and NOPs code that we don't want running
-    public static void ModifyInstructions()
+    public static unsafe void ModifyInstructions()
     {
         // Read initial game values upon connecting
         Mod.GameInstance!.LevelID = Memory.Instance.Read<int>(Mod.BaseAddress + 0xADDB7C);
@@ -201,6 +202,8 @@ public class Game
         Shops.SetShopPrices(Mod.LHP2_Archipelago!.SlotDataInstance!.CheaperShops);
         Shops.SetShopPointers();
         SpellHandler.LockBoxes();
+
+        Mod.GameInstance!.Player1DeathLink = new DeathLink((byte*)(Mod.BaseAddress + 0xC53930), 0);
     }
 
     // This function turns on the N0CUT5 Cheat Code so cutscenes don't show
@@ -360,6 +363,7 @@ public class Game
     private static IReverseWrapper<SetDuelingHealth> _reverseWrapOnSetDuelingHealth = default!;
     private static IReverseWrapper<ShopItemSelected> _reverseWrapOnShopItemSelected = default!;
     private static IReverseWrapper<CharacterShopItemSelected> _reverseWrapOnCharacterShopItemSelected = default!;
+    private static IReverseWrapper<SendPlayerDeath> _reverseWrapOnSendPlayerDeath = default!;
     private static IReverseWrapper<StudCollected> _reverseWrapOnStudCollected = default!;
 
     // Modifying the associated assembly of our game to call our functions
@@ -808,6 +812,17 @@ public class Game
             "pop ebx",
         };
         _asmHooks.Add(hooks.CreateAsmHook(characterShopItemSelected, (int)(Mod.BaseAddress + 0x88C0B), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] sendDeath =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnSendPlayerDeath, out _reverseWrapOnSendPlayerDeath)}",
+            "popad",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(sendDeath, (int)(Mod.BaseAddress + 0x3F8E6D), AsmHookBehaviour.ExecuteAfter).Activate());
 
         string[] studCollected =
         {
@@ -1754,17 +1769,44 @@ public class Game
 
     [Function([FunctionAttribute.Register.ebx],
     FunctionAttribute.Register.ebx, FunctionAttribute.StackCleanup.Callee)]
-    public delegate void CharacterShopItemSelected(int edx);
-    private static void OnCharacterShopItemSelected(int edx)
+    public delegate void CharacterShopItemSelected(int ebx);
+    private static void OnCharacterShopItemSelected(int ebx)
     {
         if (MadamMalkinMapIDs.Contains(Mod.GameInstance!.MapID3) && Mod.LHP2_Archipelago!.SlotDataInstance!.ShuffleCharacterTokens != 1)
         {
-            int item = CharacterHandler.GetLevelTokenItemID(edx);
+            int item = CharacterHandler.GetLevelTokenItemID(ebx);
             if (item == -1)
             {
                 return;
             }
             Shops.HandleShopText(item);
+        }
+    }
+
+    [Function([FunctionAttribute.Register.ebx],
+    FunctionAttribute.Register.ebx, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void SendPlayerDeath(uint ebx);
+    private unsafe static void OnSendPlayerDeath(uint ebx)
+    {
+        try
+        {
+            if (Mod.GameInstance!.Player1DeathLink == null)
+            {
+                return;
+            }
+            uint* playerBaseAddress = (uint*)(Mod.BaseAddress + 0xC53930);
+            if (playerBaseAddress == null)
+            {
+                return;
+            }
+            uint address = *playerBaseAddress;
+            PrintToLog($"Send Death function. EBX: 0x{ebx:X}. PlayerAddress: 0x{address:X}");
+            if (ebx == address)
+                Mod.GameInstance!.Player1DeathLink.SendPlayerDeath();
+        }
+        catch (Exception e)
+        {
+            Mod.Logger!.WriteLine($"Game Crashed in OnSendPlayerDeath. {e}");
         }
     }
 

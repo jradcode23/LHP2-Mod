@@ -25,39 +25,49 @@ public class Config : Configurable<Config>
         The `DefaultValue` attribute is used as part of the `Reset` button in Reloaded-Launcher.
     */
 
+    public enum DeathLinkTag
+    {
+        On,
+        Off
+    }
+
     [DisplayName("AP Connection Options")]
     [Description("AP Connection Options")]
     public ArchipelagoOptions ArchipelagoOptions { get; set; } = new ArchipelagoOptions();
 }
-    public class ArchipelagoOptions
-    {
-        [DisplayName("Host IP")]
-        [Description("Host address of the Archipelago server")]
-        [DefaultValue("Archipelago.gg")]
-        public string Server { get; set; } = "Archipelago.gg";
+public class ArchipelagoOptions
+{
+    [DisplayName("Host IP")]
+    [Description("Host address of the Archipelago server")]
+    [DefaultValue("Archipelago.gg")]
+    public string Server { get; set; } = "Archipelago.gg";
 
-        [DisplayName("Port")]
-        [Description("Port open for the Archipelago server")]
-        [DefaultValue("55555")]
-        public int Port { get; set; } = 55555;
+    [DisplayName("Port")]
+    [Description("Port open for the Archipelago server")]
+    [DefaultValue("55555")]
+    public int Port { get; set; } = 55555;
 
-        [DisplayName("Slot")]
-        [Description("Slot user name used to connect to the Archipelago server")]
-        [DefaultValue("Player1")]
-        public string Slot { get; set; } = "Player1";
+    [DisplayName("Slot")]
+    [Description("Slot user name used to connect to the Archipelago server")]
+    [DefaultValue("Player1")]
+    public string Slot { get; set; } = "Player1";
 
-        [DisplayName("Password")]
-        [Description("Password for the Archipelago server")]
-        [DefaultValue("")]
-        public string Password { get; set; } = "";
-    }
+    [DisplayName("Password")]
+    [Description("Password for the Archipelago server")]
+    [DefaultValue("")]
+    public string Password { get; set; } = "";
 
-    /// <summary>
-    /// Allows you to override certain aspects of the configuration creation process (e.g. create multiple configurations).
-    /// Override elements in <see cref="ConfiguratorMixinBase"/> for finer control.
-    /// </summary>
-    public class ConfiguratorMixin : ConfiguratorMixinBase
-    { 
+    [DisplayName("Death Link")]
+    [Description("Set how death link will work in the Archipelago session")]
+    [DefaultValue(Config.DeathLinkTag.Off)]
+    public Config.DeathLinkTag DeathLink { get; set; } = Config.DeathLinkTag.Off;
+}
+
+/// <summary>
+/// Allows you to override certain aspects of the configuration creation process (e.g. create multiple configurations).
+/// Override elements in <see cref="ConfiguratorMixinBase"/> for finer control.
+/// </summary>
+public class ConfiguratorMixin : ConfiguratorMixinBase
+{
     //
-    }
-    
+}
