@@ -41,11 +41,11 @@ public class Mod : ModBase // <= Do not Remove.
 
         if (Configuration == null)
         {
-            Logger.WriteLineAsync("[LHP2.archipelago.mod] Configuration is null. Terminating Mod.");
+            Logger.WriteLine("[LHP2.archipelago.mod] Configuration is null. Terminating Mod.");
             return;
         }
         SetUpAP(Configuration.ArchipelagoOptions.Server, Configuration.ArchipelagoOptions.Port, Configuration.ArchipelagoOptions.Slot, Configuration.ArchipelagoOptions.Password);
-        Logger.WriteLineAsync("[LHP2.archipelago.mod] Mod Version: LHP2.archipelago.mod 1.1.1");
+        Logger.WriteLineAsync("[LHP2.archipelago.mod] Mod Version: LHP2.archipelago.mod version DeathLink Source");
 
         while (true)
         {
@@ -83,20 +83,22 @@ public class Mod : ModBase // <= Do not Remove.
             Logger!.WriteLineAsync("Configuration is null, cannot update.");
             return;
         }
+
         if (Configuration.ArchipelagoOptions.Port != configuration.ArchipelagoOptions.Port || Configuration.ArchipelagoOptions.Slot != configuration.ArchipelagoOptions.Slot)
         {
             Configuration = configuration;
-            Logger!.WriteLine($"[LHP2.archipelago.mod] Config Updated: Applying");
+            Logger!.WriteLineAsync($"[LHP2.archipelago.mod] Config Updated: Applying");
             LHP2_Archipelago!.Disconnect();
             SetUpAP(Configuration.ArchipelagoOptions.Server, Configuration.ArchipelagoOptions.Port, Configuration.ArchipelagoOptions.Slot, Configuration.ArchipelagoOptions.Password);
         }
+
         if (Configuration.ArchipelagoOptions.DeathLink != configuration.ArchipelagoOptions.DeathLink)
         {
             Configuration = configuration;
-            Logger!.WriteLine($"[LHP2.archipelago.mod] Config Updated: Death Link set to {Configuration.ArchipelagoOptions.DeathLink}");
-            string[] tags = Mod.Configuration?.ArchipelagoOptions.DeathLink == Config.DeathLinkTag.On
+            Logger!.WriteLineAsync($"[LHP2.archipelago.mod] Config Updated: Death Link set to {Configuration.ArchipelagoOptions.DeathLink}");
+            string[] tags = Configuration?.ArchipelagoOptions.DeathLink == Config.DeathLinkTag.On
                 ? ["DeathLink"]
-                : Array.Empty<string>();
+                : [];
             LHP2_Archipelago?.UpdateTags(tags);
         }
     }
@@ -114,20 +116,24 @@ public class Mod : ModBase // <= Do not Remove.
             Game.PrintToLog("Hooks are Null. Please do not proceed and report this to the Dev.");
             return false;
         }
+
         int hookCount = Game._asmHooks.Count;
         if (hookCount > 0)
         {
             Game.PrintToLog($"Hooks already set up. Count: {hookCount}, skipping setup.");
             return true;
         }
+
         Game.ModifyInstructions();
+
         if (_hooks != null)
         {
             Game.PrintToLog("Menu loaded, setting up hooks. Please wait for hook setup before loading a save file.");
-            GameInstance!.SetupHooks(Mod._hooks!);
+            GameInstance!.SetupHooks(_hooks);
             Game.PrintToLog("Hooks set up complete. You may now load a save file.");
             return true;
         }
+
         return false;
     }
 
