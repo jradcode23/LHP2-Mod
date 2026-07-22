@@ -1286,7 +1286,7 @@ public class Game
                 currentMapID = Mod.GameInstance!.MapID;
             }
             SpellHandler.SpellMapLogic(currentMapID);
-            SpellHandler.HandleSpellVisibility();
+            SpellHandler.ResetSpellVisibility(true);
             return;
         }
         if (*initialP2Value == 0xFFFF)
@@ -1301,7 +1301,7 @@ public class Game
                 currentMapID = Mod.GameInstance!.MapID;
             }
             SpellHandler.SpellMapLogic(currentMapID);
-            SpellHandler.HandleSpellVisibility();
+            SpellHandler.ResetSpellVisibility(false);
             return;
         }
     }
