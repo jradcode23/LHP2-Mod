@@ -639,10 +639,10 @@ public class SpellHandler
 
     // Default Game spells that we aren't shuffling
     private static readonly int[] defaultSpells = [0, 20, 21, 22, 24, 25, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 47, 48, 49, 52, 53, 54, 55];
-    private static readonly byte[] DefaultPassiveSpellMask = BuildDefaultPassiveSpellMask();
+    private static readonly byte[] DefaultGlobalSpellMask = BuildDefaultGlobalSpellMask();
 
     // Helper function to create a bit mask so we don't have to constantly create this as resets spells runs frequently
-    private static byte[] BuildDefaultPassiveSpellMask()
+    private static byte[] BuildDefaultGlobalSpellMask()
     {
         byte[] mask = new byte[7];
 
@@ -663,7 +663,7 @@ public class SpellHandler
         for (int i = 0; i < 7; i++)
         {
             byte* pointer = address + i;
-            *pointer = DefaultPassiveSpellMask[i];
+            *pointer = DefaultGlobalSpellMask[i];
             if (i == 5 && (*y5GhostPtr & (1 << 2)) != 0 && Mod.LHP2_Archipelago!.IsLocationChecked(1007))
             {
                 // Unlocks DADA. We specially update this here because it will make you time travel the first time loading if not
@@ -685,16 +685,15 @@ public class SpellHandler
             MakeSpellsInvisible();
 
             // // Make sure that the default spells are unlocked when active spells are reset.
-            // foreach (int spellId in defaultSpells)
-            // {
-            //     if (spellId == 49)
-            //     {
-            //         continue;
-            //     }
-            //     // We aren't turning off the default spells, so we don't need to run the full 
-            //     UnlockActiveSpell(spellId, true);
-            //     UnlockActiveSpell(spellId, false);
-            // }
+            foreach (int spellId in defaultSpells)
+            {
+                if (spellId == 49)
+                {
+                    continue;
+                }
+                // We aren't turning off the default spells, so we don't need to run the full 
+                UnlockSpell(spellId, Mod.GameInstance!.CurrentP1CharID, Mod.GameInstance!.CurrentP2CharID);
+            }
 
             // Make sure that dark magic is usable if you have a character
             if (HubHandler.HubBaseAddress != null)
@@ -718,8 +717,13 @@ public class SpellHandler
         if (p1SpellPTR == null || p2SpellPTR == null)
             return;
 
-        ResetSpellsInMemory(p1SpellPTR);
-        ResetSpellsInMemory(p2SpellPTR);
+        for (int i = 0; i < 7; i++)
+        {
+            byte* activePTR = p1SpellPTR + i;
+            *activePTR = 0;
+            byte* activePTR2 = p2SpellPTR + i;
+            *activePTR2 = 0;
+        }
     }
 
     // Helper function to make all spells on the spell wheel invisible
