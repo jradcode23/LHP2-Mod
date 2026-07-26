@@ -217,6 +217,7 @@ public unsafe class DeathLink(byte* BaseAddress, int amnesty)
 
     public void KillPlayer()
     {
+        try {
         // // Keeping for future Damage link
         // IntPtr damagePlayerAddress;
         // var damagePlayer = Mod._hooks!.CreateWrapper<DamagePlayer>((long)(Mod.BaseAddress + 0x416A20), out damagePlayerAddress);
@@ -237,11 +238,18 @@ public unsafe class DeathLink(byte* BaseAddress, int amnesty)
             out nint spawnStudsAddress
         );
 
+        Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Player Death Function Address: 0x{(nuint)deathWrapperAddress:X}");
+        Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Player Lose Studs Function Address: 0x{(nuint)loseStudsAddress:X}");
+        Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Player Spawn Studs Function Address: 0x{(nuint)spawnStudsAddress:X}");
+
+        Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Player Struct Address: 0x{(nuint)PointerToPlayerStruct:X}");
+
         uint studsLost = reduceStudTotalFunction((int)PointerToPlayerStruct, 1);
+        Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Player Studs Lost: {studsLost}");
         playerDeathFunction((int)PointerToPlayerStruct, 5, 0, 1, 0, 0);
 
         int worldObj = *(int*)(Mod.BaseAddress + 0xC5E358);
-        Game.PrintToLog($"World Object: 0x{(nuint)worldObj:X}");
+        Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] World Object: 0x{(nuint)worldObj:X}");
 
         uint studLow = studsLost;
         uint studHigh = 0; // Current setup has stud loss capped at 2k (I think) so this should never be needed
@@ -249,11 +257,20 @@ public unsafe class DeathLink(byte* BaseAddress, int amnesty)
         IntPtr unknownPlayerPtr0 = (int)PointerToPlayerStruct + 0xFCC;
         int unknownPlayerInt = *(PointerToPlayerStruct + 0x55);
         float unknownPlayerFloat = *(float*)(PointerToPlayerStruct + 0x1168);
+        Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Unknown Player Ptr0: 0x{(nuint)unknownPlayerPtr0:X}");
+        Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Unknown Player Int: {unknownPlayerInt}");
+        Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Unknown Player Float: {unknownPlayerFloat}");
 
         spawnStudFunction(
             worldObj, studLow, studHigh, 0, 0, 0,
             unknownPlayerPtr0, 0, 0, unknownPlayerInt, 1.0f,
             unknownPlayerFloat, 0.0f, 1, 0, 0, 0, 0
         );
+        }
+        catch (Exception ex)
+        {
+            Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Exception during KillPlayer: {ex.Message}");
+            Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Stack Trace: {ex.StackTrace}");
+        }
     }
 }
