@@ -1900,7 +1900,7 @@ public class Game
     public static void CheckWinCon()
     {
         // Defeat Voldemort
-        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 0 && Mod.GameInstance!.PrevLevelID == 27)
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 0 && (Mod.GameInstance!.PrevLevelID == 27 || Mod.GameInstance!.LevelID == 27))
         {
             int horcruxesReceived = Mod.LHP2_Archipelago!.CountItemsCheckedInRange(440, 446);
             int requiredHorcruxes = Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredHorcruxes;

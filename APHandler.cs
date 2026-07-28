@@ -553,7 +553,7 @@ public class ArchipelagoHandler
 
     private void BouncePacketReceived(BouncePacket packet)
     {
-        Game.PrintToLog($"Bounce Packet Received. Configuration Death Link: {Mod.Configuration?.ArchipelagoOptions.DeathLink}");
+        Game.PrintToLog($"Bounce Packet Received. Configuration Death Link: {Mod.Configuration?.ArchipelagoOptions.DeathLink}. Packet Tags: {string.Join(", ", packet.Tags)}");
         if (Mod.Configuration?.ArchipelagoOptions.DeathLink == Config.DeathLinkTag.On)
             ProcessBouncePacket(packet, "DeathLink", ref lastDeath, (source, data) =>
                 Mod.GameInstance!.Player1DeathLink?.ReceiveDeathLink(data["source"]?.ToString() ?? "Unknown"));
