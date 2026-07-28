@@ -15,9 +15,17 @@ public unsafe class DeathLink(byte* BaseAddress, int amnesty)
     private bool _isProcessingOutboundDeathLinks;
     private bool ReceivedDeath = false;
     private int NextOutboundDeathLinkId;
+    private bool ShouldSendDeath = false;
 
     public void SendPlayerDeath()
     {
+        if (ShouldSendDeath)
+        {
+            Game.PrintToLog("Send function. Player Caused Death. Skipping");
+            ShouldSendDeath = false;
+            return;
+        }
+        ShouldSendDeath = true;
         bool received;
         lock (_receivedDeathLock)
         {
@@ -54,7 +62,11 @@ public unsafe class DeathLink(byte* BaseAddress, int amnesty)
         }
         HintSystem.AddInterruptedMessageToFront($"Sending Death. You have caused {id + 1} deaths", 0);
         //TODO: add death count to data storage
-        ProcessOutboundDeathLinkQueue();
+        new Thread(() => ProcessOutboundDeathLinkQueue())
+        {
+            IsBackground = true,
+            Name = "OutboundDeathLinkProcessor"
+        }.Start();
     }
 
     private void ProcessOutboundDeathLinkQueue()
@@ -99,7 +111,11 @@ public unsafe class DeathLink(byte* BaseAddress, int amnesty)
             _isProcessingDeathLinks = true;
         }
 
-        ProcessDeathLinkQueue();
+        new Thread(() => ProcessDeathLinkQueue())
+        {
+            IsBackground = true,
+            Name = "DeathLinkProcessor"
+        }.Start();
     }
 
     private void ProcessDeathLinkQueue()
@@ -159,12 +175,13 @@ public unsafe class DeathLink(byte* BaseAddress, int amnesty)
 
     public void ReceiveDeathLink(string slot)
     {
-
-        if (slot == Mod.GameInstance!.PlayerName)
+        if (slot == Mod.GameInstance!.PlayerName || ShouldSendDeath)
         {
-            Game.PrintToLog("Player Caused Death");
+            Game.PrintToLog("Receive function. Player Caused Death");
+            ShouldSendDeath = false;
             return;
         }
+        ShouldSendDeath = true;
         QueueDeathLink(slot);
         Game.PrintToLog($"Death Link received Queued from {slot}.");
     }
@@ -223,10 +240,10 @@ public unsafe class DeathLink(byte* BaseAddress, int amnesty)
         // var damagePlayer = Mod._hooks!.CreateWrapper<DamagePlayer>((long)(Mod.BaseAddress + 0x416A20), out damagePlayerAddress);
         // damagePlayer(playerAddress, 8);
 
-        var playerDeathFunction = Mod._hooks!.CreateWrapper<Game.KillPLayer>(
-            (long)(Mod.BaseAddress + 0x3F8320),
-            out nint deathWrapperAddress
-        );
+        // var playerDeathFunction = Mod._hooks!.CreateWrapper<Game.KillPLayer>(
+        //     (long)(Mod.BaseAddress + 0x3F8320),
+        //     out nint deathWrapperAddress
+        // );
 
         var reduceStudTotalFunction = Mod._hooks!.CreateWrapper<Game.LoseStuds>(
             (long)(Mod.BaseAddress + 0x312DC0),
@@ -238,7 +255,7 @@ public unsafe class DeathLink(byte* BaseAddress, int amnesty)
             out nint spawnStudsAddress
         );
 
-        Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Player Death Function Address: 0x{(nuint)deathWrapperAddress:X}");
+        // Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Player Death Function Address: 0x{(nuint)deathWrapperAddress:X}");
         Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Player Lose Studs Function Address: 0x{(nuint)loseStudsAddress:X}");
         Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Player Spawn Studs Function Address: 0x{(nuint)spawnStudsAddress:X}");
 
@@ -246,7 +263,10 @@ public unsafe class DeathLink(byte* BaseAddress, int amnesty)
 
         uint studsLost = reduceStudTotalFunction((int)PointerToPlayerStruct, 1);
         Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Player Studs Lost: {studsLost}");
-        playerDeathFunction((int)PointerToPlayerStruct, 5, 0, 1, 0, 0);
+        // playerDeathFunction((int)PointerToPlayerStruct, 5, 0, 1, 0, 0);
+
+        ushort* playerStatePtr = (ushort*)(PointerToPlayerStruct + 0x558);
+        *playerStatePtr = 0x31; // Set player state to dead
 
         int worldObj = *(int*)(Mod.BaseAddress + 0xC5E358);
         Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] World Object: 0x{(nuint)worldObj:X}");
