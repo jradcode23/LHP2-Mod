@@ -1206,7 +1206,7 @@ public class Game
         {
             prevMapID = Mod.GameInstance!.MapID; // using map ID here cause it is before the update
         }
-        if (mapID == prevMapID)
+        if (mapID == prevMapID && Mod.GameInstance!.LevelID <= 4 && Mod.GameInstance!.LevelID >= 1)
         {
             HintSystem.AddInterruptedMessageToFront("This map isn't available in this year. Please time travel to access", 0);
         }
