@@ -56,7 +56,7 @@ public class Game
     public const int SpellPurchOffset = 975;
     public const int MaxItemID = 1030;
     public string PlayerName = "";
-    public DeathLink? Player1DeathLink;
+    public Player? Player1;
 
     // Helper Function to help print to the terminal and log file with a consistent prefix
     public static void PrintToLog(string message)
@@ -203,7 +203,7 @@ public class Game
         Shops.SetShopPointers();
         SpellHandler.LockBoxes();
 
-        Mod.GameInstance!.Player1DeathLink = new DeathLink((byte*)(Mod.BaseAddress + 0xC53930), 0);
+        Mod.GameInstance!.Player1 = new Player((byte*)(Mod.BaseAddress + 0xC53930), 0);
     }
 
     // This function turns on the N0CUT5 Cheat Code so cutscenes don't show
@@ -822,7 +822,7 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(sendDeath, (int)(Mod.BaseAddress + 0x3F8E6D), AsmHookBehaviour.ExecuteAfter).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(sendDeath, (int)(Mod.BaseAddress + 0x38A85B), AsmHookBehaviour.ExecuteAfter).Activate());
 
         string[] studCollected =
         {
@@ -1790,7 +1790,7 @@ public class Game
     {
         try
         {
-            if (Mod.GameInstance!.Player1DeathLink == null)
+            if (Mod.GameInstance!.Player1 == null)
             {
                 return;
             }
@@ -1800,9 +1800,11 @@ public class Game
                 return;
             }
             uint address = *playerBaseAddress;
-            PrintToLog($"Send Death function. EBX: 0x{ebx:X}. PlayerAddress: 0x{address:X}");
             if (ebx == address)
-                Mod.GameInstance!.Player1DeathLink.SendPlayerDeath();
+            {
+                PrintToLog($"Send Death function. EBX: 0x{ebx:X}. PlayerAddress: 0x{address:X}");
+                Mod.GameInstance!.Player1.SendPlayerDeath();
+            }
         }
         catch (Exception e)
         {

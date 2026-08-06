@@ -511,13 +511,14 @@ public class ArchipelagoHandler
             Game.PrintToLog("Not connected to Archipelago server. Cannot send DeathLink packet.");
             return false;
         }
-        BouncePacket packet = new BouncePacket();
+
+        BouncePacket packet = new();
         var now = DateTime.Now;
 
         if (now - LastDeathLinkPacketTime < TimeSpan.FromSeconds(1))
-            return false; // Prevent sending too many packets in a short time
+            return true; // Prevent sending too many packets in a short time
 
-        packet.Tags = new List<string> { "DeathLink" };
+        packet.Tags = ["DeathLink"];
         packet.Data = new Dictionary<string, JToken>
         {
             { "time", now.ToUnixTimeStamp() },
@@ -556,7 +557,7 @@ public class ArchipelagoHandler
         Game.PrintToLog($"Bounce Packet Received. Configuration Death Link: {Mod.Configuration?.ArchipelagoOptions.DeathLink}. Packet Tags: {string.Join(", ", packet.Tags)}");
         if (Mod.Configuration?.ArchipelagoOptions.DeathLink == Config.DeathLinkTag.On)
             ProcessBouncePacket(packet, "DeathLink", ref lastDeath, (source, data) =>
-                Mod.GameInstance!.Player1DeathLink?.ReceiveDeathLink(data["source"]?.ToString() ?? "Unknown"));
+                Mod.GameInstance!.Player1?.ReceiveDeathLink(data["source"]?.ToString() ?? "Unknown"));
     }
 
     private static void ProcessBouncePacket(BouncePacket packet, string tag, ref string lastTime, Action<string, Dictionary<string, JToken>> handler)
