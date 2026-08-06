@@ -454,7 +454,7 @@ public class SpellHandler
     public static unsafe void ResetSpellVisibility(bool player1)
     {
         byte* spellSelectedAddress = player1 == true ? P1SpellSelectedBaseAddress + 0x18 : P1SpellSelectedBaseAddress + 0x1C;
-        byte* activeShootingSpell = player1 == false ? P1ActiveShootingSpellBaseAddress + 0xED3 : P2ActiveShootingSpellBaseAddress + 0xED3;
+        byte* activeShootingSpell = player1 == true ? P1ActiveShootingSpellBaseAddress + 0xED3 : P2ActiveShootingSpellBaseAddress + 0xED3;
 
         ResetSpellVisibility(spellSelectedAddress, activeShootingSpell, activeShootingSpell + 0x1);
     }
