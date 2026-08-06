@@ -822,7 +822,7 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(sendDeath, (int)(Mod.BaseAddress + 0x38A85B), AsmHookBehaviour.ExecuteAfter).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(sendDeath, (int)(Mod.BaseAddress + 0x3F8E6D), AsmHookBehaviour.ExecuteAfter).Activate());
 
         string[] studCollected =
         {
@@ -1799,10 +1799,9 @@ public class Game
             {
                 return;
             }
-            uint address = *playerBaseAddress;
-            if (ebx == address)
+            if (ebx == *playerBaseAddress)
             {
-                PrintToLog($"Send Death function. EBX: 0x{ebx:X}. PlayerAddress: 0x{address:X}");
+                PrintToLog($"Send Death function. EBX: 0x{ebx:X}. PlayerAddress: 0x{*playerBaseAddress:X}");
                 Mod.GameInstance!.Player1.SendPlayerDeath();
             }
         }
