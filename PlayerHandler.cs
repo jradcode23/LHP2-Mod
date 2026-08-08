@@ -2,14 +2,27 @@ namespace LHP2_Archi_Mod;
 
 public unsafe class Player(byte* BaseAddress, int amnesty)
 {
+    private const int PlayerState1Offset = 0x54C;
+    private const int PlayerState2Offset = 0x558;
+    private const int PlayerMaxHealthOffset = 0xF0C;
+    private const int PlayerCurrentHealthOffset = 0xF0D;
+    private const int PlayerDespawnedStateOffset = 0x54;
+    private const int PlayerControlFlagsOffset = 0x4D;
+    private const int PlayerDamageInvulnerabilityTimerOffset = 0x11B8;
+    private const int PlayerDeathValueOffset = 0x55;
+    private const ushort DefaultAnimation = 0xFFFF;
+    private const byte PlayerDespawnedStateValue = 3;
+    private const ushort DeathAnimationConstant = 0x31;
+
     private byte* PlayerBaseAddress = BaseAddress;
     private byte* PointerToPlayerStruct => *(byte**)PlayerBaseAddress;
-    private ushort* PlayerState1 => (ushort*)(PointerToPlayerStruct + 0x54C); // This seems to be effect that the player receives
-    private ushort* PlayerState2 => (ushort*)(PointerToPlayerStruct + 0x558); // This seems to be how the player is animation of the effect
-    private byte* PlayerMaxHealth => PointerToPlayerStruct + 0xF0C;
-    private byte* PlayerCurrentHealth => PointerToPlayerStruct + 0xF0D;
-    private int SendDeathAmensty = amnesty;
-    private int ReceiveDeathAmnesty = amnesty;
+    private ushort* PlayerState1 => (ushort*)(PointerToPlayerStruct + PlayerState1Offset); // This seems to be effect that the player receives
+    private ushort* PlayerState2 => (ushort*)(PointerToPlayerStruct + PlayerState2Offset); // This seems to be how the player is animation of the effect
+    private byte* PlayerMaxHealth => PointerToPlayerStruct + PlayerMaxHealthOffset;
+    private byte* PlayerCurrentHealth => PointerToPlayerStruct + PlayerCurrentHealthOffset;
+
+    private int _sendDeathAmnesty = amnesty;
+    private int _receiveDeathAmnesty = amnesty;
     private readonly Queue<string> _deathLinkQueue = new();
     private readonly object _deathLinkQueueLock = new();
     private readonly object _receivedDeathLock = new();
@@ -17,25 +30,25 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
     private readonly object _outboundDeathLinkQueueLock = new();
     private bool _isProcessingDeathLinks;
     private bool _isProcessingOutboundDeathLinks;
-    private bool ReceivedDeath = false;
-    private int NextOutboundDeathLinkId;
+    private bool _receivedDeath;
+    private int _nextOutboundDeathLinkId;
 
     public void SendPlayerDeath()
     {
         lock (_receivedDeathLock)
         {
-            if (ReceivedDeath)
+            if (_receivedDeath)
             {
                 Game.PrintToLog("Death Due to Death Received. Skipping");
-                ReceivedDeath = false;
+                _receivedDeath = false;
                 return;
             }
         }
-        if (SendDeathAmensty > 0)
+        if (_sendDeathAmnesty > 0)
         {
-            SendDeathAmensty--;
-            HintSystem.AddInterruptedMessageToFront($"Sent Death ignored due to amnesty. Remaining amnesty: {SendDeathAmensty}", 0);
-            Game.PrintToLog($"Sent Death ignored due to amnesty. Remaining amnesty: {SendDeathAmensty}");
+            _sendDeathAmnesty--;
+            HintSystem.AddInterruptedMessageToFront($"Sent Death ignored due to amnesty. Remaining amnesty: {_sendDeathAmnesty}", 0);
+            Game.PrintToLog($"Sent Death ignored due to amnesty. Remaining amnesty: {_sendDeathAmnesty}");
             return;
         }
         QueueOutboundDeathLink();
@@ -46,7 +59,7 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
         int id;
         lock (_outboundDeathLinkQueueLock)
         {
-            id = NextOutboundDeathLinkId++;
+            id = _nextOutboundDeathLinkId++;
             _outboundDeathLinkQueue.Enqueue(id);
             if (_isProcessingOutboundDeathLinks)
             {
@@ -57,11 +70,7 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
         }
         HintSystem.AddInterruptedMessageToFront($"Sending Death. You have caused {id + 1} deaths", 0);
         //TODO: add death count to data storage
-        new Thread(() => ProcessOutboundDeathLinkQueue())
-        {
-            IsBackground = true,
-            Name = "OutboundDeathLinkProcessor"
-        }.Start();
+        StartBackgroundProcessor(ProcessOutboundDeathLinkQueue, "OutboundDeathLinkProcessor");
     }
 
     private void ProcessOutboundDeathLinkQueue()
@@ -106,14 +115,10 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
             _isProcessingDeathLinks = true;
         }
 
-        new Thread(() => ProcessDeathLinkQueue())
-        {
-            IsBackground = true,
-            Name = "InboundDeathLinkProcessor"
-        }.Start();
+        StartBackgroundProcessor(ProcessInboundDeathLinkQueue, "InboundDeathLinkProcessor");
     }
 
-    private void ProcessDeathLinkQueue()
+    private void ProcessInboundDeathLinkQueue()
     {
         while (true)
         {
@@ -140,26 +145,26 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
                 continue;
             }
 
-            ProcessDeathLink(nextDeath);
+            ProcessInboundDeathLink(nextDeath);
         }
     }
 
-    private void ProcessDeathLink(string slot)
+    private void ProcessInboundDeathLink(string slot)
     {
         lock (_receivedDeathLock)
         {
-            ReceivedDeath = true;
+            _receivedDeath = true;
         }
         string deathLinkMessage = $"Death Link received from {slot}";
 
-        if (ReceiveDeathAmnesty > 0)
+        if (_receiveDeathAmnesty > 0)
         {
-            ReceiveDeathAmnesty--;
-            HintSystem.AddInterruptedMessageToFront($"{deathLinkMessage} Ignored due to amnesty. Remaining amnesty: {ReceiveDeathAmnesty}", 0);
-            Game.PrintToLog($" Death Link received but ignored due to amnesty. Remaining amnesty: {ReceiveDeathAmnesty}");
+            _receiveDeathAmnesty--;
+            HintSystem.AddInterruptedMessageToFront($"{deathLinkMessage} Ignored due to amnesty. Remaining amnesty: {_receiveDeathAmnesty}", 0);
+            Game.PrintToLog($" Death Link received but ignored due to amnesty. Remaining amnesty: {_receiveDeathAmnesty}");
             lock (_receivedDeathLock)
             {
-                ReceivedDeath = false;
+                _receivedDeath = false;
             }
             return;
         }
@@ -184,18 +189,19 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
     {
         if (PointerToPlayerStruct == null)
         {
+            Game.PrintToLog("[LHP2.archipelago.mod] Cannot receive negative effect: PointerToPlayerStruct is null.");
             return false;
         }
-        if (*PlayerState2 != 0xFFFF) // Player is in shop - works faster than player controllable below
+        if (*PlayerState2 != DefaultAnimation) // Player isn't performing any animation
         {
             return false;
         }
-        byte* isPlayerDead = PointerToPlayerStruct + 0x54;
-        if (*isPlayerDead == 3) // 3 indicates the player is despawned. Lasts just as long as the respawn timer
+        byte* isPlayerDead = PointerToPlayerStruct + PlayerDespawnedStateOffset;
+        if (*isPlayerDead == PlayerDespawnedStateValue) // 3 indicates the player is despawned. Lasts just as long as the respawn timer
         {
             return false;
         }
-        byte isPlayerControllable = *(PointerToPlayerStruct + 0x4D);
+        byte isPlayerControllable = *(PointerToPlayerStruct + PlayerControlFlagsOffset);
         if ((isPlayerControllable & (1 << 3)) != 0)
         {
             return false;
@@ -204,7 +210,7 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
         {
             return false;
         }
-        float* damageInvulnerabilityTimer = (float*)(PointerToPlayerStruct + 0x11B8);
+        float* damageInvulnerabilityTimer = (float*)(PointerToPlayerStruct + PlayerDamageInvulnerabilityTimerOffset);
         if (*damageInvulnerabilityTimer > 2) // Set to 2 cause changing map is 3 seconds and changing character is 2.5 seconds
         {
             return false;
@@ -215,7 +221,7 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
         {
             return false;
         }
-        int deathValue = *(int*)(PointerToPlayerStruct + 0x55);
+        int deathValue = *(int*)(PointerToPlayerStruct + PlayerDeathValueOffset);
         if ((deathValue & 0xFFFF) == 0x300)
         {
             Game.PrintToLog("Player can die");
@@ -252,14 +258,31 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
             Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Player Lose Studs Function Address: 0x{(nuint)loseStudsAddress:X}");
             Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Player Spawn Studs Function Address: 0x{(nuint)spawnStudsAddress:X}");
 
+            if (PointerToPlayerStruct == null)
+            {
+                Mod.Logger!.WriteLine("[LHP2.archipelago.mod] KillPlayer aborted: PointerToPlayerStruct is null.");
+                return;
+            }
+
+            if (reduceStudTotalFunction == null)
+            {
+                Mod.Logger!.WriteLine("[LHP2.archipelago.mod] KillPlayer aborted: LoseStuds wrapper is null.");
+                return;
+            }
+
+            if (spawnStudFunction == null)
+            {
+                Mod.Logger!.WriteLine("[LHP2.archipelago.mod] KillPlayer aborted: StudDropSpawner wrapper is null.");
+                return;
+            }
+
             Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Player Struct Address: 0x{(nuint)PointerToPlayerStruct:X}");
 
             uint studsLost = reduceStudTotalFunction((int)PointerToPlayerStruct, 1);
             Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Player Studs Lost: {studsLost}");
             // playerDeathFunction((int)PointerToPlayerStruct, 5, 0, 1, 0, 0);
 
-            ushort* playerStatePtr = (ushort*)(PointerToPlayerStruct + 0x558);
-            *playerStatePtr = 0x31; // Set player state to dead
+            WriteToPlayerState(DeathAnimationConstant); // This value plays the death animation
 
             int worldObj = *(int*)(Mod.BaseAddress + 0xC5E358);
             Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] World Object: 0x{(nuint)worldObj:X}");
@@ -268,6 +291,13 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
             uint studHigh = 0; // Current setup has stud loss capped at 2k (I think) so this should never be needed
 
             IntPtr unknownPlayerPtr0 = (int)PointerToPlayerStruct + 0xFCC;
+
+            if (unknownPlayerPtr0 == IntPtr.Zero)
+            {
+                Mod.Logger!.WriteLine("[LHP2.archipelago.mod] KillPlayer aborted: unknownPlayerPtr0 is null.");
+                return;
+            }
+
             int unknownPlayerInt = *(PointerToPlayerStruct + 0x55);
             float unknownPlayerFloat = *(float*)(PointerToPlayerStruct + 0x1168);
             Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Unknown Player Ptr0: 0x{(nuint)unknownPlayerPtr0:X}");
@@ -285,5 +315,25 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
             Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Exception during KillPlayer: {ex.Message}");
             Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Stack Trace: {ex.StackTrace}");
         }
+    }
+
+    private static void StartBackgroundProcessor(Action action, string name)
+    {
+        new Thread(() => action())
+        {
+            IsBackground = true,
+            Name = name
+        }.Start();
+    }
+
+    private void WriteToPlayerState(ushort value)
+    {
+        if (PointerToPlayerStruct == null)
+        {
+            Mod.Logger?.WriteLine("[LHP2.archipelago.mod] WriteToPlayerState aborted: PointerToPlayerStruct is null.");
+            return;
+        }
+
+        *PlayerState2 = value;
     }
 }
