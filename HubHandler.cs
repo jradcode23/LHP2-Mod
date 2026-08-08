@@ -891,6 +891,10 @@ public class HubHandler
                         break;
                     }
                     Game.CheckAndReportLocation(1007);
+                    Game.CheckAndReportLocation(995); // Pets
+                    Game.CheckAndReportLocation(996); // Invisibility Cloak
+                    Game.CheckAndReportLocation(997); // Avada Kedavra
+                    Game.CheckAndReportLocation(999); // Lumos
                     break;
                 case 0x8: // Thestral Forest Lesson
                     *y5GhostPtr |= 1 << 3; // Mark Thestral Forest Complete

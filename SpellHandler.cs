@@ -475,7 +475,7 @@ public class SpellHandler
         {
             < 23 => 1, // Green Spells
             23 => 2, // Diffindo
-            < 26 => 3, // Lumos & Delum
+            <= 26 => 3, // Lumos & Delum
             27 => 4, // Agua
             28 => 5, // Focus
             29 => 6, // Expecto
@@ -638,7 +638,7 @@ public class SpellHandler
     }
 
     // Default Game spells that we aren't shuffling
-    private static readonly int[] defaultSpells = [0, 20, 21, 22, 24, 25, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 47, 48, 49, 52, 53, 54, 55];
+    private static readonly int[] defaultSpells = [0, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 47, 48, 49, 52, 53, 54, 55];
     private static readonly byte[] DefaultGlobalSpellMask = BuildDefaultGlobalSpellMask();
 
     // Helper function to create a bit mask so we don't have to constantly create this as resets spells runs frequently
@@ -871,6 +871,9 @@ public class SpellHandler
             // DADA Banned Lesson
             case 301 when !Mod.LHP2_Archipelago!.IsLocationChecked(1007) || (*y5GhostPtr & (1 << 2)) == 0:
                 LockGlobalSpell(46); // Ensure lesson can be beaten since game doesn't like when you already have it
+                break;
+            case 301:
+                UnlockSpell(20, Mod.GameInstance!.CurrentP1CharID, Mod.GameInstance!.CurrentP2CharID); // Unlock Pets since it is needed to leave the room
                 break;
             case 303 when (*y5GhostPtr2 & (1 << 6)) == 0 && (*y5GhostPtr2 & (1 << 3)) != 0:
                 UnlockGlobalSpell(28); // Unlock Focus since the game likes to constantly unlock it if you renter this map

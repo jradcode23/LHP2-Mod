@@ -211,7 +211,7 @@ public class ArchipelagoHandler
             if (Mod.GameInstance != null && Game.IsPlayerControllable())
             {
                 // Handle Spells/Abilities
-                if (gameID >= 998)
+                if (gameID >= Game.SpellPurchOffset)
                 {
                     Game.ManageItem(gameID);
                     int mapID;
