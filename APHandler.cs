@@ -515,8 +515,8 @@ public class ArchipelagoHandler
         BouncePacket packet = new();
         var now = DateTime.Now;
 
-        if (now - LastDeathLinkPacketTime < TimeSpan.FromSeconds(1))
-            return true; // Prevent sending too many packets in a short time
+        // if (now - LastDeathLinkPacketTime < TimeSpan.FromSeconds(1))
+        //     return true; // Prevent sending too many packets in a short time
 
         packet.Tags = ["DeathLink"];
         packet.Data = new Dictionary<string, JToken>
@@ -554,7 +554,7 @@ public class ArchipelagoHandler
 
     private void BouncePacketReceived(BouncePacket packet)
     {
-        Game.PrintToLog($"Bounce Packet Received. Configuration Death Link: {Mod.Configuration?.ArchipelagoOptions.DeathLink}. Packet Tags: {string.Join(", ", packet.Tags)}");
+        // Game.PrintToLog($"Bounce Packet Received. Configuration Death Link: {Mod.Configuration?.ArchipelagoOptions.DeathLink}. Packet Tags: {string.Join(", ", packet.Tags)}");
         if (Mod.Configuration?.ArchipelagoOptions.DeathLink == Config.DeathLinkTag.On)
             ProcessBouncePacket(packet, "DeathLink", ref lastDeath, (source, data) =>
                 Mod.GameInstance!.Player1?.ReceiveDeathLink(data["source"]?.ToString() ?? "Unknown"));

@@ -532,6 +532,10 @@ public class SpellHandler
                 MakeSpellVisible(spellId, isPlayer1);
             }
         }
+        if (spellId == 24)
+        {
+            UnlockSpell(25, charID1, charID2);
+        }
 
     }
 
