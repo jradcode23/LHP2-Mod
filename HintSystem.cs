@@ -23,6 +23,9 @@ public class HintSystem
     private static uint UseMagicAsHarry => HintTextAddress + 0x10e6;
     private static unsafe uint MessagePTRValue => (uint)(((byte*)*(uint**)(Mod.BaseAddress + 0xC58388)) + 0xFFC);
 
+    // Lock to read screen/cutscene state atomically across threads
+    private static readonly object ScreenStateLock = new();
+
     // This is a helper function to verify if there is anything else on screen before printing a hint message.
     public static unsafe bool IsScreenEmpty()
     {
@@ -35,6 +38,18 @@ public class HintSystem
     {
         byte* hubCutSceneAddress = (byte*)(Mod.BaseAddress + 0xC5B224);
         return *hubCutSceneAddress == 0; // 48 means that the player is in a hub cutscene, 0 means they are not
+    }
+
+    // Read both screen-empty and hub-cutscene flags under a single lock to avoid
+    // race conditions when multiple threads sample these values concurrently.
+    public static (bool nothingOnScreen, bool hubCutscene) GetScreenAndCutsceneState()
+    {
+        lock (ScreenStateLock)
+        {
+            bool nothing = IsScreenEmpty();
+            bool hub = IsPlayerNotInHubCutscene();
+            return (nothing, hub);
+        }
     }
 
     // We set up our thread safe containers and lock for them
@@ -78,8 +93,7 @@ public class HintSystem
             bool notInShop;
             bool notInLevelSelect;
             bool notInMenu;
-            bool nothingOnScreen = IsScreenEmpty();
-            bool hubCutscene = IsPlayerNotInHubCutscene();
+            (bool nothingOnScreen, bool hubCutscene) = GetScreenAndCutsceneState();
             lock (Mod.GameInstance!.StateLock)
             {
                 notInShop = Mod.GameInstance!.PrevInShop == false;

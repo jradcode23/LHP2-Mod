@@ -215,8 +215,7 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
         {
             return false;
         }
-        bool nothingOnScreen = HintSystem.IsScreenEmpty();
-        bool hubCutscene = HintSystem.IsPlayerNotInHubCutscene();
+        (bool nothingOnScreen, bool hubCutscene) = HintSystem.GetScreenAndCutsceneState();
         if (!nothingOnScreen || !hubCutscene)
         {
             return false;
