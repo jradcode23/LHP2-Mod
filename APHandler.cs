@@ -503,7 +503,8 @@ public class ArchipelagoHandler
         Session.DataStorage[Scope.Slot, "map"] = MapID;
     }
 
-    private string lastDeath = string.Empty;
+    private long LastReceivedDeath = 0;
+    private string LastReceivedSource = string.Empty;
     public bool SendDeath()
     {
         if (!IsConnected || _session == null)
@@ -515,8 +516,8 @@ public class ArchipelagoHandler
         BouncePacket packet = new();
         var now = DateTime.Now;
 
-        // if (now - LastDeathLinkPacketTime < TimeSpan.FromSeconds(1))
-        //     return true; // Prevent sending too many packets in a short time
+        if (now - LastDeathLinkPacketTime < TimeSpan.FromSeconds(1))
+            return true; // Prevent sending too many packets in a short time
 
         packet.Tags = ["DeathLink"];
         packet.Data = new Dictionary<string, JToken>
@@ -556,21 +557,31 @@ public class ArchipelagoHandler
     {
         // Game.PrintToLog($"Bounce Packet Received. Configuration Death Link: {Mod.Configuration?.ArchipelagoOptions.DeathLink}. Packet Tags: {string.Join(", ", packet.Tags)}");
         if (Mod.Configuration?.ArchipelagoOptions.DeathLink == Config.DeathLinkTag.On)
-            ProcessBouncePacket(packet, "DeathLink", ref lastDeath, (source, data) =>
-                Mod.GameInstance!.Player1?.ReceiveDeathLink(data["source"]?.ToString() ?? "Unknown"));
+            ProcessBouncePacket(packet, "DeathLink", ref LastReceivedDeath, ref LastReceivedSource, (source, data) =>
+                Mod.GameInstance!.Player1?.ReceiveDeathLink(data["cause"]?.ToString() ?? "Unknown"));
     }
 
-    private static void ProcessBouncePacket(BouncePacket packet, string tag, ref string lastTime, Action<string, Dictionary<string, JToken>> handler)
+    private static void ProcessBouncePacket(BouncePacket packet, string tag, ref long lastTime, ref string lastSource, Action<string, Dictionary<string, JToken>> handler)
     {
-        if (!packet.Tags.Contains(tag)) return;
-        if (!packet.Data.TryGetValue("time", out var timeObj))
+        if (!packet.Tags.Contains(tag))
             return;
-        if (lastTime == timeObj.ToString())
-            return;
-        lastTime = timeObj.ToString();
         if (!packet.Data.TryGetValue("source", out var sourceObj))
             return;
         var source = sourceObj?.ToString() ?? "Unknown";
+        if (source == Mod.GameInstance?.PlayerName)
+            return; // Ignore packets sent by ourselves
+        if (!packet.Data.TryGetValue("time", out var timeObj))
+            return;
+
+        if (!long.TryParse(timeObj?.ToString(), out var currentUnixTime))
+            return;
+
+        if (lastTime != 0 && source == lastSource && Math.Abs(currentUnixTime - lastTime) <= 1)
+            return;
+
+        lastTime = currentUnixTime;
+        lastSource = source;
+
         if (packet.Data.TryGetValue("cause", out var causeObj))
         {
             var cause = causeObj?.ToString() ?? "Unknown";

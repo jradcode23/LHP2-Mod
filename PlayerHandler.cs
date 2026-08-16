@@ -279,9 +279,15 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
 
             uint studsLost = reduceStudTotalFunction((int)PointerToPlayerStruct, 1);
             Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Player Studs Lost: {studsLost}");
-            // playerDeathFunction((int)PointerToPlayerStruct, 5, 0, 1, 0, 0);
+            // playerDeathFunction((int)PointerToPlayerStruct, 5, 0, 1, 0, 0); // Removed for now, was randomly crashing. It seemed to be corrupting other function call addresses
 
             WriteToPlayerState(DeathAnimationConstant); // This value plays the death animation
+
+            if (studsLost == 0)
+            {
+                Mod.Logger!.WriteLine("No studs lost, skipping stud spawn.");
+                return;
+            }
 
             int worldObj = *(int*)(Mod.BaseAddress + 0xC5E358);
             Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] World Object: 0x{(nuint)worldObj:X}");

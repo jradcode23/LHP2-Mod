@@ -1815,15 +1815,15 @@ public class Game
     [Function(CallingConventions.Cdecl)]
     public delegate uint LoseStuds(int playerPtr, int type);
 
-    [Function(CallingConventions.Cdecl)]
-    public delegate void KillPLayer(
-        IntPtr playerPtr, // pointer to the player that is being killed
-        uint deathType, // I believe this is death type, looks to be 4-5
-        int unkown0, // Unkown int - looks to be 0 when called
-        int unknown1, // unkown int - looks to be 1 when called
-        IntPtr deathFlags, // pointer to array that contains all the death information & timers. Can pass 0
-        int unkown2 // Unknown in - looks to be 0 when called
-    );
+    // [Function(CallingConventions.Cdecl)]
+    // public delegate void KillPLayer(
+    //     IntPtr playerPtr, // pointer to the player that is being killed
+    //     uint deathType, // I believe this is death type, looks to be 4-5
+    //     int unkown0, // Unkown int - looks to be 0 when called
+    //     int unknown1, // unkown int - looks to be 1 when called
+    //     IntPtr deathFlags, // pointer to array that contains all the death information & timers. Can pass 0
+    //     int unkown2 // Unknown in - looks to be 0 when called
+    // );
 
     [Function(CallingConventions.Cdecl)]
     public delegate void StudDropSpawner(
