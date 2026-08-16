@@ -176,11 +176,6 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
 
     public void ReceiveDeathLink(string slot)
     {
-        if (slot == Mod.GameInstance!.PlayerName)
-        {
-            Game.PrintToLog("Receive function. Player Caused Death, skipping.");
-            return;
-        }
         QueueInboundDeath(slot);
         Game.PrintToLog($"Death Link received Queued from {slot}.");
     }

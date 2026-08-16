@@ -524,6 +524,7 @@ public class ArchipelagoHandler
         {
             { "time", now.ToUnixTimeStamp() },
             { "source", Slot },
+            { "cause", "Harry didn't cast Expelliarmus fast enough" }
         };
 
         if (packet.Data.TryGetValue("source", out var sourceObj))
@@ -560,8 +561,8 @@ public class ArchipelagoHandler
             ProcessBouncePacket(packet, "DeathLink", ref LastReceivedDeath, ref LastReceivedSource, (source, data) =>
             {
                 var cause = data.TryGetValue("cause", out var causeObj)
-                    ? causeObj?.ToString() ?? source
-                    : source;
+                    ? causeObj?.ToString() ?? $"Death Received from {source}"
+                    : $"Death Received from {source}";
 
                 Mod.GameInstance!.Player1?.ReceiveDeathLink(cause);
             });
