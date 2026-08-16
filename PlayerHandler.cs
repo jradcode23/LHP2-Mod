@@ -201,7 +201,12 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
         {
             return false;
         }
-        if (*PlayerMaxHealth < 8) // Player has less than 8 health, which means duel or broom or something
+        if (*PlayerMaxHealth < 8) // Player has less than 8 health, which means they are on a rideable
+        {
+            return false;
+        }
+        byte* duelingCameraState = *(byte**)(Mod.BaseAddress + 0xC4ECB0) + 0x1FD1;
+        if (*duelingCameraState == 1) // Player is in a duel, which means they can't die
         {
             return false;
         }
