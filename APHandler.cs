@@ -503,7 +503,7 @@ public class ArchipelagoHandler
         Session.DataStorage[Scope.Slot, "map"] = MapID;
     }
 
-    private long LastReceivedDeath = 0;
+    private double LastReceivedDeath = 0;
     private string LastReceivedSource = string.Empty;
     public bool SendDeath()
     {
@@ -558,10 +558,16 @@ public class ArchipelagoHandler
         // Game.PrintToLog($"Bounce Packet Received. Configuration Death Link: {Mod.Configuration?.ArchipelagoOptions.DeathLink}. Packet Tags: {string.Join(", ", packet.Tags)}");
         if (Mod.Configuration?.ArchipelagoOptions.DeathLink == Config.DeathLinkTag.On)
             ProcessBouncePacket(packet, "DeathLink", ref LastReceivedDeath, ref LastReceivedSource, (source, data) =>
-                Mod.GameInstance!.Player1?.ReceiveDeathLink(data["cause"]?.ToString() ?? "Unknown"));
+            {
+                var cause = data.TryGetValue("cause", out var causeObj)
+                    ? causeObj?.ToString() ?? source
+                    : source;
+
+                Mod.GameInstance!.Player1?.ReceiveDeathLink(cause);
+            });
     }
 
-    private static void ProcessBouncePacket(BouncePacket packet, string tag, ref long lastTime, ref string lastSource, Action<string, Dictionary<string, JToken>> handler)
+    private static void ProcessBouncePacket(BouncePacket packet, string tag, ref double lastTime, ref string lastSource, Action<string, Dictionary<string, JToken>> handler)
     {
         if (!packet.Tags.Contains(tag))
             return;
@@ -570,16 +576,22 @@ public class ArchipelagoHandler
         var source = sourceObj?.ToString() ?? "Unknown";
         if (source == Mod.GameInstance?.PlayerName)
             return; // Ignore packets sent by ourselves
-        if (!packet.Data.TryGetValue("time", out var timeObj))
+        if (!packet.Data.TryGetValue("time", out var timeObj) || timeObj is null)
             return;
 
-        if (!long.TryParse(timeObj?.ToString(), out var currentUnixTime))
+        if (timeObj.Type != JTokenType.Integer && timeObj.Type != JTokenType.Float)
             return;
 
-        if (lastTime != 0 && source == lastSource && Math.Abs(currentUnixTime - lastTime) <= 1)
-            return;
+        var currentUnixTime = timeObj.Value<double>();
+        var roundedUnixTime = Math.Round(currentUnixTime, MidpointRounding.AwayFromZero);
 
-        lastTime = currentUnixTime;
+        if (lastTime != 0f && source == lastSource && Math.Abs(currentUnixTime - lastTime) <= 1.0)
+        {
+            Game.PrintToLog($"Last Time: {lastTime}, Last Source: {lastSource}, Current Time: {roundedUnixTime}, Current source: {source}");
+            return;
+        }
+
+        lastTime = roundedUnixTime;
         lastSource = source;
 
         if (packet.Data.TryGetValue("cause", out var causeObj))
