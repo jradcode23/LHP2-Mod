@@ -184,7 +184,7 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
     {
         if (PointerToPlayerStruct == null)
         {
-            Game.PrintToLog("[LHP2.archipelago.mod] Cannot receive negative effect: PointerToPlayerStruct is null.");
+            Game.PrintToLog("Cannot receive negative effect: PointerToPlayerStruct is null.");
             return false;
         }
         if (*PlayerState2 != DefaultAnimation) // Player isn't performing any animation
@@ -254,31 +254,31 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
             );
 
             // Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Player Death Function Address: 0x{(nuint)deathWrapperAddress:X}");
-            Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Player Lose Studs Function Address: 0x{(nuint)loseStudsAddress:X}");
-            Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Player Spawn Studs Function Address: 0x{(nuint)spawnStudsAddress:X}");
+            Mod.Logger!.WriteLine($"Player Lose Studs Function Address: 0x{(nuint)loseStudsAddress:X}");
+            Mod.Logger!.WriteLine($"Player Spawn Studs Function Address: 0x{(nuint)spawnStudsAddress:X}");
 
             if (PointerToPlayerStruct == null)
             {
-                Mod.Logger!.WriteLine("[LHP2.archipelago.mod] KillPlayer aborted: PointerToPlayerStruct is null.");
+                Mod.Logger!.WriteLine("KillPlayer aborted: PointerToPlayerStruct is null.");
                 return;
             }
 
             if (reduceStudTotalFunction == null)
             {
-                Mod.Logger!.WriteLine("[LHP2.archipelago.mod] KillPlayer aborted: LoseStuds wrapper is null.");
+                Mod.Logger!.WriteLine("KillPlayer aborted: LoseStuds wrapper is null.");
                 return;
             }
 
             if (spawnStudFunction == null)
             {
-                Mod.Logger!.WriteLine("[LHP2.archipelago.mod] KillPlayer aborted: StudDropSpawner wrapper is null.");
+                Mod.Logger!.WriteLine("KillPlayer aborted: StudDropSpawner wrapper is null.");
                 return;
             }
 
-            Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Player Struct Address: 0x{(nuint)PointerToPlayerStruct:X}");
+            Mod.Logger!.WriteLine($"Player Struct Address: 0x{(nuint)PointerToPlayerStruct:X}");
 
             uint studsLost = reduceStudTotalFunction((int)PointerToPlayerStruct, 1);
-            Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Player Studs Lost: {studsLost}");
+            Mod.Logger!.WriteLine($"Player Studs Lost: {studsLost}");
             // playerDeathFunction((int)PointerToPlayerStruct, 5, 0, 1, 0, 0); // Removed for now, was randomly crashing. It seemed to be corrupting other function call addresses
 
             WriteToPlayerState(DeathAnimationConstant); // This value plays the death animation
@@ -290,7 +290,7 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
             }
 
             int worldObj = *(int*)(Mod.BaseAddress + 0xC5E358);
-            Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] World Object: 0x{(nuint)worldObj:X}");
+            Mod.Logger!.WriteLine($"World Object: 0x{(nuint)worldObj:X}");
 
             uint studLow = studsLost;
             uint studHigh = 0; // Current setup has stud loss capped at 2k (I think) so this should never be needed
@@ -299,15 +299,15 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
 
             if (unknownPlayerPtr0 == IntPtr.Zero)
             {
-                Mod.Logger!.WriteLine("[LHP2.archipelago.mod] KillPlayer aborted: unknownPlayerPtr0 is null.");
+                Mod.Logger!.WriteLine("KillPlayer aborted: unknownPlayerPtr0 is null.");
                 return;
             }
 
             int unknownPlayerInt = *(PointerToPlayerStruct + 0x55);
             float unknownPlayerFloat = *(float*)(PointerToPlayerStruct + 0x1168);
-            Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Unknown Player Ptr0: 0x{(nuint)unknownPlayerPtr0:X}");
-            Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Unknown Player Int: {unknownPlayerInt}");
-            Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Unknown Player Float: {unknownPlayerFloat}");
+            Mod.Logger!.WriteLine($"Unknown Player Ptr0: 0x{(nuint)unknownPlayerPtr0:X}");
+            Mod.Logger!.WriteLine($"Unknown Player Int: {unknownPlayerInt}");
+            Mod.Logger!.WriteLine($"Unknown Player Float: {unknownPlayerFloat}");
 
             spawnStudFunction(
                 worldObj, studLow, studHigh, 0, 0, 0,
@@ -317,8 +317,8 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
         }
         catch (Exception ex)
         {
-            Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Exception during KillPlayer: {ex.Message}");
-            Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Stack Trace: {ex.StackTrace}");
+            Mod.Logger!.WriteLine($"Exception during KillPlayer: {ex.Message}");
+            Mod.Logger!.WriteLine($"Stack Trace: {ex.StackTrace}");
         }
     }
 
