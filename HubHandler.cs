@@ -520,7 +520,7 @@ public class HubHandler
         }
 
         byte* N0CUT5CheatCodeConstant = (byte*)(Mod.BaseAddress + 0x8968A4);
-        HintSystem.SetMessageText(mapRequested, (uint)N0CUT5CheatCodeConstant);
+        HintSystem.WriteTextToMemory(mapRequested, (uint)N0CUT5CheatCodeConstant);
 
         currentMap.UpdateMap(destinationMap.MapConstant);
         AdjustLeakyMapConstants(destinationMap.MapConstant, destinationMap.EntranceConstant);
@@ -826,7 +826,7 @@ public class HubHandler
         }
         string hubName = $"{year}HubLeakyCauldron";
         Game.PrintToLog($"Return to Leaky address: 0x{(uint)returnToLeakyPTR:X}, year: {year}");
-        HintSystem.SetMessageText(hubName, (uint)returnToLeakyPTR);
+        HintSystem.WriteTextToMemory(hubName, (uint)returnToLeakyPTR);
     }
 
     /*

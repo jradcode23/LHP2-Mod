@@ -4,44 +4,30 @@ using System.Collections.Concurrent;
 
 namespace LHP2_Archi_Mod;
 
-// Struct that contains the max text length that the game can handle
-public struct HintData
-{
-    public const int MaxLength = 255;
-}
-
 // We use a record container to hold the hint messages and their associated type (i.e. progression, filler, trap, useful).
 public record HintMessage(string Text, byte MessageType);
 
 public class HintSystem
 {
-    private static unsafe float* hintTimerBaseAddress => (float*)(Mod.BaseAddress + 0xC5839C);
-    private static unsafe uint* hintPTRBaseAddress => (uint*)(Mod.BaseAddress + 0xC5838C);
-    private static unsafe byte* hintColor => (byte*)(Mod.BaseAddress + 0xC58391);
-    public static unsafe byte* HintTextBaseAddress => *(byte**)(Mod.BaseAddress + 0xB16324);
-    private static unsafe uint HintTextAddress => (uint)(HintTextBaseAddress + 0xBA);
-    private static uint UseMagicAsHarry => HintTextAddress + 0x10e6;
-    private static unsafe uint MessagePTRValue => (uint)(((byte*)*(uint**)(Mod.BaseAddress + 0xC58388)) + 0xFFC);
-
-    // Lock to read screen/cutscene state atomically across threads
+    // PlayerHandler also uses these 2 addresses to check if the player can receive a negative effect (runs on a different thread). Set up a lock for thread safety
     private static readonly object ScreenStateLock = new();
 
     // This is a helper function to verify if there is anything else on screen before printing a hint message.
     public static unsafe bool IsScreenEmpty()
     {
         byte* screenEmptyBaseAddress = (byte*)(Mod.BaseAddress + 0xAD98D9);
-        return *screenEmptyBaseAddress == 255; // 255 is the value when the screen is empty, 0 means something is on screen
+        // 255 is the value when the screen is empty, 0 means something is on screen
+        return *screenEmptyBaseAddress == 255;
     }
 
     // This is a helper function to verify if the player is Not in a Hub cutscene (i.e. umbridge breaking up the students kissing)
     public static unsafe bool IsPlayerNotInHubCutscene()
     {
         byte* hubCutSceneAddress = (byte*)(Mod.BaseAddress + 0xC5B224);
-        return *hubCutSceneAddress == 0; // 48 means that the player is in a hub cutscene, 0 means they are not
+        // 48 means that the player is in a hub cutscene, 0 means they are not
+        return *hubCutSceneAddress == 0;
     }
 
-    // Read both screen-empty and hub-cutscene flags under a single lock to avoid
-    // race conditions when multiple threads sample these values concurrently.
     public static (bool nothingOnScreen, bool hubCutscene) GetScreenAndCutsceneState()
     {
         lock (ScreenStateLock)
@@ -52,10 +38,10 @@ public class HintSystem
         }
     }
 
-    // We set up our thread safe containers and lock for them
     private static readonly ConcurrentQueue<HintMessage> MessageQueue = new();
-    private static readonly LinkedList<HintMessage> InterruptedMessageQueue = new();
-    private static readonly object queueLock = new();
+    // Used a link list for interupted messages so you can add to front of list if it can't be displayed
+    private static readonly LinkedList<HintMessage> InterruptedMessageList = new();
+    private static readonly object interruptedMessageLock = new();
 
     // Helper function to add a message to the queue 
     public static void EnqueueMessage(string message, byte messageType = 5)
@@ -74,14 +60,31 @@ public class HintSystem
             return;
         }
 
-        lock (queueLock)
+        lock (interruptedMessageLock)
         {
-            if (!InterruptedMessageQueue.Any(m => m.Text == message))
+            if (!InterruptedMessageList.Any(m => m.Text == message))
             {
-                InterruptedMessageQueue.AddFirst(new HintMessage(message, messageType));
+                InterruptedMessageList.AddFirst(new HintMessage(message, messageType));
             }
         }
     }
+
+    // Timer for how long hints stay on screen (5 seconds)
+    private static unsafe float* HintTimerAddress => (float*)(Mod.BaseAddress + 0xC5839C);
+    // Place the hint code in this address to make the respective text appear on screen
+    private static unsafe uint* HintCodeInterpreterAddress => (uint*)(Mod.BaseAddress + 0xC5838C);
+    // The byte here determines what color the hint text prints as
+    private static unsafe byte* HintColorAdress => (byte*)(Mod.BaseAddress + 0xC58391);
+
+    private static unsafe uint* HintMessageBaseAddress => *(uint**)(Mod.BaseAddress + 0xC58388);
+    // Pointer to the Hint Code for "Some LEGO blocks" hint text. Place this address into the interpreter to get it to print on screen
+    private static unsafe uint* SomeLegoHintCode => HintMessageBaseAddress + (0xFFC / 4);
+    // The address that contains the "Some LEGO blocks" hint is 4 bytes after the hint code
+    private static unsafe uint* SomeLegoTextAddress => HintMessageBaseAddress + (0x1000 / 4);
+    // The address that contains the "Use Magic As Harry" hint
+    private static unsafe uint* UseMagicAsHarryTextAddress => HintMessageBaseAddress + (0xDF0 / 4);
+    // Limiting the text to 255 characters. Can potentially handle more, but this should be sufficient and prevent unexpected crashes.
+    private const int MaxMessageLength = 255;
 
     // Main function we use (in a separate thread) to print a message on screen
     public static unsafe void HandleMessages()
@@ -104,16 +107,16 @@ public class HintSystem
             if (playerControllable && notInShop && notInLevelSelect && notInMenu && nothingOnScreen && hubCutscene)
             {
                 // verify if there is no message currently being printed or if the timer is maxed (at 5 seconds)
-                if (*hintPTRBaseAddress == 0 || *hintTimerBaseAddress >= 5.0f)
+                if (*HintCodeInterpreterAddress == 0 || *HintTimerAddress >= 5.0f)
                 {
                     HintMessage? message = null;
-                    lock (queueLock)
+                    lock (interruptedMessageLock)
                     {
                         // If there is a message that was interrupted, we want that to print first
-                        if (InterruptedMessageQueue.Count > 0)
+                        if (InterruptedMessageList.Count > 0)
                         {
-                            message = InterruptedMessageQueue.First!.Value;
-                            InterruptedMessageQueue.RemoveFirst();
+                            message = InterruptedMessageList.First!.Value;
+                            InterruptedMessageList.RemoveFirst();
                         }
                     }
                     // If there wasn't anything in the interrupted queue, try to get something from the message queue
@@ -126,13 +129,10 @@ public class HintSystem
                     // If there was something in the message queue, print it out
                     if (message != null)
                     {
-                        uint messagePTRValue = MessagePTRValue;
-                        uint hintTextPTRAddress = HintTextAddress;
-
-                        SetMessageText(message.Text, hintTextPTRAddress); // Set the designated messaged
-                        *hintPTRBaseAddress = messagePTRValue; // Set hint system pointer to our message
-                        *hintColor = message.MessageType; // Set Color based on item progression
-                        *hintTimerBaseAddress = 0f; // Restart Hint timer, shows for 5 seconds
+                        WriteTextToMemory(message.Text, *SomeLegoTextAddress); // Set the designated messaged
+                        *HintCodeInterpreterAddress = (uint)SomeLegoHintCode; // Set hint system pointer to our message
+                        *HintColorAdress = message.MessageType; // Set Color based on item progression
+                        *HintTimerAddress = 0f; // Restart Hint timer, shows for 5 seconds
                     }
                 }
                 Thread.Sleep(100);
@@ -150,23 +150,22 @@ public class HintSystem
     */
     public static unsafe void HandleInterruptedMessage()
     {
-        if (*hintTimerBaseAddress > 4f || *hintPTRBaseAddress == 0) // If timer is greater than 4 seconds or if there is nothing on screen, we can return
+        if (*HintTimerAddress > 4f || *HintCodeInterpreterAddress == 0) // If timer is greater than 4 seconds or if there is nothing on screen, we can return
         {
-            *hintPTRBaseAddress = 0;
+            *HintCodeInterpreterAddress = 0;
             return;
         }
 
-        uint hintTextPTRAddress = HintTextAddress;
-        string currentMessage = new((sbyte*)hintTextPTRAddress); // Read the current message from memory
-        byte currentMessageType = *hintColor; // Read the message type from memory
+        string currentMessage = new((sbyte*)*SomeLegoTextAddress); // Read the current message from memory
+        byte currentMessageType = *HintColorAdress; // Read the message type from memory
 
         if (string.IsNullOrEmpty(currentMessage))
         {
-            Game.PrintToLog("Hint Message has a null value");
+            Game.PrintToLog("Message was interrupted, but had a null value");
             return;
         }
 
-        if (currentMessage.Length > HintData.MaxLength)
+        if (currentMessage.Length > MaxMessageLength)
         {
             Game.PrintToLog("Unexpected Behavior, hint message exceeded max length");
             return;
@@ -182,23 +181,22 @@ public class HintSystem
     Helper function to convert a string to ASCII encoded bytes
     Used primarily for hint system, but also used to restore Return to Leaky Cauldron in The Seven Harrys since the Delum and Bag lesson messes with it to ensure you learn apparition
     */
-    public static void SetMessageText(string newText, uint hintTextPTRAddress)
+    public static void WriteTextToMemory(string newText, uint memoryAddress)
     {
 
         // ASCII encode and null-terminate
-        var normalized = newText;
-        var bytes = System.Text.Encoding.ASCII.GetBytes(normalized + '\0');
+        var bytes = System.Text.Encoding.ASCII.GetBytes(newText + '\0');
 
         // Ensure that our message isn't too large to print.
-        if (bytes.Length > HintData.MaxLength)
+        if (bytes.Length > MaxMessageLength)
         {
-            var full = new byte[HintData.MaxLength];
-            Array.Copy(bytes, full, HintData.MaxLength);
+            var full = new byte[MaxMessageLength];
+            Array.Copy(bytes, full, MaxMessageLength);
             bytes = full;
         }
 
         // Write the message directly to memory
-        Memory.Instance.SafeWrite(hintTextPTRAddress, bytes);
+        Memory.Instance.SafeWrite(memoryAddress, bytes);
     }
 
     private static uint OriginalPausedAddress = 0;
@@ -206,14 +204,14 @@ public class HintSystem
     // This is a helper function that verifies the count of horcruxes received and updates the on screen text
     public static unsafe void UpdateWinConText()
     {
-        nuint* pausedTextBaseAddress = *(nuint**)(Mod.BaseAddress + 0xAE6E58) + 0xE5;
+        uint* pausedTextBaseAddress = *(uint**)(Mod.BaseAddress + 0xAE6E58) + 0xE5;
         if (OriginalPausedAddress == 0)
         {
             OriginalPausedAddress = (uint)*(byte**)pausedTextBaseAddress;
-            Game.PrintToLog($"Set OriginalPausedAddress to: 0x{(nuint)OriginalPausedAddress:X}");
+            Game.PrintToLog($"Set OriginalPausedAddress to: 0x{OriginalPausedAddress:X}");
         }
 
-        *pausedTextBaseAddress = UseMagicAsHarry;
+        *pausedTextBaseAddress = *UseMagicAsHarryTextAddress;
 
         if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 0)
         {
@@ -229,22 +227,22 @@ public class HintSystem
 
     public static unsafe void RestoreWinConText()
     {
-        nuint* pausedTextBaseAddress = *(nuint**)(Mod.BaseAddress + 0xAE6E58) + 0xE5;
+        uint* pausedTextBaseAddress = *(uint**)(Mod.BaseAddress + 0xAE6E58) + 0xE5;
         *pausedTextBaseAddress = OriginalPausedAddress;
     }
 
     // Helper function to write the received Horcrux count to the Player 2 slot name
-    public static void DisplayHorcruxCount(byte count)
+    public static unsafe void DisplayHorcruxCount(byte count)
     {
         string message = $"Horcruxes Collected: {count}/{Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredHorcruxes}";
-        SetMessageText(message, UseMagicAsHarry);
+        WriteTextToMemory(message, *UseMagicAsHarryTextAddress);
     }
 
     // Helper function to write the Levels Beaten to the Player 2 slot name
-    public static void DisplayLevelsBeaten(byte count)
+    public static unsafe void DisplayLevelsBeaten(byte count)
     {
         string message = $"Levels Beaten: {count}/{Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredLevels}";
-        SetMessageText(message, UseMagicAsHarry);
+        WriteTextToMemory(message, *UseMagicAsHarryTextAddress);
     }
 
 }

@@ -101,7 +101,7 @@ public class ArchipelagoHandler
         {
             // Check to see if Game/Menu is loaded before trying to connect, we do this to mitigate impact of null values and the game changing things later.
             Game.IsGameLoaded();
-            HintSystem.SetMessageText("Connecting. Please wait.", (uint)NewGameTextPTR);
+            HintSystem.WriteTextToMemory("Connecting. Please wait.", (uint)NewGameTextPTR);
             Seed = Session.ConnectAsync()?.Result?.SeedName;
             Game.PrintToLog(Seed + Slot);
 
@@ -121,7 +121,7 @@ public class ArchipelagoHandler
         catch (Exception e)
         {
             result = new LoginFailure(e.GetBaseException().Message);
-            HintSystem.SetMessageText("Failed To Connect", (uint)NewGameTextPTR);
+            HintSystem.WriteTextToMemory("Failed To Connect", (uint)NewGameTextPTR);
         }
 
         if (result.Successful)
@@ -132,7 +132,7 @@ public class ArchipelagoHandler
             SlotDataInstance.PrintData();
             var locationIDs = BuildLocationIds();
             var scouting = Session.Locations.ScoutLocationsAsync(HintCreationPolicy.None, locationIDs);
-            HintSystem.SetMessageText("Hooking, Please Wait", (uint)NewGameTextPTR);
+            HintSystem.WriteTextToMemory("Hooking, Please Wait", (uint)NewGameTextPTR);
             // Modify the game now that we are connected
             bool isHooked = Mod.InitOnMenu();
             // Store our slot name in game to access later
@@ -141,11 +141,11 @@ public class ArchipelagoHandler
             Session.DataStorage[Scope.Slot, "map"] = 402;
             if (isHooked)
             {
-                HintSystem.SetMessageText("Ready to Play, New Game", (uint)NewGameTextPTR);
+                HintSystem.WriteTextToMemory("Ready to Play, New Game", (uint)NewGameTextPTR);
             }
             else
             {
-                HintSystem.SetMessageText("Failed To Hook", (uint)NewGameTextPTR);
+                HintSystem.WriteTextToMemory("Failed To Hook", (uint)NewGameTextPTR);
             }
             EnsureBackgroundThreads();
             scouting.Wait();

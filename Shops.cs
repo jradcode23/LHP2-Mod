@@ -25,7 +25,7 @@ public class Shops
     private static unsafe int* JokeShopBaseAddress => (int*)(Mod.BaseAddress + 0x94E514);
     private static unsafe byte* SingleSlotCharacterBaseAddress => *(byte**)(Mod.BaseAddress + 0xADBF90);
     private static unsafe byte* MultiSlotCharacterBaseAddress => *(byte**)(Mod.BaseAddress + 0xAE157C);
-    private static unsafe uint ShopTextAddress => (uint)(HintSystem.HintTextBaseAddress + 0x274);
+    private static unsafe uint ShopTextAddress => (uint)(*(byte**)(Mod.BaseAddress + 0xB16324) + 0x274);
     private static unsafe int* GoldBrickShopPointerAddress => *(int**)(Mod.BaseAddress + 0xAE6E58) + 0xE0;
     private static unsafe byte* CharacterPointerBaseAddress => *(byte**)(Mod.BaseAddress + 0xB06ED0);
     private static IntPtr[] OriginalJokeShopPointers = new IntPtr[JokeShopCount];
@@ -264,7 +264,7 @@ public class Shops
             {
                 message = message[..60]; // Truncate message if it exceeds selected max hint length
             }
-            HintSystem.SetMessageText(message, ShopTextAddress);
+            HintSystem.WriteTextToMemory(message, ShopTextAddress);
         }
         catch (Exception ex)
         {
