@@ -245,6 +245,10 @@ public class LevelHandler
             // Menu
             case 402:
                 HubHandler.UpdateDarkTimesMap();
+                if (ArchipelagoHandler.IsConnected)
+                {
+                    HintSystem.UpdateConnectionStatusText("Ready to Play");
+                }
                 break;
             default:
                 break;

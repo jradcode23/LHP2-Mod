@@ -1216,12 +1216,6 @@ public class Game
             prevMapID = Mod.GameInstance!.PrevMapID;
         }
 
-        // When leaving Y7 London, ensure that Code is running as normal (disabled in Y7 London cause of apparition)
-        // if (prevMapID == 103)
-        // {
-        //     LessonRestoreReturnToHub();
-        // }
-
         // When leaving Leaky & staying in Hub, we want to verify what the London ID is still correct
         if (LeakyMapIDs.Contains(prevMapID) && Mod.GameInstance!.LevelID is >= 1 and <= 4)
         {
@@ -1241,6 +1235,7 @@ public class Game
         {
             HubHandler.LoadRedBricksEnabled();
             HubHandler.RestoreDarkTimesMap();
+            HintSystem.RestoreNewGamePtr();
         }
 
         // Make it so upon returning to diagon, the wilderness code runs instead of having to enter the code

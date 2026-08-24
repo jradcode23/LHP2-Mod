@@ -245,4 +245,27 @@ public class HintSystem
         WriteTextToMemory(message, *UseMagicAsHarryTextAddress);
     }
 
+    // New Game text on the main menu. We show connection status here.
+    public static unsafe byte* NewGameTextAddress => *(byte**)(*(byte**)(Mod.BaseAddress + 0xB16750) + 0xC);
+    private static byte[] OriginalNewGameText = new byte[30];
+
+    public static unsafe void UpdateConnectionStatusText(string status)
+    {
+        if (OriginalNewGameText[0] == 0)
+        {
+            for (int i = 0; i < OriginalNewGameText.Length; i++)
+            {
+                OriginalNewGameText[i] = *(NewGameTextAddress + i);
+            }
+        }
+        WriteTextToMemory(status, (uint)NewGameTextAddress);
+    }
+
+    public static unsafe void RestoreNewGamePtr()
+    {
+        for (int i = 0; i < OriginalNewGameText.Length; i++)
+        {
+            *(NewGameTextAddress + i) = OriginalNewGameText[i];
+        }
+    }
 }

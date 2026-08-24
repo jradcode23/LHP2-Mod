@@ -21,7 +21,6 @@ public class ArchipelagoHandler
     public ArchipelagoSession Session => _session ?? throw new InvalidOperationException("Session has not been initialized.");
     private LoginSuccessful? _loginSuccessful;
     public SlotData? SlotDataInstance;
-    private static unsafe byte* NewGameTextPTR => *(byte**)(Mod.BaseAddress + 0xC4EB9C) + 0x32E;
     public static DateTime LastDeathLinkPacketTime = DateTime.Now;
     private string Server { get; set; }
     private int Port { get; set; }
@@ -93,7 +92,7 @@ public class ArchipelagoHandler
     }
 
     // Attempts to connect to the server
-    private unsafe bool Connect()
+    private bool Connect()
     {
         LoginResult result;
 
@@ -101,7 +100,7 @@ public class ArchipelagoHandler
         {
             // Check to see if Game/Menu is loaded before trying to connect, we do this to mitigate impact of null values and the game changing things later.
             Game.IsGameLoaded();
-            HintSystem.WriteTextToMemory("Connecting. Please wait.", (uint)NewGameTextPTR);
+            HintSystem.UpdateConnectionStatusText("Connecting. Please wait");
             Seed = Session.ConnectAsync()?.Result?.SeedName;
             Game.PrintToLog(Seed + Slot);
 
@@ -121,7 +120,7 @@ public class ArchipelagoHandler
         catch (Exception e)
         {
             result = new LoginFailure(e.GetBaseException().Message);
-            HintSystem.WriteTextToMemory("Failed To Connect", (uint)NewGameTextPTR);
+            HintSystem.UpdateConnectionStatusText("Failed To Connect");
         }
 
         if (result.Successful)
@@ -132,7 +131,7 @@ public class ArchipelagoHandler
             SlotDataInstance.PrintData();
             var locationIDs = BuildLocationIds();
             var scouting = Session.Locations.ScoutLocationsAsync(HintCreationPolicy.None, locationIDs);
-            HintSystem.WriteTextToMemory("Hooking, Please Wait", (uint)NewGameTextPTR);
+            HintSystem.UpdateConnectionStatusText("Hooking, Please Wait");
             // Modify the game now that we are connected
             bool isHooked = Mod.InitOnMenu();
             // Store our slot name in game to access later
@@ -141,11 +140,11 @@ public class ArchipelagoHandler
             Session.DataStorage[Scope.Slot, "map"] = 402;
             if (isHooked)
             {
-                HintSystem.WriteTextToMemory("Ready to Play, New Game", (uint)NewGameTextPTR);
+                HintSystem.UpdateConnectionStatusText("Ready to Play");
             }
             else
             {
-                HintSystem.WriteTextToMemory("Failed To Hook", (uint)NewGameTextPTR);
+                HintSystem.UpdateConnectionStatusText("Failed To Hook");
             }
             EnsureBackgroundThreads();
             scouting.Wait();
