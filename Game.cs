@@ -341,6 +341,7 @@ public class Game
     private static IReverseWrapper<HubSIP> _reverseWrapOnHubSIP = default!;
     private static IReverseWrapper<HubGB> _reverseWrapOnHubGB = default!;
     private static IReverseWrapper<HubRB> _reverseWrapOnHubRB = default!;
+    private static IReverseWrapper<HubMapEntry> _reverseWrapOnHubMapEntry = default!;
     private static IReverseWrapper<HubGhostPath> _reverseWrapOnHubGhostPath = default!;
     private static IReverseWrapper<UpdateLevel> _reverseWrapOnLevelUpdate = default!;
     private static IReverseWrapper<UpdateMap> _reverseWrapOnMapUpdate = default!;
@@ -510,6 +511,17 @@ public class Game
             "popfd",
         };
         _asmHooks.Add(hooks.CreateAsmHook(collectHubRBHook, (int)(Mod.BaseAddress + 0x71E92), AsmHookBehaviour.ExecuteFirst).Activate());
+
+        string[] HubMapEntryHook =
+        {
+            "use32",
+            "pushfd",
+            "pushad",
+            $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnHubMapEntry, out _reverseWrapOnHubMapEntry)}",
+            "popad",
+            "popfd",
+        };
+        _asmHooks.Add(hooks.CreateAsmHook(HubMapEntryHook, (int)(Mod.BaseAddress + 0x38066C), AsmHookBehaviour.ExecuteFirst).Activate());
 
         string[] handleHubGhostPathUpdatesHook =
         {
@@ -1148,6 +1160,17 @@ public class Game
         }
         CheckAndReportLocation(itemID + RedBrickCollectOffset);
 
+    }
+
+    [Function([FunctionAttribute.Register.eax],
+    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void HubMapEntry(int eax);
+    private static void OnHubMapEntry(int eax)
+    {
+        if (eax == 0x184) // Offset for Y5Diagon which is where the player first loads into
+        {
+            HubHandler.WriteForestHubSaveFlags();
+        }
     }
 
     [Function([FunctionAttribute.Register.eax, FunctionAttribute.Register.edx],

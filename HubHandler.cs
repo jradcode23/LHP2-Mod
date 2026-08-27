@@ -1058,11 +1058,11 @@ public class HubHandler
 
     /*
     Because we are skipping levels and allowing time travel, there are certain things that break.
-    These following functions correct these broken things in the save file.
-    We call this function when the player is trying to switch years cause they will reload the save.
-    This function will do a byte search through the save file Map container and update the game flags as needed.
-    There are several downsides to this method (i.e. the save file info isn't written until the player enters that map at least once and map reloads are required).
-    TODO: with the breakthrough with loading zones and with security doors, see if we can update the information instantly.
+    These following functions adjust the map flags by writing to memory where these map flags are stored and subsequently written to the save file.
+    The downside is it requires a reload to take effect. As such, we call these functions when the player is timing travelling/fast travelling.
+    This function will do a byte search through the map flags stored here and update the map flags as needed.
+    There are several downsides to this method (i.e. the save file info isn't written until the player enters that map at least once). 
+    We can write the flags to the memory container, but like in the case of wilderness, it can be a large memory write.
     */
     public static unsafe void AdjustHubMaps(int year)
     {
@@ -1392,6 +1392,29 @@ public class HubHandler
         }
         Game.PrintToLog($"Map Flags Address for {mapName} is 0x{(nuint)returningAddress:X}");
         return returningAddress;
+    }
+
+    public static unsafe void WriteForestHubSaveFlags()
+    {
+        wildernessAddress = GetHubMapAddress("ForestHub", 0);
+        if (wildernessAddress == MapFlagsBaseAddress + 0x40)
+        {
+            byte* diagonAddress = GetHubMapAddress("HubDiagon", 0);
+            if (diagonAddress == MapFlagsBaseAddress + 0x40)
+            {
+                Game.PrintToLog("Diagon Save has not been written yet. Returning");
+                return;
+            }
+            diagonAddress += 0xC36; // Move the address to the spot after Diagon
+            Game.PrintToLog("Writing Forest Hub Flags");
+            for (int i = 0; i < SaveDataFlags.ForestHubSaveDataFlags.Length; i++)
+            {
+                *(diagonAddress + i) = SaveDataFlags.ForestHubSaveDataFlags[i];
+            }
+            Game.PrintToLog("Forest Hub Flags written");
+            return;
+        }
+        Game.PrintToLog("Wilderness Save has been written. Returning.");
     }
 }
 
