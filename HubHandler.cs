@@ -1073,7 +1073,7 @@ public class HubHandler
         classLobbyAddress = GetHubMapAddress("ClassLobby", 0x1318); // Class Lobby
         kingsCrossAddress = GetHubMapAddress("KingsCross", 0x7B); // King's Cross
         foyerAddress = GetHubMapAddress("Foyer", 0); // Foyer
-        mainCorridorAddress = GetHubMapAddress("MainCorridor", 0x149D); // Main Corridor
+        mainCorridorAddress = GetHubMapAddress("MainCorridor", 0); // Main Corridor
         byte* y5GhostPtr = GhostPathBaseAddress + 0x21;
         byte* y6GhostPtr = GhostPathBaseAddress + 0x34;
         byte* y6GhostPtr2 = GhostPathBaseAddress + 0x35;
@@ -1103,15 +1103,45 @@ public class HubHandler
             AdjustKingsCross();
         }
 
+        byte* weasleyLessonLoadingZone = mainCorridorAddress + 0x149D;
+
         // Ensure Weasley Lesson loading zone isn't active
         if (year != 5)
         {
-            *mainCorridorAddress &= unchecked((byte)~(1 << 0));
+            *weasleyLessonLoadingZone &= unchecked((byte)~(1 << 0));
         }
 
+        // Reactivate WWW Lesson loading zone if needed
         if (year == 5 && (*y5GhostPtr & (1 << 6)) == 0 && (*y5GhostPtr & (1 << 3)) != 0)
         {
-            *mainCorridorAddress |= 1 << 0;
+            *weasleyLessonLoadingZone |= 1 << 0;
+        }
+
+        // Failsafe to ensure that the door to courtyard opens
+        if ((*y5GhostPtr & (1 << 6)) != 0)
+        {
+            Game.PrintToLog("Ensuring Weasley Courtyard is Open");
+            byte* courtyardFlags = mainCorridorAddress + 0x7D; // Object 1 open/close
+            *courtyardFlags = 82;
+            courtyardFlags += 2; // Object 1 position
+            *courtyardFlags = 56;
+            courtyardFlags += 5; // Object 2 open/close
+            *courtyardFlags = 82;
+            courtyardFlags += 2; // Object 2 position
+            *courtyardFlags = 56;
+            courtyardFlags += 5; // Object 3 open/close
+            *courtyardFlags = 81;
+            courtyardFlags += 2; // Object 3 position
+            *courtyardFlags = 56;
+            courtyardFlags += 5; // Object 4 open/close
+            *courtyardFlags = 81;
+            courtyardFlags += 2; // Object 4 position
+            *courtyardFlags = 56;
+        }
+
+        if (year == 7 || year == 8)
+        {
+            AdjustWilderness();
         }
 
     }
@@ -1165,6 +1195,7 @@ public class HubHandler
     }
 
     // Helper function to remove the invisible walls in the wilderness and make sure the Xeno token spawns
+    // Leaving the invisible wall code for now in case something goes wrong
     public static unsafe void AdjustWilderness()
     {
         wildernessAddress = GetHubMapAddress("ForestHub", 0); // Wilderness
@@ -1390,6 +1421,7 @@ public class HubHandler
                 break;
             }
         }
+        // TODO: Adjust this print statement to be more meaningful
         Game.PrintToLog($"Map Flags Address for {mapName} is 0x{(nuint)returningAddress:X}");
         return returningAddress;
     }
@@ -1397,8 +1429,10 @@ public class HubHandler
     public static unsafe void WriteForestHubSaveFlags()
     {
         wildernessAddress = GetHubMapAddress("ForestHub", 0);
-        if (wildernessAddress == MapFlagsBaseAddress + 0x40)
+        byte* knockturnAddress = GetHubMapAddress("Knockturn", 0);
+        if (wildernessAddress == MapFlagsBaseAddress + 0x40 && knockturnAddress == MapFlagsBaseAddress + 0x40)
         {
+            Game.PrintToLog("Writing Wilderness Flags to Save File");
             byte* diagonAddress = GetHubMapAddress("HubDiagon", 0);
             if (diagonAddress == MapFlagsBaseAddress + 0x40)
             {

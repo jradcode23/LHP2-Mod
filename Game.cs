@@ -1261,12 +1261,6 @@ public class Game
             HintSystem.RestoreNewGamePtr();
         }
 
-        // Make it so upon returning to diagon, the wilderness code runs instead of having to enter the code
-        if ((mapID == 376 || mapID == 370) && (prevMapID == 99 || prevMapID == 5))
-        {
-            HubHandler.AdjustWilderness();
-        }
-
         // Send Polyjuice Potion Check
         if (mapID == 168 && prevMapID == 169)
         {
