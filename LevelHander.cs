@@ -210,17 +210,13 @@ public class LevelHandler
     {
         byte* y5GhostPtr2 = HubHandler.GhostPathBaseAddress + 0x21;
         // Game doesn't open WW Courtyard if these two bits are completed so plan is to handle them once map changes after the fact
-        bool locationChecked = Mod.LHP2_Archipelago!.IsLocationChecked(1014);
-        bool bitSet1 = (*y5GhostPtr2 & (1 << 4)) != 0;
-        bool bitSet2 = (*y5GhostPtr2 & (1 << 5)) == 0;
+        bool locationChecked = Mod.LHP2_Archipelago!.IsLocationChecked(1014); // AP location for WWW Lesson
+        bool bitSet1 = (*y5GhostPtr2 & (1 << 4)) != 0; // WWW Lesson completed - onto A Giant Virtuoso. This should be on when the Main Corridor Map loads for the loading zone to open
+        bool bitSet2 = (*y5GhostPtr2 & (1 << 5)) == 0; // A Giant Virtuoso Complete, onto A Veiled Threat
 
-        int mapID;
-        lock (Mod.GameInstance!.MapLock)
-        {
-            mapID = Mod.GameInstance!.MapID;
-        }
         // Marks the two levels complete after the next map change (assuming they aren't in great hall lobby)
-        if (locationChecked && bitSet1 && bitSet2 && mapID != 293)
+        // Adjusting so map ID isn't WW Courtyard, Storage, Cutscene after, Great Hall, and Main Corridor
+        if (locationChecked && bitSet1 && bitSet2 && (map > 293 || map < 289))
         {
             *y5GhostPtr2 |= 1 << 5; // Mark A Giant Viruoso Story Complete
             *y5GhostPtr2 |= 1 << 6; // Mark A Veiled Threat Story Complete
