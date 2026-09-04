@@ -262,7 +262,7 @@ public class Shops
             string message = item.Player + "'s " + item.ItemDisplayName;
             if (message.Length > 60)
             {
-                message = message[..60]; // Truncate message if it exceeds selected max hint length
+                message = message[..60]; // Truncate message if it exceeds selected max shop character length (seems to be 64 characters, but we leave a little buffer cause of the Gold Brick Shop adding numbers)
             }
             HintSystem.WriteTextToMemory(message, ShopTextAddress);
         }
