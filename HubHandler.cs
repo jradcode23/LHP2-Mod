@@ -429,6 +429,8 @@ public class HubHandler
             { "Y6London", new Map("Y6London", Y6MapBase + 0x32) },
             { "Y7London", new Map("Y7London", Y7MapBase + 0x32) },
             { "Y8London", new Map("Y8London", Y8MapBase + 0x32) },
+            { "Y7Cafe", new Map("Y7Cafe", Y7MapBase - 0xF0 + 0x32)},
+            // { "Y8Cafe", new Map("Y8Cafe", Y8MapBase - 0xA0 + 0x32)},
             { "Y5Foyer", new Map("Y5Foyer", Y5MapBase + 0x960 + 0x32) },
             { "Y6Foyer", new Map("Y6Foyer", Y6MapBase + 0xA00 + 0x32) },
             { "Y7Foyer", new Map("Y7Foyer", Y7MapBase + 0xA00 + 0x32) },
@@ -746,6 +748,15 @@ public class HubHandler
 
         SetSingleMapConstant(LookUpMap("Y8Quidditch"), groundsMap);
         SetSingleMapConstant(LookUpMap("Y8BlackLake"), groundsMap);
+
+        Map? londonMap = level switch
+        {
+            1 => LookUpMap("Y5London"),
+            2 => LookUpMap("Y6London"),
+            _ => null
+        };
+
+        SetSingleMapConstant(LookUpMap("Y7Cafe"), londonMap);
     }
 
     private static void SetFutureYearMapConstants(
