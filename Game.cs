@@ -4,6 +4,7 @@ using Reloaded.Hooks.Definitions;
 using Reloaded.Hooks.Definitions.Enums;
 using Reloaded.Hooks.Definitions.X86;
 using System.Numerics;
+using LHP2_Archi_Mod.Configuration;
 
 namespace LHP2_Archi_Mod;
 
@@ -1799,19 +1800,22 @@ public class Game
     {
         try
         {
-            if (Mod.GameInstance!.Player1 == null)
+            if (Mod.Configuration?.ArchipelagoOptions.DeathLink == Config.DeathLinkTag.On)
             {
-                return;
-            }
-            uint* playerBaseAddress = (uint*)(Mod.BaseAddress + 0xC53930);
-            if (playerBaseAddress == null)
-            {
-                return;
-            }
-            if (ebx == *playerBaseAddress)
-            {
-                PrintToLog($"Send Death function. EBX: 0x{ebx:X}. PlayerAddress: 0x{*playerBaseAddress:X}");
-                Mod.GameInstance!.Player1.SendPlayerDeath();
+                if (Mod.GameInstance!.Player1 == null)
+                {
+                    return;
+                }
+                uint* playerBaseAddress = (uint*)(Mod.BaseAddress + 0xC53930);
+                if (playerBaseAddress == null)
+                {
+                    return;
+                }
+                if (ebx == *playerBaseAddress)
+                {
+                    PrintToLog($"Send Death function. EBX: 0x{ebx:X}. PlayerAddress: 0x{*playerBaseAddress:X}");
+                    Mod.GameInstance!.Player1!.SendPlayerDeath();
+                }
             }
         }
         catch (Exception e)
@@ -1857,7 +1861,7 @@ public class Game
     byte cVar27, // Unkown Char - looks to push a constant 0
     byte cVar2, // Unknown Char - looks to push a constant 0
     int iVar34 // Unknown int - looks to be 0 when called
-);
+    );
 
     [Function([FunctionAttribute.Register.edi, FunctionAttribute.Register.ecx],
     FunctionAttribute.Register.edi, FunctionAttribute.StackCleanup.Callee)]

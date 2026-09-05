@@ -2,9 +2,8 @@ using System.Text;
 
 namespace LHP2_Archi_Mod;
 
-/// <summary>
-/// Handles hub-related game state management, including collectibles, time travel, and map adjustments.
-/// </summary>
+
+// Handles hub-related game state management, including collectibles, time travel, and map adjustments.
 public class HubHandler
 {
     public static unsafe byte* HubBaseAddress => *(byte**)(Mod.BaseAddress + 0xC5B3B4);

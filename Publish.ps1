@@ -120,7 +120,7 @@
     Publishes a package that can be uploaded to any NuGet Source.
 
 .PARAMETER PublishGameBanana
-    Default: $Flase
+    Default: $False
 
     Publishes a package that can be uploaded to GameBanana.
 
@@ -184,8 +184,8 @@ param (
 
     ## => User: Publish Config
     $PublishGeneric    = $True,
-    $PublishNuGet      = $True,
-    $PublishGameBanana = $True
+    $PublishNuGet      = $False,
+    $PublishGameBanana = $False
 )
 
 ## => User: Publish Output
