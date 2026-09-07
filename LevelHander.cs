@@ -224,6 +224,9 @@ public class LevelHandler
 
         switch (map)
         {
+            case 165:
+                HubHandler.FixReturnToLeakyCauldron();
+                break;
             // Diagon Alley
             case 370:
             case 376:
