@@ -1436,13 +1436,12 @@ public class HubHandler
         return returningAddress;
     }
 
-    public static unsafe void WriteForestHubSaveFlags()
+    public static unsafe void WriteInitialHubSaveFlags()
     {
         wildernessAddress = GetHubMapAddress("ForestHub", 0);
         byte* knockturnAddress = GetHubMapAddress("Knockturn", 0);
         if (wildernessAddress == MapFlagsBaseAddress + 0x40 && knockturnAddress == MapFlagsBaseAddress + 0x40)
         {
-            Game.PrintToLog("Writing Wilderness Flags to Save File");
             byte* diagonAddress = GetHubMapAddress("HubDiagon", 0);
             if (diagonAddress == MapFlagsBaseAddress + 0x40)
             {
@@ -1450,12 +1449,16 @@ public class HubHandler
                 return;
             }
             diagonAddress += 0xC36; // Move the address to the spot after Diagon
-            Game.PrintToLog("Writing Forest Hub Flags");
+            Game.PrintToLog("Writing Foyer & Forest Hub Flags");
+            for (int i = 0; i < SaveDataFlags.FoyerSaveDataFlags.Length; i++)
+            {
+                *(diagonAddress + i) = SaveDataFlags.FoyerSaveDataFlags[i];
+            }
             for (int i = 0; i < SaveDataFlags.ForestHubSaveDataFlags.Length; i++)
             {
-                *(diagonAddress + i) = SaveDataFlags.ForestHubSaveDataFlags[i];
+                *(diagonAddress + SaveDataFlags.FoyerSaveDataFlags.Length + i) = SaveDataFlags.ForestHubSaveDataFlags[i];
             }
-            Game.PrintToLog("Forest Hub Flags written");
+            Game.PrintToLog("Foyer & Forest Hub Flags written");
             return;
         }
         Game.PrintToLog("Wilderness Save has been written. Returning.");

@@ -1170,7 +1170,7 @@ public class Game
     {
         if (eax == 0x184) // Offset for Y5Diagon which is where the player first loads into
         {
-            HubHandler.WriteForestHubSaveFlags();
+            HubHandler.WriteInitialHubSaveFlags();
         }
     }
 
