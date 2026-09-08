@@ -644,7 +644,7 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(openPolyjuicePotHook, (int)(Mod.BaseAddress + 0x3C69A0), AsmHookBehaviour.ExecuteFirst).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(openPolyjuicePotHook, (int)(Mod.BaseAddress + 0x55156A), AsmHookBehaviour.ExecuteFirst).Activate());
 
         string[] closePolyjuicePotHook =
         {
@@ -655,7 +655,7 @@ public class Game
             "popad",
             "popfd",
         };
-        _asmHooks.Add(hooks.CreateAsmHook(closePolyjuicePotHook, (int)(Mod.BaseAddress + 0x3C69B0), AsmHookBehaviour.ExecuteFirst).Activate());
+        _asmHooks.Add(hooks.CreateAsmHook(closePolyjuicePotHook, (int)(Mod.BaseAddress + 0x552DE0), AsmHookBehaviour.ExecuteFirst).Activate());
 
         // Handles Spell logic when you change charactesr
         string[] changeCharactersHook =
@@ -1594,21 +1594,57 @@ public class Game
         HubHandler.SaveRedBricksEnabled();
     }
 
-    [Function(CallingConventions.Fastcall)]
-    public delegate void OpenPolyjuicePot();
-    private static unsafe void OnOpenPolyjuicePot()
+    [Function([FunctionAttribute.Register.eax],
+    FunctionAttribute.Register.eax, FunctionAttribute.StackCleanup.Callee)]
+    public delegate void OpenPolyjuicePot(uint eax);
+    private static unsafe void OnOpenPolyjuicePot(uint eax)
     {
-        byte* cauldronBaseAddress = (byte*)*(int*)(Mod.BaseAddress + 0xC54290);
-        nuint cauldronItem = Memory.Instance.Read<nuint>((nuint)(cauldronBaseAddress + 0x68));
         bool prevInLevelSelect;
         lock (Mod.GameInstance!.StateLock)
         {
             prevInLevelSelect = Mod.GameInstance!.PrevInLevelSelect;
         }
-        if (cauldronItem != 4 || prevInLevelSelect == true) // Only trigger on opening the Polyjuice Pot
+
+        if (prevInLevelSelect == true) // Don't trigger if is in level select
         {
             return;
         }
+
+        byte* eax2 = (byte*)eax;
+        byte* player1Pointer = *(byte**)(Mod.BaseAddress + 0xC53930);
+
+        byte* cauldronBaseAddress = *(byte**)(Mod.BaseAddress + 0xC54290);
+
+        if (eax2 == player1Pointer)
+        {
+            byte* player1CauldronAddress = cauldronBaseAddress + 0x68;
+            if (*player1CauldronAddress != 4)
+            {
+                return; // Only trigger on opening the Polyjuice Pot
+            }
+            *player1CauldronAddress = 0; // Reset cauldron item selected to 0
+            UpdatePolyjuiceOpen();
+            return;
+        }
+
+        byte* player2Pointer = *(byte**)(Mod.BaseAddress + 0xC5D578);
+
+        if (eax2 == player2Pointer)
+        {
+            byte* player2CauldronAddress = cauldronBaseAddress + 0x6C;
+            if (*player2CauldronAddress != 4)
+            {
+                return; // Only trigger on opening the Polyjuice Pot
+            }
+            *player2CauldronAddress = 0;
+            UpdatePolyjuiceOpen();
+            return;
+        }
+
+    }
+
+    private static void UpdatePolyjuiceOpen()
+    {
         PrintToLog("Polyjuice Pot Opened");
         ResetItems();
         Mod.LHP2_Archipelago!.UpdateBasedOnItems(0, tokenOffset - 1);
@@ -1632,7 +1668,7 @@ public class Game
         {
             mapID = Mod.GameInstance!.MapID;
         }
-        if (cauldronItem != 4 || prevInLevelSelect == true) // Only trigger on opening the Polyjuice Pot
+        if (prevInLevelSelect == true) // Only trigger on opening the Polyjuice Pot
         {
             return;
         }
