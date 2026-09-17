@@ -2,7 +2,6 @@ using System.Text;
 
 namespace LHP2_Archi_Mod;
 
-
 // Handles hub-related game state management, including collectibles, time travel, and map adjustments.
 public class HubHandler
 {
@@ -18,16 +17,7 @@ public class HubHandler
     private static unsafe byte* HogwartWarpEntranceBaseAddress => *(byte**)(Mod.BaseAddress + 0x00C4EE5C);
     private static unsafe byte* SecondPointerWarp => *(byte**)(HogwartWarpEntranceBaseAddress + 0x04);
 
-    // These null addresses don't have a fixed pointer (the saved data is a unordered collection). We handle this by doing a byte search over the collection.
-    private static unsafe byte* leaky2LondonAddress = null;
-    private static unsafe byte* hogsPathAddress = null;
-    private static unsafe byte* wildernessAddress = null;
-    private static unsafe byte* quadAddress = null;
-    private static unsafe byte* hogsStatAddress = null;
-    private static unsafe byte* classLobbyAddress = null;
-    private static unsafe byte* kingsCrossAddress = null;
-    private static unsafe byte* foyerAddress = null;
-    private static unsafe byte* mainCorridorAddress = null;
+
 
     // These are the bit flags that handle the different collectibles stored in the same memory address.
     [Flags]
@@ -1066,11 +1056,22 @@ public class HubHandler
         }
     }
 
+    // These null addresses don't have a fixed pointer (the saved data is a unordered collection). We handle this by doing a byte search over the collection.
+    private static unsafe byte* leaky2LondonAddress = null;
+    private static unsafe byte* hogsPathAddress = null;
+    private static unsafe byte* wildernessAddress = null;
+    private static unsafe byte* quadAddress = null;
+    private static unsafe byte* hogsStatAddress = null;
+    private static unsafe byte* classLobbyAddress = null;
+    private static unsafe byte* kingsCrossAddress = null;
+    private static unsafe byte* foyerAddress = null;
+    private static unsafe byte* mainCorridorAddress = null;
+
     /*
-    Because we are skipping levels and allowing time travel, there are certain things that break.
-    These following functions adjust the map flags by writing to memory where these map flags are stored and subsequently written to the save file.
-    The downside is it requires a reload to take effect. As such, we call these functions when the player is timing travelling/fast travelling.
-    This function will do a byte search through the map flags stored here and update the map flags as needed.
+    Because we are skipping levels and allowing time travel, there are certain things that break in hub maps.
+    The downside is it requires a map reload to take effect. 
+    As such, we call these functions when the player is timing travelling/fast travelling.
+    This function will do a byte search through the maps in the collection to get the .
     There are several downsides to this method (i.e. the save file info isn't written until the player enters that map at least once). 
     We can write the flags to the memory container, but like in the case of wilderness, it can be a large memory write.
     */
