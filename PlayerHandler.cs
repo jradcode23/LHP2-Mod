@@ -1,161 +1,113 @@
 namespace LHP2_Archi_Mod;
 
+public enum EffectType : ushort
+{
+    // Values to give the first state address which seems to be type (+ 0x54C)
+    Immobulus = 0xA5,
+    SlugulusEructo = 0xA7,
+    Incarcerous = 0xF4,
+
+    // Values to write in the second state address which seems to be related animation (+ 0x558)
+    GivePlayerEffect = 0x19,
+    KillPlayer = 0x31,
+    Default = 0xFFFF,
+}
+
+public record class ReceivedEffect(string Reason, EffectType PlayerEffect)
+{
+    public string Reason = Reason;
+    public EffectType PlayerEffect = PlayerEffect;
+}
+
 public unsafe class Player(byte* BaseAddress, int amnesty)
 {
-    private const int PlayerState1Offset = 0x54C;
-    private const int PlayerState2Offset = 0x558;
-    private const int PlayerMaxHealthOffset = 0xF0C;
-    private const int PlayerCurrentHealthOffset = 0xF0D;
-    private const int PlayerDespawnedStateOffset = 0x54;
-    private const int PlayerControlFlagsOffset = 0x4D;
-    private const int PlayerDamageInvulnerabilityTimerOffset = 0x11B8;
-    private const int PlayerDeathValueOffset = 0x55;
-    private const ushort DefaultAnimation = 0xFFFF;
-    private const byte PlayerDespawnedStateValue = 3;
-    private const ushort DeathAnimationConstant = 0x31;
+    // Memory offsets for the Player struct
+    private const uint PlayerStateOffset1 = 0x54C;
+    private const uint PlayerStateOffset2 = 0x558;
+    private const uint PlayerEffectTimer = 0x504;
+    private const uint PlayerMaxHealthOffset = 0xF0C;
+    private const uint PlayerCurrentHealthOffset = 0xF0D;
+    private const uint PlayerDespawnedStateOffset = 0x54;
+    private const uint PlayerControlFlagsOffset = 0x4D;
+    private const uint PlayerDamageInvulnerabilityTimerOffset = 0x11B8;
+    private const uint PlayerDeathValueOffset = 0x55;
 
+    // Pointers to the Relevant Addresses in the Player Struct
     private byte* PlayerBaseAddress = BaseAddress;
     private byte* PointerToPlayerStruct => *(byte**)PlayerBaseAddress;
-    private ushort* PlayerState1 => (ushort*)(PointerToPlayerStruct + PlayerState1Offset); // This seems to be effect that the player receives
-    private ushort* PlayerState2 => (ushort*)(PointerToPlayerStruct + PlayerState2Offset); // This seems to be how the player is animation of the effect
+    private ushort* PlayerStateEffect => (ushort*)(PointerToPlayerStruct + PlayerStateOffset1); // This seems to be effect that the player receives
+    private ushort* PlayerStateAnimation => (ushort*)(PointerToPlayerStruct + PlayerStateOffset2); // This seems to be how the player is animation of the effect
     private byte* PlayerMaxHealth => PointerToPlayerStruct + PlayerMaxHealthOffset;
-    private byte* PlayerCurrentHealth => PointerToPlayerStruct + PlayerCurrentHealthOffset;
+    // private byte* PlayerCurrentHealth => PointerToPlayerStruct + PlayerCurrentHealthOffset; // Keeping for Damage Link in the future
 
-    private int _sendDeathAmnesty = amnesty;
-    private int _receiveDeathAmnesty = amnesty;
-    private readonly Queue<string> _deathLinkQueue = new();
-    private readonly object _deathLinkQueueLock = new();
+    // Lock and Variable to ensure that Deaths aren't sent when we receive death
     private readonly object _receivedDeathLock = new();
-    private readonly Queue<int> _outboundDeathLinkQueue = new();
-    private readonly object _outboundDeathLinkQueueLock = new();
-    private bool _isProcessingDeathLinks;
-    private bool _isProcessingOutboundDeathLinks;
-    private bool _receivedDeath;
-    private int _nextOutboundDeathLinkId;
+    private bool _receivedDeath; 
 
-    public void SendPlayerDeath()
-    {
-        lock (_receivedDeathLock)
-        {
-            if (_receivedDeath)
-            {
-                Game.PrintToLog("Death Due to Death Received. Skipping");
-                _receivedDeath = false;
-                return;
-            }
-        }
-        if (_sendDeathAmnesty > 0)
-        {
-            _sendDeathAmnesty--;
-            HintSystem.AddInterruptedMessageToFront($"Sent Death ignored due to amnesty. Remaining amnesty: {_sendDeathAmnesty}", 0);
-            Game.PrintToLog($"Sent Death ignored due to amnesty. Remaining amnesty: {_sendDeathAmnesty}");
-            return;
-        }
-        QueueOutboundDeathLink();
-    }
+    // Variables and functions relating to receiving a negative effect
+    private int _receiveDeathAmnesty = amnesty;
+    private readonly Queue<ReceivedEffect> _inboundEffectQueue = new();
+    private readonly object _inboundEffectQueueLock = new();
+    private bool _isProcessingInboundQueue;
 
-    private void QueueOutboundDeathLink()
+    public void QueueInboundEffect(string cause, EffectType effectType)
     {
-        int id;
-        lock (_outboundDeathLinkQueueLock)
+        ReceivedEffect effect = new(cause, effectType);
+        lock (_inboundEffectQueueLock)
         {
-            id = _nextOutboundDeathLinkId++;
-            _outboundDeathLinkQueue.Enqueue(id);
-            if (_isProcessingOutboundDeathLinks)
+            _inboundEffectQueue.Enqueue(effect);
+            if (_isProcessingInboundQueue)
             {
                 return;
             }
 
-            _isProcessingOutboundDeathLinks = true;
+            _isProcessingInboundQueue = true;
         }
-        HintSystem.AddInterruptedMessageToFront($"Sending Death. You have caused {id + 1} deaths", 0);
-        //TODO: add death count to data storage
-        StartBackgroundProcessor(ProcessOutboundDeathLinkQueue, "OutboundDeathLinkProcessor");
+
+        StartBackgroundProcessor(ProcessInboundEffectQueue, "InboundEffectProcessor");
     }
 
-    private void ProcessOutboundDeathLinkQueue()
+    private void ProcessInboundEffectQueue()
     {
         while (true)
         {
-            int? nextDeath;
-            lock (_outboundDeathLinkQueueLock)
+            ReceivedEffect? nextEffect;
+            lock (_inboundEffectQueueLock)
             {
-                if (_outboundDeathLinkQueue.Count == 0)
+                if (_inboundEffectQueue.Count == 0)
                 {
-                    _isProcessingOutboundDeathLinks = false;
+                    _isProcessingInboundQueue = false;
                     return;
                 }
 
-                nextDeath = _outboundDeathLinkQueue.Dequeue();
-            }
-
-            if (!Mod.LHP2_Archipelago!.SendDeath())
-            {
-                lock (_outboundDeathLinkQueueLock)
-                {
-                    _outboundDeathLinkQueue.Enqueue(nextDeath.Value);
-                }
-
-                Thread.Sleep(1000);
-                continue;
-            }
-        }
-    }
-
-    public void QueueInboundDeath(string cause)
-    {
-        lock (_deathLinkQueueLock)
-        {
-            _deathLinkQueue.Enqueue(cause);
-            if (_isProcessingDeathLinks)
-            {
-                return;
-            }
-
-            _isProcessingDeathLinks = true;
-        }
-
-        StartBackgroundProcessor(ProcessInboundDeathLinkQueue, "InboundDeathLinkProcessor");
-    }
-
-    private void ProcessInboundDeathLinkQueue()
-    {
-        while (true)
-        {
-            string? nextDeath;
-            lock (_deathLinkQueueLock)
-            {
-                if (_deathLinkQueue.Count == 0)
-                {
-                    _isProcessingDeathLinks = false;
-                    return;
-                }
-
-                nextDeath = _deathLinkQueue.Dequeue();
+                nextEffect = _inboundEffectQueue.Dequeue();
             }
 
             if (!CanPlayerReceiveNegativeEffect())
             {
-                lock (_deathLinkQueueLock)
+                lock (_inboundEffectQueueLock)
                 {
-                    _deathLinkQueue.Enqueue(nextDeath);
+                    _inboundEffectQueue.Enqueue(nextEffect);
                 }
 
                 Thread.Sleep(100);
                 continue;
             }
 
-            ProcessInboundDeathLink(nextDeath);
+            if (nextEffect.PlayerEffect == EffectType.KillPlayer)
+            {
+                ProcessInboundDeathLink(nextEffect.Reason);
+            }
         }
     }
 
-    private void ProcessInboundDeathLink(string slot)
+    private void ProcessInboundDeathLink(string reason)
     {
         lock (_receivedDeathLock)
         {
             _receivedDeath = true;
         }
-        string deathLinkMessage = $"Death Link received from {slot}";
+        string deathLinkMessage = reason;
 
         if (_receiveDeathAmnesty > 0)
         {
@@ -174,10 +126,10 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
         KillPlayer();
     }
 
-    public void ReceiveDeathLink(string slot)
+    public void ReceiveDeathLink(string reason)
     {
-        QueueInboundDeath(slot);
-        Game.PrintToLog($"Death Link received Queued from {slot}.");
+        QueueInboundEffect(reason, EffectType.KillPlayer);
+        Game.PrintToLog($"Death Link queued: {reason}.");
     }
 
     private bool CanPlayerReceiveNegativeEffect()
@@ -187,12 +139,12 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
             Game.PrintToLog("Cannot receive negative effect: PointerToPlayerStruct is null.");
             return false;
         }
-        if (*PlayerState2 != DefaultAnimation) // Player isn't performing any animation
+        if (*PlayerStateAnimation != (ushort)EffectType.Default) // Player isn't performing any animation
         {
             return false;
         }
         byte* isPlayerDead = PointerToPlayerStruct + PlayerDespawnedStateOffset;
-        if (*isPlayerDead == PlayerDespawnedStateValue) // 3 indicates the player is despawned. Lasts just as long as the respawn timer
+        if (*isPlayerDead == 3) // 3 indicates the player is despawned. Lasts just as long as the respawn timer
         {
             return false;
         }
@@ -253,7 +205,7 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
                 out nint spawnStudsAddress
             );
 
-            // Mod.Logger!.WriteLine($"[LHP2.archipelago.mod] Player Death Function Address: 0x{(nuint)deathWrapperAddress:X}");
+            // Mod.Logger!.WriteLine($"Player Death Function Address: 0x{(nuint)deathWrapperAddress:X}");
             Mod.Logger!.WriteLine($"Player Lose Studs Function Address: 0x{(nuint)loseStudsAddress:X}");
             Mod.Logger!.WriteLine($"Player Spawn Studs Function Address: 0x{(nuint)spawnStudsAddress:X}");
 
@@ -281,7 +233,7 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
             Mod.Logger!.WriteLine($"Player Studs Lost: {studsLost}");
             // playerDeathFunction((int)PointerToPlayerStruct, 5, 0, 1, 0, 0); // Removed for now, was randomly crashing. It seemed to be corrupting other function call addresses
 
-            WriteToPlayerState(DeathAnimationConstant); // This value plays the death animation
+            WriteToPlayerState((ushort)EffectType.KillPlayer);
 
             if (studsLost == 0)
             {
@@ -335,10 +287,84 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
     {
         if (PointerToPlayerStruct == null)
         {
-            Mod.Logger?.WriteLine("[LHP2.archipelago.mod] WriteToPlayerState aborted: PointerToPlayerStruct is null.");
+            Mod.Logger?.WriteLine("WriteToPlayerState aborted: PointerToPlayerStruct is null.");
             return;
         }
 
-        *PlayerState2 = value;
+        *PlayerStateAnimation = value;
+    }
+
+    // Functions and variables relating to sending deaths when the player dies
+    private readonly Queue<int> _outboundDeathLinkQueue = new();
+    private readonly object _outboundDeathLinkQueueLock = new();
+    private int _sendDeathAmnesty = amnesty;
+    public void SendPlayerDeath()
+    {
+        lock (_receivedDeathLock)
+        {
+            if (_receivedDeath)
+            {
+                Game.PrintToLog("Death Due to Death Received. Skipping");
+                _receivedDeath = false;
+                return;
+            }
+        }
+        if (_sendDeathAmnesty > 0)
+        {
+            _sendDeathAmnesty--;
+            HintSystem.AddInterruptedMessageToFront($"Sent Death ignored due to amnesty. Remaining amnesty: {_sendDeathAmnesty}", 0);
+            Game.PrintToLog($"Sent Death ignored due to amnesty. Remaining amnesty: {_sendDeathAmnesty}");
+            return;
+        }
+        QueueOutboundDeathLink();
+    }
+    private int _nextOutboundDeathLinkId;
+    private bool _isProcessingOutboundDeathLinks;
+    private void QueueOutboundDeathLink()
+    {
+        int id;
+        lock (_outboundDeathLinkQueueLock)
+        {
+            id = _nextOutboundDeathLinkId++;
+            _outboundDeathLinkQueue.Enqueue(id);
+            if (_isProcessingOutboundDeathLinks)
+            {
+                return;
+            }
+
+            _isProcessingOutboundDeathLinks = true;
+        }
+        HintSystem.AddInterruptedMessageToFront($"Sending Death. You have caused {id + 1} deaths", 0);
+        //TODO: add death count to data storage
+        StartBackgroundProcessor(ProcessOutboundDeathLinkQueue, "OutboundDeathLinkProcessor");
+    }
+
+    private void ProcessOutboundDeathLinkQueue()
+    {
+        while (true)
+        {
+            int? nextDeath;
+            lock (_outboundDeathLinkQueueLock)
+            {
+                if (_outboundDeathLinkQueue.Count == 0)
+                {
+                    _isProcessingOutboundDeathLinks = false;
+                    return;
+                }
+
+                nextDeath = _outboundDeathLinkQueue.Dequeue();
+            }
+
+            if (!Mod.LHP2_Archipelago!.SendDeath())
+            {
+                lock (_outboundDeathLinkQueueLock)
+                {
+                    _outboundDeathLinkQueue.Enqueue(nextDeath.Value);
+                }
+
+                Thread.Sleep(1000);
+                continue;
+            }
+        }
     }
 }
