@@ -76,7 +76,6 @@ public class Game
                 PrintToLog("Waiting for menu to load");
             rewriteNumber++;
             Thread.Sleep(500);
-
         }
     }
 

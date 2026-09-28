@@ -82,7 +82,7 @@ public class ArchipelagoHandler
     }
 
 
-    // something we wrong or we need to properly disconnect from the server. cleanup and re null our session
+    // Something went wrong or we need to properly disconnect from the server. Cleanup and re null our session
     public void Disconnect()
     {
         Game.PrintToLog("Disconnected from server and attempting to reconnect. If you close the application, checks will not be sent.");
