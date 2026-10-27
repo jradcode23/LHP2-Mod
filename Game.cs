@@ -1689,29 +1689,42 @@ public class Game
         {
             mapID = Mod.GameInstance!.MapID;
         }
+        byte* menuCheatAddress = (byte*)(Mod.BaseAddress + 0xC575E0);
+        char[] chars = new char[6];
+        for (int i = 0; i < 6; i++)
+        {
+            int position = Memory.Instance.Read<byte>((nuint)(menuCheatAddress + i));
+            if (position >= 0 && position <= 25)
+            {
+                chars[i] = (char)('A' + position);
+            }
+            else if (position >= 26 && position <= 35)
+            {
+                // Maps to 0-9
+                chars[i] = (char)('0' + (position - 26));
+            }
+            else
+            {
+                chars[i] = '_'; // Unknown character
+            }
+        }
+        string mapString = new(chars);
+
+        // The goal is only sent when the player asks for it, from anywhere
+        if (mapString == WinConCode)
+        {
+            // Held or repeated confirms call this many times: one answer until 2 s of quiet
+            long now = Environment.TickCount64;
+            bool repeated = now - _lastWinConRequest < 2000;
+            _lastWinConRequest = now;
+            if (!repeated)
+                CheckWinCon(requested: true);
+            return;
+        }
+
         // Only run in the Character Customization Room
         if (LeakyMapIDs.Contains(mapID))
         {
-            byte* menuCheatAddress = (byte*)(Mod.BaseAddress + 0xC575E0);
-            char[] chars = new char[6];
-            for (int i = 0; i < 6; i++)
-            {
-                int position = Memory.Instance.Read<byte>((nuint)(menuCheatAddress + i));
-                if (position >= 0 && position <= 25)
-                {
-                    chars[i] = (char)('A' + position);
-                }
-                else if (position >= 26 && position <= 35)
-                {
-                    // Maps to 0-9
-                    chars[i] = (char)('0' + (position - 26));
-                }
-                else
-                {
-                    chars[i] = '_'; // Unknown character
-                }
-            }
-            string mapString = new(chars);
             PrintToLog($"Map Requested is: {mapString}");
 
             if (FastTravelRequests.Contains(mapString))
@@ -1946,10 +1959,62 @@ public class Game
         Mod.LHP2_Archipelago!.CheckLocation(apID);
     }
 
-    public static void CheckWinCon()
+    public const string WinConCode = "WINCON";
+    private static long _lastWinConRequest;
+    private static nint _codeAnswerText;
+
+    // Shown as a message, and on the code screen if the player is still there
+    private static void AnswerWinCon(string message)
+    {
+        HintSystem.EnqueueMessage(message, 0);
+        if (_codeAnswerText == 0)
+            _codeAnswerText = System.Runtime.InteropServices.Marshal.AllocHGlobal(256);
+        HintSystem.WriteTextToMemory(message, (uint)_codeAnswerText);
+    }
+
+    private static bool IsModCheatCode(string code, int mapID)
+    {
+        return code == WinConCode || (LeakyMapIDs.Contains(mapID) && FastTravelRequests.Contains(code));
+    }
+
+    // The game asks this slot about the codes it doesn't know; it never sets it itself
+    public static unsafe void InstallCheatCodeCallback()
+    {
+        nint* slot = (nint*)(Mod.BaseAddress + 0xC575F8);
+        if (*slot != 0)
+        {
+            PrintToLog("[Codes] Unknown-code slot already in use, left as is.");
+            return;
+        }
+        *slot = (nint)(delegate* unmanaged[Cdecl]<byte*, nint*, int>)&OnUnknownCheatCode;
+    }
+
+    // Accepting plays the game's "code accepted" sound; the text shows under it for 5 s
+    [System.Runtime.InteropServices.UnmanagedCallersOnly(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
+    private static unsafe int OnUnknownCheatCode(byte* code, nint* text)
+    {
+        try
+        {
+            string entered = System.Runtime.InteropServices.Marshal.PtrToStringAnsi((nint)code) ?? "";
+            int mapID = Mod.GameInstance?.MapID ?? 0;
+            if (!IsModCheatCode(entered, mapID))
+                return 0;
+            if (entered == WinConCode && text != null && _codeAnswerText != 0)
+                *text = _codeAnswerText;
+            return 1;
+        }
+        catch (Exception ex)
+        {
+            PrintToLog($"[Codes] {ex.Message}");
+            return 0;
+        }
+    }
+
+    // requested: the player entered WINCON; the levels goal is only sent then
+    public static void CheckWinCon(bool requested = false)
     {
         // Defeat Voldemort
-        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 0 && (Mod.GameInstance!.PrevLevelID == 27 || Mod.GameInstance!.LevelID == 27))
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 0)
         {
             int horcruxesReceived = Mod.LHP2_Archipelago!.CountItemsCheckedInRange(440, 446);
             int requiredHorcruxes = Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredHorcruxes;
@@ -1958,6 +2023,13 @@ public class Game
                 PrintToLog("Can't Determine if the game is completed, Horcrux slot data not available.");
                 return;
             }
+            if (requested)
+            {
+                AnswerWinCon($"Horcruxes Collected: {horcruxesReceived}/{requiredHorcruxes}. Defeat Voldemort to win.");
+                return;
+            }
+            if (Mod.GameInstance!.PrevLevelID != 27 && Mod.GameInstance!.LevelID != 27)
+                return;
             PrintToLog($"Player Has Received {horcruxesReceived} Horcruxes");
             if (horcruxesReceived >= requiredHorcruxes)
             {
@@ -1967,7 +2039,7 @@ public class Game
         }
 
         // Levels Beaten
-        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 2)
+        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 2 && requested)
         {
             int levelsCompleted = Mod.LHP2_Archipelago!.CountLocationsCheckedInRange(450, 473);
             int requiredLevels = Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredLevels;
@@ -1980,6 +2052,11 @@ public class Game
             if (levelsCompleted >= requiredLevels)
             {
                 Mod.LHP2_Archipelago!.Release();
+                AnswerWinCon("Goal complete!");
+            }
+            else
+            {
+                AnswerWinCon($"Levels Beaten: {levelsCompleted}/{requiredLevels}");
             }
             return;
         }

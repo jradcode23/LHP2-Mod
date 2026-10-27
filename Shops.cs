@@ -260,9 +260,10 @@ public class Shops
         try
         {
             string message = item.Player + "'s " + item.ItemDisplayName;
-            if (message.Length > 60)
+            // Counted in UTF-8 bytes: the slot holds bytes, and an accent takes two
+            while (System.Text.Encoding.UTF8.GetByteCount(message) > 60)
             {
-                message = message[..60]; // Truncate message if it exceeds selected max shop character length (seems to be 64 characters, but we leave a little buffer cause of the Gold Brick Shop adding numbers)
+                message = message[..^1]; // Truncate message if it exceeds selected max shop character length (seems to be 64 characters, but we leave a little buffer cause of the Gold Brick Shop adding numbers)
             }
             HintSystem.WriteTextToMemory(message, ShopTextAddress);
         }

@@ -130,6 +130,7 @@ public class Mod : ModBase // <= Do not Remove.
         {
             Game.PrintToLog("Menu loaded, setting up hooks. Please wait for hook setup before loading a save file.");
             GameInstance!.SetupHooks(_hooks);
+            Game.InstallCheatCodeCallback();
             Game.PrintToLog("Hooks set up complete. You may now load a save file.");
             return true;
         }

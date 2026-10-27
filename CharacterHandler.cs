@@ -283,6 +283,11 @@ public class CharacterHandler
     public static unsafe void UnlockCharacter(int id)
     {
         int byteOffset = GetCharacterByteOffset(id);
+        if (byteOffset == -1)
+        {
+            Game.PrintToLog($"Can't Unlock Character, unknown archi ID {id}");
+            return;
+        }
 
         byte* ptr = characterBaseAddress + byteOffset + unlockOffset;
         if (ptr == null || characterBaseAddress == null)

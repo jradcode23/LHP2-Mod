@@ -178,20 +178,24 @@ public class HintSystem
     }
 
     /*
-    Helper function to convert a string to ASCII encoded bytes
+    Helper function to convert a string to UTF-8 encoded bytes
     Used primarily for hint system, but also used to restore Return to Leaky Cauldron in The Seven Harrys since the Delum and Bag lesson messes with it to ensure you learn apparition
     */
     public static void WriteTextToMemory(string newText, uint memoryAddress)
     {
 
-        // ASCII encode and null-terminate
-        var bytes = System.Text.Encoding.ASCII.GetBytes(newText + '\0');
+        // The game draws UTF-8: accents in player and item names display as they are
+        var bytes = System.Text.Encoding.UTF8.GetBytes(newText + '\0');
 
         // Ensure that our message isn't too large to print.
         if (bytes.Length > MaxMessageLength)
         {
-            var full = new byte[MaxMessageLength];
-            Array.Copy(bytes, full, MaxMessageLength);
+            // keep the terminator, and don't cut a UTF-8 character in half
+            int cut = MaxMessageLength - 1;
+            while (cut > 0 && (bytes[cut] & 0xC0) == 0x80)
+                cut--;
+            var full = new byte[cut + 1];
+            Array.Copy(bytes, full, cut);
             bytes = full;
         }
 
@@ -227,6 +231,9 @@ public class HintSystem
 
     public static unsafe void RestoreWinConText()
     {
+        // Nothing saved yet: writing would leave the "Paused" text pointer null
+        if (OriginalPausedAddress == 0)
+            return;
         uint* pausedTextBaseAddress = *(uint**)(Mod.BaseAddress + 0xAE6E58) + 0xE5;
         *pausedTextBaseAddress = OriginalPausedAddress;
     }
@@ -263,6 +270,9 @@ public class HintSystem
 
     public static unsafe void RestoreNewGamePtr()
     {
+        // Nothing saved yet: writing would blank the New Game text
+        if (OriginalNewGameText[0] == 0)
+            return;
         for (int i = 0; i < OriginalNewGameText.Length; i++)
         {
             *(NewGameTextAddress + i) = OriginalNewGameText[i];
