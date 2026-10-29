@@ -21,7 +21,7 @@ public class ArchipelagoHandler
     public ArchipelagoSession Session => _session ?? throw new InvalidOperationException("Session has not been initialized.");
     private LoginSuccessful? _loginSuccessful;
     public SlotData? SlotDataInstance;
-    public static DateTime LastDeathLinkPacketTime = DateTime.Now;
+    public static DateTime LastDeathLinkPacketTime = DateTime.UtcNow;
     private string Server { get; set; }
     private int Port { get; set; }
     private string Slot { get; set; }
@@ -146,6 +146,7 @@ public class ArchipelagoHandler
             {
                 HintSystem.UpdateConnectionStatusText("Failed To Hook");
             }
+            CharacterHandler.ReleaseDLCPurchasesOnLegacy();
             EnsureBackgroundThreads();
             scouting.Wait();
             ScoutedLocations = scouting.Result;
@@ -166,6 +167,7 @@ public class ArchipelagoHandler
     {
         var ids = new List<long>();
         ids.AddRange(Enumerable.Range(400000, 1030).Select(i => (long)i));
+        ids.AddRange(Enumerable.Range(400000 + CharacterHandler.DLCCharacterOffset, 10).Select(i => (long)i));
         return [.. ids];
     }
 
@@ -406,7 +408,9 @@ public class ArchipelagoHandler
         {
             var startId = start + gameOffset;
             var endId = end + gameOffset;
-            return Session.Locations.AllLocationsChecked.Count(location => location >= startId && location <= endId);
+            // Count checks not sent yet: the win check runs right after a level is reported
+            return Session.Locations.AllLocationsChecked.Concat(_locationsToCheck).Distinct()
+                .Count(location => location >= startId && location <= endId);
         }
     }
 
@@ -513,7 +517,8 @@ public class ArchipelagoHandler
         }
 
         BouncePacket packet = new();
-        var now = DateTime.Now;
+        // The packet time is a UTC Unix timestamp: local time would be off by the time zone
+        var now = DateTime.UtcNow;
 
         if (now - LastDeathLinkPacketTime < TimeSpan.FromSeconds(1))
             return true; // Prevent sending too many packets in a short time

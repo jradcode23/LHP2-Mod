@@ -4,12 +4,13 @@ namespace LHP2_Archi_Mod;
 
 public class CharacterHandler
 {
-    private static unsafe byte* characterBaseAddress => *(byte**)(Mod.BaseAddress + 0xC546E4);
+    private static unsafe byte* characterBaseAddress => *(byte**)Addresses.Addr.CharacterSaveBasePtr;
     private static readonly byte TokenOffset = 0xE;
     private static readonly byte unlockOffset = 0xE4;
 
     // Dictionary containing all characters (by their archi ID) and their offset in the character array
-    public static readonly Dictionary<int, int> characterMap = new()
+    // (32-bit indices; see characterMap for the running version)
+    private static readonly Dictionary<int, int> characterMap32 = new()
     {
         {0, 0x3}, // Hagrid
         {1, 0xB}, // Fang
@@ -226,6 +227,134 @@ public class CharacterHandler
         {212, 0x27F}, // Skeleton
     };
 
+    // Collection: PeverellChild (0x2F1) moves to 0x124 and the entries after it shift by +1
+    private const int PeverellChild32 = 0x2F1 - 0x70;
+    private const int PeverellChild64 = 0x124 - 0x70;
+
+    public static int ToGameCharacterIndex(int index32)
+    {
+        if (!Addresses.GameVersion.Is64 || index32 < PeverellChild64)
+            return index32;
+        return index32 == PeverellChild32 ? PeverellChild64 : index32 + 1;
+    }
+
+    // Game character id, 64-bit to 32-bit, for tables keyed by 32-bit ids (characterAbilities)
+    public static int ToOriginalCharacterId(int gameId)
+    {
+        const int peverell32 = PeverellChild32 + 0x70, peverell64 = PeverellChild64 + 0x70;
+        if (!Addresses.GameVersion.Is64 || gameId < peverell64 || gameId == 0xFFFF)
+            return gameId;
+        return gameId == peverell64 ? peverell32 : gameId - 1;
+    }
+
+    // Collection DLC characters, sold at Madam Malkin's (archi id -> 64-bit save slot)
+    public const int DLCCharacterOffset = 1100;
+    private static readonly Dictionary<int, int> dlcCharacterMap64 = new()
+    {
+        {1100, 0xCA}, // Rowena Ravenclaw
+        {1101, 0xCB}, // Helga Hufflepuff
+        {1102, 0x127}, // Luna (Lion Head)
+        {1103, 0x13B}, // Godric Gryffindor
+        {1104, 0x155}, // Lockhart (Straitjacket)
+        {1105, 0x191}, // Hermione (Pink Dress)
+        {1106, 0x1AA}, // Harry (Yule Ball)
+        {1107, 0x22E}, // Salazar Slytherin
+        {1108, 0x238}, // Ron (Ghoul)
+        {1109, 0x27E}, // Peeves
+    };
+
+    // Declared after dlcCharacterMap64: static fields are initialized in order
+    public static readonly Dictionary<int, int> characterMap = BuildCharacterMap();
+
+    // On 64-bit the DLC characters are in the map, so resets lock them unless received
+    private static Dictionary<int, int> BuildCharacterMap()
+    {
+        var map = characterMap32.ToDictionary(kvp => kvp.Key, kvp => ToGameCharacterIndex(kvp.Value));
+        if (Addresses.GameVersion.Is64)
+        {
+            foreach (var kvp in dlcCharacterMap64)
+                map[kvp.Key] = kvp.Value;
+        }
+        return map;
+    }
+
+    public static bool IsDLCCharacter(int id) => Addresses.GameVersion.Is64 && dlcCharacterMap64.ContainsKey(id);
+
+    // Free in the Collection: priced like characters with the same abilities
+    private static readonly Dictionary<int, int> dlcCharacterPrices = new()
+    {
+        {1100, 75000}, {1101, 50000}, {1102, 50000}, {1103, 50000}, {1104, 50000},
+        {1105, 25000}, {1106, 25000}, {1107, 3750000}, {1108, 20000}, {1109, 50000},
+    };
+
+    // Game character id (64-bit) -> undivided price, for the shop price table
+    public static IEnumerable<(int GameId, int Price)> DLCCharacterPrices =>
+        dlcCharacterMap64.Select(kvp => (kvp.Value + 0x70, dlcCharacterPrices[kvp.Key]));
+
+    // DLC characters have no token to find: shown in the shop only when the seed includes them
+    public static bool DLCCharactersEnabled
+    {
+        get
+        {
+            var slotData = Mod.LHP2_Archipelago?.SlotDataInstance;
+            return Addresses.GameVersion.Is64 && slotData?.SeedGameVersion == 1 && slotData.ShuffleCharacterTokens != 1;
+        }
+    }
+
+    // Collection seed on the original game: DLC characters that matter in logic get a stand-in
+    private static readonly Dictionary<int, int> legacyStandIns = new()
+    {
+        {1100, 46}, // Rowena Ravenclaw -> Cho Chang (Ravenclaw)
+        {1102, 125}, // Luna (Lion Head) -> Luna Lovegood (Ravenclaw)
+        {1104, 168}, // Lockhart (Straitjacket) -> Padma Patil (Ravenclaw)
+        {1107, 21}, // Salazar Slytherin -> Bellatrix Lestrange (dark magic)
+    };
+
+    private static bool IsCollectionSeedOnLegacy
+    {
+        get
+        {
+            var slotData = Mod.LHP2_Archipelago?.SlotDataInstance;
+            return !Addresses.GameVersion.Is64 && slotData?.SeedGameVersion == 1 && slotData.ShuffleCharacterTokens != 1;
+        }
+    }
+
+    public static void UnlockDLCCharacter(int id)
+    {
+        if (IsDLCCharacter(id))
+            UnlockCharacter(id);
+        else if (IsCollectionSeedOnLegacy && legacyStandIns.TryGetValue(id, out int standIn))
+            UnlockCharacter(standIn);
+        else
+            Game.PrintToLog($"Collection DLC character received on the original game, ignored: {id}");
+    }
+
+    // Their purchases can't be done on the original game: send them so their items aren't lost
+    public static void ReleaseDLCPurchasesOnLegacy()
+    {
+        if (!IsCollectionSeedOnLegacy)
+            return;
+        Game.PrintToLog("Collection seed on the original game: DLC purchases sent, logic characters replaced.");
+        HintSystem.EnqueueMessage("Collection seed: its DLC characters are replaced on this game.", 0);
+        for (int id = DLCCharacterOffset; id < DLCCharacterOffset + 10; id++)
+            Game.CheckAndReportLocation(id);
+    }
+
+    public static unsafe void UpdateDLCTokens()
+    {
+        if (!Addresses.GameVersion.Is64 || characterBaseAddress == null)
+            return;
+        bool enabled = DLCCharactersEnabled;
+        foreach (int slot in dlcCharacterMap64.Values)
+        {
+            byte* ptr = characterBaseAddress + slot / 8 + TokenOffset;
+            if (enabled)
+                *ptr |= (byte)(1 << (slot % 8));
+            else
+                *ptr &= (byte)~(1 << (slot % 8));
+        }
+    }
+
     // Returns the offset when searching the ID
     public static int GetCharacterByteOffset(int id)
     {
@@ -283,6 +412,11 @@ public class CharacterHandler
     public static unsafe void UnlockCharacter(int id)
     {
         int byteOffset = GetCharacterByteOffset(id);
+        if (byteOffset == -1)
+        {
+            Game.PrintToLog($"Can't Unlock Character, unknown archi ID {id}");
+            return;
+        }
 
         byte* ptr = characterBaseAddress + byteOffset + unlockOffset;
         if (ptr == null || characterBaseAddress == null)

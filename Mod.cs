@@ -2,6 +2,7 @@
 using Reloaded.Mod.Interfaces;
 using LHP2_Archi_Mod.Template;
 using LHP2_Archi_Mod.Configuration;
+using LHP2_Archi_Mod.Addresses;
 using System.Diagnostics;
 #if DEBUG
 // using System.Diagnostics;
@@ -37,28 +38,39 @@ public class Mod : ModBase // <= Do not Remove.
 
         GameInstance = new Game();
         BaseAddress = (nuint)Process.GetCurrentProcess().MainModule!.BaseAddress;
-        bool is32Bit = IntPtr.Size == 4;
 
         if (Configuration == null)
         {
             Logger.WriteLine("[LHP2.archipelago.mod] Configuration is null. Terminating Mod.");
             return;
         }
+
+        // Version detection: original 32-bit exe, or 64-bit exe of LEGO Harry Potter Collection.
+        GameVersion.Detect(BaseAddress);
+        Logger.WriteLine($"[LHP2.archipelago.mod] Game version: {GameVersion.Describe()}");
+        switch (GameVersion.Current)
+        {
+            case GameVersionKind.Original32:
+                break;
+            case GameVersionKind.Collection64:
+            case GameVersionKind.Collection64Unknown:
+                if (GameVersion.Current == GameVersionKind.Collection64Unknown)
+                    Logger.WriteLine("[LHP2.archipelago.mod] Unknown 64-bit build: trying AOB signatures without fallback offsets. Please report this to the dev.");
+                Addr64.Resolve(BaseAddress);
+                // Many reads don't check for a missing address: not hooking beats crashing the game
+                if (Addr64.Missing > 0)
+                {
+                    Logger.WriteLine("[LHP2.archipelago.mod] Some 64-bit signatures were not found: the mod will not hook the game. Please report this to the dev.");
+                    return;
+                }
+                break;
+            default:
+                Logger.WriteLine("[LHP2.archipelago.mod] Unsupported game executable. The mod will not hook the game.");
+                return;
+        }
+
         SetUpAP(Configuration.ArchipelagoOptions.Server, Configuration.ArchipelagoOptions.Port, Configuration.ArchipelagoOptions.Slot, Configuration.ArchipelagoOptions.Password);
         Logger.WriteLineAsync("[LHP2.archipelago.mod] Mod Version: LHP2.archipelago.mod version 1.2.0 Pre-release v2.1");
-
-        while (true)
-        {
-            if (is32Bit)
-            {
-                break;
-            }
-            else
-            {
-                Logger.WriteLine("[LHP2.archipelago.mod] The game is not 32 bit. This may not be the standalone game. Please report to the dev if you are playing the standalone game.");
-                Thread.Sleep(10000);
-            }
-        }
 
         var thread1 = new Thread(start: () =>
         {
@@ -130,6 +142,7 @@ public class Mod : ModBase // <= Do not Remove.
         {
             Game.PrintToLog("Menu loaded, setting up hooks. Please wait for hook setup before loading a save file.");
             GameInstance!.SetupHooks(_hooks);
+            Game.InstallCheatCodeCallback();
             Game.PrintToLog("Hooks set up complete. You may now load a save file.");
             return true;
         }

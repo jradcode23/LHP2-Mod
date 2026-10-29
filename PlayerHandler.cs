@@ -1,3 +1,5 @@
+using LHP2_Archi_Mod.Addresses;
+
 namespace LHP2_Archi_Mod;
 
 public enum EffectType : ushort
@@ -21,16 +23,16 @@ public record class ReceivedEffect(string Reason, EffectType PlayerEffect)
 
 public unsafe class Player(byte* BaseAddress, int amnesty)
 {
-    // Memory offsets for the Player struct
-    private const uint PlayerStateOffset1 = 0x54C;
-    private const uint PlayerStateOffset2 = 0x558;
-    private const uint PlayerEffectTimer = 0x504;
-    private const uint PlayerMaxHealthOffset = 0xF0C;
-    private const uint PlayerCurrentHealthOffset = 0xF0D;
-    private const uint PlayerDespawnedStateOffset = 0x54;
-    private const uint PlayerControlFlagsOffset = 0x4D;
-    private const uint PlayerDamageInvulnerabilityTimerOffset = 0x11B8;
-    private const uint PlayerDeathValueOffset = 0x55;
+    // Memory offsets for the Player struct (they differ on the Collection, see Off)
+    private static int PlayerStateOffset1 => Off.PlayerStateEffect;
+    private static int PlayerStateOffset2 => Off.PlayerStateAnimation;
+    private static int PlayerEffectTimer => Off.PlayerEffectTimer;
+    private static int PlayerMaxHealthOffset => Off.PlayerMaxHealth;
+    private static int PlayerCurrentHealthOffset => Off.PlayerCurrentHealth;
+    private static int PlayerDespawnedStateOffset => Off.PlayerDespawnedState;
+    private static int PlayerControlFlagsOffset => Off.PlayerControlFlags;
+    private static int PlayerDamageInvulnerabilityTimerOffset => Off.PlayerInvulnerabilityTimer;
+    private static int PlayerDeathValueOffset => Off.PlayerDeathValue;
 
     // Pointers to the Relevant Addresses in the Player Struct
     private byte* PlayerBaseAddress = BaseAddress;
@@ -132,7 +134,8 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
         Game.PrintToLog($"Death Link queued: {reason}.");
     }
 
-    private bool CanPlayerReceiveNegativeEffect()
+    // checkScreen false: the death message itself is on screen when the deferred death runs
+    private bool CanPlayerReceiveNegativeEffect(bool checkScreen = true)
     {
         if (PointerToPlayerStruct == null)
         {
@@ -157,7 +160,7 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
         {
             return false;
         }
-        byte* duelingCameraState = *(byte**)(Mod.BaseAddress + 0xC4ECB0) + 0x1FD1;
+        byte* duelingCameraState = *(byte**)Addr.DuelCameraPtr + Off.DuelCameraState;
         if (*duelingCameraState == 1) // Player is in a duel, which means they can't die
         {
             return false;
@@ -167,15 +170,19 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
         {
             return false;
         }
-        (bool nothingOnScreen, bool hubCutscene) = HintSystem.GetScreenAndCutsceneState();
-        if (!nothingOnScreen || !hubCutscene)
+        if (checkScreen)
         {
-            return false;
+            (bool nothingOnScreen, bool hubCutscene) = HintSystem.GetScreenAndCutsceneState();
+            if (!nothingOnScreen || !hubCutscene)
+            {
+                return false;
+            }
         }
         int deathValue = *(int*)(PointerToPlayerStruct + PlayerDeathValueOffset);
         if ((deathValue & 0xFFFF) == 0x300)
         {
-            Game.PrintToLog("Player can die");
+            if (checkScreen)
+                Game.PrintToLog("Player can die");
             return true;
         }
         return false;
@@ -183,6 +190,12 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
 
     public void KillPlayer()
     {
+        if (GameVersion.Is64)
+        {
+            KillPlayer64();
+            return;
+        }
+
         try
         {
             // // Keeping for future Damage link
@@ -196,12 +209,12 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
             // );
 
             var reduceStudTotalFunction = Mod._hooks!.CreateWrapper<Game.LoseStuds>(
-                (long)(Mod.BaseAddress + 0x312DC0),
+                (long)Addr.LoseStudsFunction,
                 out nint loseStudsAddress
             );
 
             var spawnStudFunction = Mod._hooks!.CreateWrapper<Game.StudDropSpawner>(
-                (long)(Mod.BaseAddress + 0x318420),
+                (long)Addr.StudDropSpawnerFunction,
                 out nint spawnStudsAddress
             );
 
@@ -241,13 +254,13 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
                 return;
             }
 
-            int worldObj = *(int*)(Mod.BaseAddress + 0xC5E358);
+            int worldObj = *(int*)Addr.WorldObjectPtr;
             Mod.Logger!.WriteLine($"World Object: 0x{(nuint)worldObj:X}");
 
             uint studLow = studsLost;
             uint studHigh = 0; // Current setup has stud loss capped at 2k (I think) so this should never be needed
 
-            IntPtr unknownPlayerPtr0 = (int)PointerToPlayerStruct + 0xFCC;
+            IntPtr unknownPlayerPtr0 = (int)PointerToPlayerStruct + Off.PlayerStudDropPosition;
 
             if (unknownPlayerPtr0 == IntPtr.Zero)
             {
@@ -255,8 +268,8 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
                 return;
             }
 
-            int unknownPlayerInt = *(PointerToPlayerStruct + 0x55);
-            float unknownPlayerFloat = *(float*)(PointerToPlayerStruct + 0x1168);
+            int unknownPlayerInt = *(PointerToPlayerStruct + Off.PlayerDeathValue);
+            float unknownPlayerFloat = *(float*)(PointerToPlayerStruct + Off.PlayerStudDropFloat);
             Mod.Logger!.WriteLine($"Unknown Player Ptr0: 0x{(nuint)unknownPlayerPtr0:X}");
             Mod.Logger!.WriteLine($"Unknown Player Int: {unknownPlayerInt}");
             Mod.Logger!.WriteLine($"Unknown Player Float: {unknownPlayerFloat}");
@@ -271,6 +284,65 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
         {
             Mod.Logger!.WriteLine($"Exception during KillPlayer: {ex.Message}");
             Mod.Logger!.WriteLine($"Stack Trace: {ex.StackTrace}");
+        }
+    }
+
+    // 64-bit: the game's stud functions crash off its thread, so the death runs on the next frame
+    private volatile bool _pendingKill64;
+
+    private void KillPlayer64()
+    {
+        _pendingKill64 = true;
+        // Wait for the frame to apply it: a death queued meanwhile would merge into this one
+        while (_pendingKill64)
+            Thread.Sleep(10);
+    }
+
+    // Called by the per-frame hook, on the game thread
+    public void RunPendingKill64()
+    {
+        if (!_pendingKill64)
+            return;
+        if (PointerToPlayerStruct == null)
+        {
+            _pendingKill64 = false;
+            Mod.Logger!.WriteLine("KillPlayer aborted: PointerToPlayerStruct is null.");
+            return;
+        }
+        // Deferred past a menu or a load: the player may no longer be able to die, retry next frame
+        if (!CanPlayerReceiveNegativeEffect(checkScreen: false))
+            return;
+        _pendingKill64 = false;
+        try
+        {
+
+            if (Addr.LoseStudsFunction == 0 || Addr.StudDropSpawnerFunction == 0 || Addr.WorldObjectPtr == 0)
+            {
+                Mod.Logger!.WriteLine("LoseStuds, StudDropSpawner or the world object not found: death only.");
+                WriteToPlayerState((ushort)EffectType.KillPlayer);
+                return;
+            }
+
+            var loseStuds = (delegate* unmanaged<nint, int, ulong>)Addr.LoseStudsFunction;
+            ulong studsLost = loseStuds((nint)PointerToPlayerStruct, 1);
+            Mod.Logger!.WriteLine($"Player Studs Lost: {studsLost}");
+
+            WriteToPlayerState((ushort)EffectType.KillPlayer);
+
+            nint worldObj = *(nint*)Addr.WorldObjectPtr;
+            if (studsLost == 0 || worldObj == 0)
+                return;
+
+            // The spawner takes the stud count as one argument: 17 arguments instead of 18
+            nint studDropPosition = (nint)(PointerToPlayerStruct + Off.PlayerStudDropPosition);
+            int deathValue = *(PointerToPlayerStruct + Off.PlayerDeathValue);
+            float playerFloat = *(float*)(PointerToPlayerStruct + Off.PlayerStudDropFloat);
+            var spawner = (delegate* unmanaged<nint, ulong, int, long, uint, long, long, long, int, float, float, long, int, int, byte, byte, int, void>)Addr.StudDropSpawnerFunction;
+            spawner(worldObj, studsLost, 0, 0, 0, studDropPosition, 0, 0, deathValue, 1.0f, playerFloat, 0, 1, 0, 0, 0, 0);
+        }
+        catch (Exception ex)
+        {
+            Mod.Logger!.WriteLine($"Exception during KillPlayer: {ex.Message}");
         }
     }
 

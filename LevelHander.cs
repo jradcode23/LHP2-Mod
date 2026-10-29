@@ -2,7 +2,7 @@ namespace LHP2_Archi_Mod;
 
 public class LevelHandler
 {
-    public static unsafe byte* LevelBaseAddress => *(byte**)(Mod.BaseAddress + 0xC55F2C);
+    public static unsafe byte* LevelBaseAddress => *(byte**)Addresses.Addr.LevelBasePtr;
 
     // Bitmask for how the level unlock byte is structed.
     [Flags]

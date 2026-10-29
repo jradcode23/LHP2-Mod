@@ -1,4 +1,6 @@
+using System.Runtime.InteropServices;
 using Archipelago.MultiClient.Net.Models;
+using LHP2_Archi_Mod.Addresses;
 
 namespace LHP2_Archi_Mod;
 
@@ -6,33 +8,47 @@ public class Shops
 {
     private const int RedBrickShopCount = 24;
     private const int JokeShopCount = 19;
-    private const int CharacterShopCount = 213;
     private const int SingleSlotCharacterCount = 0x72;
     private const int MultiSlotCharacterCount = 0xD2;
-    private const int RedBrickShopGap = 0x6;
     private const int CharacterPriceGap = 0x8;
-    private const int JokeShopGap = 0xB;
+    // Gaps are in ints; red bricks are 0x18 bytes apart (0x20 on 64-bit)
+    private static int RedBrickShopGap => Off.RedBrickShopStride / sizeof(int);
+    // Joke shop entries: 0x2C bytes, text at +0x20 (64-bit: 0x50 bytes, text at +0x38)
+    private static int JokeShopGap => (GameVersion.Is64 ? 0x50 : 0x2C) / sizeof(int);
+    private static int JokeShopTextPointer => GameVersion.Is64 ? 0x38 : 0x20;
 
-    private static readonly nuint[] RedBrickShopOffsets =
-    [
-        0xAD9DB4, 0xAD9DA4, 0xAD9984, 0xAD9D44, 0xAD9D94, 0xAD9A74, 0xAD9D24, 0xAD9AC4,
-        0xAD9BB4, 0xAD9BF4, 0xAD9C24, 0xAD9C54, 0xAD9C84, 0xAD9AA4, 0xAD9C04, 0xAD9CF4,
-        0xAD9BA4, 0xAD9A34, 0xAD9A44, 0xAD9A54, 0xAD9D64, 0xAD9D34, 0xAD9B74, 0xAD9C94,
-    ];
+    private static unsafe int* GoldBrickShopBaseAddress => (int*)Addr.GoldBrickShopPrice;
+    private static unsafe int* RedBrickShopBaseAddress => (int*)Addr.RedBrickShopPrices;
+    private static unsafe int* JokeShopBaseAddress => (int*)Addr.JokeShopTable;
+    private static unsafe byte* SingleSlotCharacterBaseAddress => Addr.SingleSlotCharacterPricesPtr == 0 ? null : *(byte**)Addr.SingleSlotCharacterPricesPtr;
+    private static unsafe byte* MultiSlotCharacterBaseAddress => Addr.MultiSlotCharacterPricesPtr == 0 ? null : *(byte**)Addr.MultiSlotCharacterPricesPtr;
 
-    private static unsafe int* GoldBrickShopBaseAddress => (int*)(Mod.BaseAddress + 0x94B13C);
-    private static unsafe int* RedBrickShopBaseAddress => (int*)(Mod.BaseAddress + 0x94CEE4);
-    private static unsafe int* JokeShopBaseAddress => (int*)(Mod.BaseAddress + 0x94E514);
-    private static unsafe byte* SingleSlotCharacterBaseAddress => *(byte**)(Mod.BaseAddress + 0xADBF90);
-    private static unsafe byte* MultiSlotCharacterBaseAddress => *(byte**)(Mod.BaseAddress + 0xAE157C);
-    private static unsafe uint ShopTextAddress => (uint)(*(byte**)(Mod.BaseAddress + 0xB16324) + 0x274);
-    private static unsafe int* GoldBrickShopPointerAddress => *(int**)(Mod.BaseAddress + 0xAE6E58) + 0xE0;
-    private static unsafe byte* CharacterPointerBaseAddress => *(byte**)(Mod.BaseAddress + 0xB06ED0);
+    // 64-bit: the text bank isn't located, so shop texts go to a mod buffer
+    private static nuint _ownShopText;
+    private static unsafe nuint ShopTextAddress
+    {
+        get
+        {
+            if (!GameVersion.Is64)
+                return (nuint)(*(byte**)Addr.HintTextBasePtr + Off.ShopText);
+            if (_ownShopText == 0)
+            {
+                _ownShopText = (nuint)Marshal.AllocHGlobal(256);
+                *(byte*)_ownShopText = 0;
+            }
+            return _ownShopText;
+        }
+    }
+
+    // Gold brick shop text pointer in the text table (entry 0xE0, 0xEC on 64-bit)
+    private static unsafe nint* GoldBrickShopPointerAddress => (nint*)(*(byte**)Addr.TextTablePtr + Off.GoldBrickShopTextSlot);
+    private static bool GoldBrickShopTextAvailable => Addr.TextTablePtr != 0;
+    private static unsafe byte* CharacterPointerBaseAddress => *(byte**)Addr.CharacterTableBasePtr;
     private static IntPtr[] OriginalJokeShopPointers = new IntPtr[JokeShopCount];
     private static IntPtr OriginalGoldBrickShopPointer;
     private static IntPtr[] RedBrickShopAddresses = new IntPtr[RedBrickShopCount];
     private static IntPtr[] OriginalRedBrickShopPointers = new IntPtr[RedBrickShopCount];
-    private static IntPtr[] OriginalCharacterPointers = new IntPtr[CharacterShopCount];
+    private static readonly Dictionary<int, IntPtr> OriginalCharacterPointers = new();
 
     private static int ValidateMultiplier(int multiplier)
     {
@@ -59,7 +75,9 @@ public class Shops
         }
     }
 
-    private static unsafe bool TryGetCharacterShopTextPointer(int characterId, out int* pointer)
+    private static unsafe nint* JokeShopTextPointerAddress(int i) => (nint*)((byte*)(JokeShopBaseAddress + i * JokeShopGap) + JokeShopTextPointer);
+
+    private static unsafe bool TryGetCharacterShopTextPointer(int characterId, out nint* pointer)
     {
         pointer = null;
         int offset = CharacterHandler.GetCharacterByteOffset(characterId);
@@ -69,16 +87,18 @@ public class Shops
         }
         offset += 0x70;
 
-        byte* pointerAddress1 = *(byte**)(CharacterPointerBaseAddress + 0x64);
-        byte* pointerAddress2 = *(byte**)(pointerAddress1 + offset * 0x4);
-        byte* pointerAddress3 = pointerAddress2 + 0x0C;
-        pointer = (int*)pointerAddress3;
+        byte* pointerAddress1 = *(byte**)(CharacterPointerBaseAddress + Off.CharacterTableArray);
+        byte* pointerAddress2 = *(byte**)(pointerAddress1 + offset * Off.PtrSize);
+        byte* pointerAddress3 = pointerAddress2 + Off.CharacterEntryText;
+        pointer = (nint*)pointerAddress3;
         return true;
     }
 
+    // 64-bit: the character prices are handled in SetCharacterPrices64
     private static unsafe bool AreShopBaseAddressesValid()
     {
-        return GoldBrickShopBaseAddress != null && RedBrickShopBaseAddress != null && SingleSlotCharacterBaseAddress != null && MultiSlotCharacterBaseAddress != null;
+        bool characterTablesValid = GameVersion.Is64 || (SingleSlotCharacterBaseAddress != null && MultiSlotCharacterBaseAddress != null);
+        return GoldBrickShopBaseAddress != null && RedBrickShopBaseAddress != null && characterTablesValid;
     }
 
     // This helper function is used to reduce the shop prices based on what is stated in the Slot Data
@@ -95,6 +115,12 @@ public class Shops
         ApplyPriceOperation(GoldBrickShopBaseAddress, 1, 1, multiplier);
         ApplyPriceOperation(RedBrickShopBaseAddress, RedBrickShopCount, RedBrickShopGap, multiplier);
 
+        if (GameVersion.Is64)
+        {
+            SetCharacterPrices64(multiplier);
+            return;
+        }
+
         int* singleSlotPricePtr = (int*)(SingleSlotCharacterBaseAddress + 0x4);
         int* multiSlotPricePtr = (int*)(MultiSlotCharacterBaseAddress + 0x64);
 
@@ -103,6 +129,52 @@ public class Shops
 
         ApplyPriceOperation(singleSlotPricePtr, SingleSlotCharacterCount, CharacterPriceGap, multiplier);
         ApplyPriceOperation(multiSlotPricePtr, MultiSlotCharacterCount, CharacterPriceGap, multiplier);
+    }
+
+    // 64-bit: one merged price table (0x20-byte entries), held twice: divide both copies
+    private static unsafe void SetCharacterPrices64(int multiplier)
+    {
+        byte* divided = null;
+        foreach (nuint collection in new[] { Addr.CharacterPricesA, Addr.CharacterPricesB })
+        {
+            byte* entries = collection == 0 ? null : *(byte**)collection;
+            if (entries == null)
+            {
+                Game.PrintToLog("[ShopPrices] Character price table unavailable, character prices unchanged");
+                continue;
+            }
+            // Two holders of the same array would divide its prices twice
+            if (entries == divided)
+                continue;
+            divided = entries;
+            int count = *(ushort*)(collection + 0xA);
+            if (CharacterHandler.DLCCharactersEnabled)
+                SetDLCCharacterPrices(entries, count);
+            ApplyPriceOperation((int*)(entries + 4), count, 0x20 / sizeof(int), multiplier);
+            Game.PrintToLog($"[ShopPrices] {count} character prices divided at 0x{(nuint)entries:X}");
+        }
+
+        // Madam Malkin's grid: DLC entries keep their own price (0) instead of pointing into A/B
+        nuint grid = Addr.CharacterPricesC;
+        byte* gridEntries = grid == 0 ? null : *(byte**)grid;
+        if (CharacterHandler.DLCCharactersEnabled && gridEntries != null)
+            SetDLCCharacterPrices(gridEntries, *(ushort*)(grid + 0xA), multiplier);
+    }
+
+    // Entries start with the character's game id (low word), the price is at +4
+    private static unsafe void SetDLCCharacterPrices(byte* entries, int count, int divisor = 1)
+    {
+        foreach (var (gameId, price) in CharacterHandler.DLCCharacterPrices)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (*(ushort*)(entries + i * 0x20) == gameId)
+                {
+                    *(int*)(entries + i * 0x20 + 4) = price / divisor;
+                    break;
+                }
+            }
+        }
     }
 
     // Joke shop prices are set upon opening the shop. As such, we have to run this separately from the other shop price function.
@@ -138,74 +210,93 @@ public class Shops
     {
         for (int i = 0; i < RedBrickShopCount; i++)
         {
-            RedBrickShopAddresses[i] = new IntPtr(unchecked((nint)(Mod.BaseAddress + RedBrickShopOffsets[i])));
+            RedBrickShopAddresses[i] = (IntPtr)Addr.RedBrickTextPointer(i);
         }
     }
 
     public static unsafe void SetShopPointers()
     {
-        int* firstJokePTR = JokeShopBaseAddress + 0x8;
-        for (int i = 0; i < JokeShopCount; i++)
+        if (JokeShopBaseAddress != null)
         {
-            OriginalJokeShopPointers[i] = new IntPtr(*(firstJokePTR + i * JokeShopGap));
+            for (int i = 0; i < JokeShopCount; i++)
+            {
+                OriginalJokeShopPointers[i] = *JokeShopTextPointerAddress(i);
+            }
+        }
+        else
+        {
+            Game.PrintToLog("[Shops] Joke shop table unavailable, joke shop text unchanged");
         }
 
-        OriginalGoldBrickShopPointer = new IntPtr(*GoldBrickShopPointerAddress);
+        if (GoldBrickShopTextAvailable)
+            OriginalGoldBrickShopPointer = *GoldBrickShopPointerAddress;
+        else
+            Game.PrintToLog("[Shops] Gold brick shop text pointer unavailable, gold brick shop text unchanged");
+
         CreateRedBrickArray();
         for (int i = 0; i < RedBrickShopCount; i++)
         {
-            OriginalRedBrickShopPointers[i] = new IntPtr(*(int*)RedBrickShopAddresses[i].ToPointer());
+            if (RedBrickShopAddresses[i] != IntPtr.Zero)
+                OriginalRedBrickShopPointers[i] = *(nint*)RedBrickShopAddresses[i].ToPointer();
         }
 
-        for (int i = 0; i < CharacterShopCount; i++)
+        foreach (int i in CharacterHandler.characterMap.Keys)
         {
-            if (!TryGetCharacterShopTextPointer(i, out int* pointer))
+            if (!TryGetCharacterShopTextPointer(i, out nint* pointer))
             {
                 continue;
             }
 
-            OriginalCharacterPointers[i] = new IntPtr(*pointer);
+            OriginalCharacterPointers[i] = *pointer;
         }
     }
 
     public static unsafe void UpdateJokeShopPointers()
     {
-        int* firstPTR = JokeShopBaseAddress + 0x8;
-        if (firstPTR == null)
+        if (JokeShopBaseAddress == null)
         {
             return;
         }
 
         for (int i = 0; i < JokeShopCount; i++)
         {
-            *(firstPTR + i * JokeShopGap) = (int)ShopTextAddress;
+            *JokeShopTextPointerAddress(i) = (nint)ShopTextAddress;
         }
     }
 
     public static unsafe void ResetJokeShopPointers()
     {
-        int* firstPTR = JokeShopBaseAddress + 0x8;
+        if (JokeShopBaseAddress == null)
+        {
+            return;
+        }
+
         for (int i = 0; i < JokeShopCount; i++)
         {
-            *(firstPTR + i * JokeShopGap) = (int)OriginalJokeShopPointers[i];
+            *JokeShopTextPointerAddress(i) = OriginalJokeShopPointers[i];
         }
     }
 
     public static unsafe void UpdateGoldBrickPointer()
     {
-        *GoldBrickShopPointerAddress = (int)ShopTextAddress;
+        if (!GoldBrickShopTextAvailable)
+            return;
+        *GoldBrickShopPointerAddress = (nint)ShopTextAddress;
     }
 
     public static unsafe void ResetGoldBrickPointer()
     {
-        *GoldBrickShopPointerAddress = (int)OriginalGoldBrickShopPointer;
+        if (!GoldBrickShopTextAvailable)
+            return;
+        *GoldBrickShopPointerAddress = OriginalGoldBrickShopPointer;
     }
 
     public static unsafe void UpdateRedBrickPointers()
     {
         for (int i = 0; i < RedBrickShopCount; i++)
         {
-            *(int*)RedBrickShopAddresses[i].ToPointer() = (int)ShopTextAddress;
+            if (RedBrickShopAddresses[i] != IntPtr.Zero)
+                *(nint*)RedBrickShopAddresses[i].ToPointer() = (nint)ShopTextAddress;
         }
     }
 
@@ -213,33 +304,34 @@ public class Shops
     {
         for (int i = 0; i < RedBrickShopCount; i++)
         {
-            *(int*)RedBrickShopAddresses[i].ToPointer() = (int)OriginalRedBrickShopPointers[i];
+            if (RedBrickShopAddresses[i] != IntPtr.Zero)
+                *(nint*)RedBrickShopAddresses[i].ToPointer() = OriginalRedBrickShopPointers[i];
         }
     }
 
     public static unsafe void UpdateCharacterPointers()
     {
-        for (int i = 0; i < CharacterShopCount; i++)
+        foreach (int i in CharacterHandler.characterMap.Keys)
         {
-            if (!TryGetCharacterShopTextPointer(i, out int* pointer))
+            if (!TryGetCharacterShopTextPointer(i, out nint* pointer))
             {
                 continue;
             }
 
-            *pointer = (int)ShopTextAddress;
+            *pointer = (nint)ShopTextAddress;
         }
     }
 
     public static unsafe void ResetCharacterPointers()
     {
-        for (int i = 0; i < CharacterShopCount; i++)
+        foreach (var kvp in OriginalCharacterPointers)
         {
-            if (!TryGetCharacterShopTextPointer(i, out int* pointer))
+            if (!TryGetCharacterShopTextPointer(kvp.Key, out nint* pointer))
             {
                 continue;
             }
 
-            *pointer = (int)OriginalCharacterPointers[i];
+            *pointer = kvp.Value;
         }
     }
 
@@ -260,9 +352,10 @@ public class Shops
         try
         {
             string message = item.Player + "'s " + item.ItemDisplayName;
-            if (message.Length > 60)
+            // Counted in UTF-8 bytes: the slot holds bytes, and an accent takes two
+            while (System.Text.Encoding.UTF8.GetByteCount(message) > 60)
             {
-                message = message[..60]; // Truncate message if it exceeds selected max shop character length (seems to be 64 characters, but we leave a little buffer cause of the Gold Brick Shop adding numbers)
+                message = message[..^1]; // Truncate message if it exceeds selected max shop character length (seems to be 64 characters, but we leave a little buffer cause of the Gold Brick Shop adding numbers)
             }
             HintSystem.WriteTextToMemory(message, ShopTextAddress);
         }

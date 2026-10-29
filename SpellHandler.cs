@@ -1,5 +1,7 @@
 using Reloaded.Memory;
 using Reloaded.Memory.Interfaces;
+using LHP2_Archi_Mod.Addresses;
+using LHP2_Archi_Mod.Collection64;
 namespace LHP2_Archi_Mod;
 
 public class SpellHandler
@@ -139,6 +141,7 @@ public class SpellHandler
         {0x0192, [0xFF, 0xFF, 0x8F, 0xCB, 0xFD, 0xF5, 0x07]}, // Custom F
         {0x0193, [0xFF, 0xFF, 0x8F, 0xCB, 0xFD, 0xF5, 0x07]}, // Generic Wizard Pink
         {0x0195, [0xFF, 0xFF, 0x8F, 0xEB, 0xFD, 0xFD, 0x07]}, // Luna (Blue Cardigan)
+        {0x0196, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]}, // Luna (Lion Head), Collection DLC
         {0x0197, [0xFF, 0xFF, 0x8F, 0xEB, 0xFD, 0xF7, 0x07]}, // Kingsley Shacklebolt
         {0x0198, [0xFF, 0xFF, 0x8F, 0xEB, 0xFD, 0xFF, 0x07]}, // Aberforth
         {0x0199, [0xFF, 0xFF, 0x8F, 0xFB, 0xFD, 0xF7, 0x07]}, // Albert Runcorn
@@ -349,6 +352,7 @@ public class SpellHandler
         {0x02A2, [0xFF, 0xFF, 0x8F, 0xEB, 0xFD, 0xF7, 0x07]}, // Xenophilius Lovegood
         {0x02A3, [0xFF, 0xFF, 0xCF, 0xFB, 0xFD, 0xF7, 0x07]}, // Yaxley
         {0x02A4, [0xFF, 0xFF, 0x8F, 0xEB, 0xFD, 0xF5, 0x07]}, // Zacharias Smith
+        {0x02A7, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]}, // Ron (Ghoul), Collection DLC
         {0x02A8, [0xFF, 0xFF, 0x9F, 0xEF, 0xFD, 0xFD, 0x07]}, // Ron (Brown Sweater)
         {0x02A9, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]}, // Waitress (Treats)
         {0x02AA, [0xFF, 0xFF, 0x8F, 0xCB, 0xFD, 0xF5, 0x07]}, // Statue
@@ -405,6 +409,7 @@ public class SpellHandler
         {0x02EA, [0xFF, 0xFF, 0x9F, 0xEF, 0xFD, 0xFD, 0x07]}, // Ron (Father)
         {0x02EB, [0xFF, 0xFF, 0x8F, 0xCB, 0xFD, 0xFD, 0x07]}, // Scoprius Malfoy
         {0x02EC, [0xFF, 0xFF, 0x9F, 0xEB, 0xFD, 0xFD, 0x07]}, // Rose Weasley
+        {0x02ED, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]}, // Peeves, Collection DLC
         {0x02EF, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]}, // Skeleton
         {0x02F0, [0xFF, 0xFF, 0x9F, 0xEF, 0xFD, 0xFD, 0x07]}, // Ron (Dummy)
     };
@@ -412,6 +417,7 @@ public class SpellHandler
     // This is a helper function that takes the character ID, looks it up in the dictionary, and returns true/false if they have the specified spell/ability
     private static bool HasAbility(int charID, int byteOffset, int bitOffset)
     {
+        charID = CharacterHandler.ToOriginalCharacterId(charID); // the table uses 32-bit ids
         if (!characterAbilities.TryGetValue(charID, out var abilities))
         {
             Game.PrintToLog($"Could Not find Character ID 0x{charID:X}. Leaving all spells locked");
@@ -447,19 +453,25 @@ public class SpellHandler
         *spellImage = 0;
     }
 
-    private static unsafe byte* P1SpellSelectedBaseAddress => *(byte**)(Mod.BaseAddress + 0xC55968);
-    private static unsafe byte* P1ActiveShootingSpellBaseAddress => *(byte**)(Mod.BaseAddress + 0xC53930);
-    private static unsafe byte* P2ActiveShootingSpellBaseAddress => *(byte**)(Mod.BaseAddress + 0xC53934);
+    private static unsafe byte* P1SpellSelectedBaseAddress => *(byte**)Addr.SpellSelectionPtr;
+    private static unsafe byte* P1ActiveShootingSpellBaseAddress => *(byte**)Addr.Player1Ptr;
+    private static unsafe byte* P2ActiveShootingSpellBaseAddress => *(byte**)Addr.Player2Ptr;
 
     public static unsafe void ResetSpellVisibility(bool player1)
     {
-        byte* spellSelectedAddress = player1 == true ? P1SpellSelectedBaseAddress + 0x18 : P1SpellSelectedBaseAddress + 0x1C;
-        byte* activeShootingSpell = player1 == true ? P1ActiveShootingSpellBaseAddress + 0xED3 : P2ActiveShootingSpellBaseAddress + 0xED3;
+        if (Off.SpellSelectedP1 < 0 || Off.ActiveShootingSpell < 0)
+        {
+            // spell selection offsets not resolved
+            return;
+        }
+        // Player 2's selection is 4 bytes after player 1's on both versions
+        byte* spellSelectedAddress = player1 == true ? P1SpellSelectedBaseAddress + Off.SpellSelectedP1 : P1SpellSelectedBaseAddress + Off.SpellSelectedP1 + 0x4;
+        byte* activeShootingSpell = player1 == true ? P1ActiveShootingSpellBaseAddress + Off.ActiveShootingSpell : P2ActiveShootingSpellBaseAddress + Off.ActiveShootingSpell;
 
         ResetSpellVisibility(spellSelectedAddress, activeShootingSpell, activeShootingSpell + 0x1);
     }
 
-    private static unsafe byte* SpellVisibilityBaseAddress => (byte*)(Mod.BaseAddress + 0xB067C4);
+    private static unsafe byte* SpellVisibilityBaseAddress => (byte*)Addr.SpellVisibility;
 
     // This is a helper function to make a spell on the slot wheel visible/selectable if it is unlocked
     private static unsafe void MakeSpellVisible(int spellId, bool player1)
@@ -539,7 +551,7 @@ public class SpellHandler
 
     }
 
-    private static unsafe byte* SpellBaseAddress => (byte*)(Mod.BaseAddress + 0xB06AB0);
+    private static unsafe byte* SpellBaseAddress => (byte*)Addr.SpellBase;
 
     // Spells are stored in 2 separate bit arrays. One is the static global array which is later pushed to all the minifig files upon map update.
     private static unsafe void UnlockGlobalSpell(int byteOffset, int bitOffset)
@@ -575,13 +587,13 @@ public class SpellHandler
         *ptr |= (byte)(1 << bitOffset);
     }
 
-    // Helper function to unlock an active character spell using archi ID
-    private static void UnlockActiveSpell(int id, bool player1)
-    {
-        int byteOffset = id / 8;
-        int bitOffset = id % 8;
-        UnlockActiveSpell(byteOffset, bitOffset, player1);
-    }
+    // // Helper function to unlock an active character spell using archi ID
+    // private static void UnlockActiveSpell(int id, bool player1)
+    // {
+    //     int byteOffset = id / 8;
+    //     int bitOffset = id % 8;
+    //     UnlockActiveSpell(byteOffset, bitOffset, player1);
+    // }
 
     // Helper function to lock an active character's spell (minifig file)
     private static unsafe void LockActiveSpell(int id)
@@ -619,7 +631,9 @@ public class SpellHandler
     // This is a helper function to get the pointer to the active character's spell array (minfig file)
     private static unsafe byte* GetActiveSpellPointer(bool player1)
     {
-        byte* activeSpellBaseAddress = *(byte**)((int)Mod.BaseAddress + (player1 ? 0xC53930 : 0xC53934));
+        if (GameVersion.Is64)
+            return GetActiveSpellPointer64(player1 ? Mod.GameInstance!.CurrentP1CharID : Mod.GameInstance!.CurrentP2CharID);
+        byte* activeSpellBaseAddress = *(byte**)(player1 ? Addr.Player1Ptr : Addr.Player2Ptr);
 
         if (activeSpellBaseAddress == null)
             return null;
@@ -639,6 +653,52 @@ public class SpellHandler
         }
 
         return activeSecondPointer + 0x58;
+    }
+
+    // 64-bit: the minifig file is the character's entry in the character table (spells at +0x80)
+    private static readonly Dictionary<int, nint> CharacterEntryCache = new();
+
+    private static unsafe byte* GetActiveSpellPointer64(int characterId)
+    {
+        if (characterId == 0 || characterId == 0xFFFF)
+            return null;
+        byte* entry = FindCharacterEntry(characterId);
+        return entry == null ? null : entry + Off.CharacterEntrySpells;
+    }
+
+    private static unsafe byte* FindCharacterEntry(int characterId)
+    {
+        lock (CharacterEntryCache)
+        {
+            if (CharacterEntryCache.TryGetValue(characterId, out nint cached))
+                return (byte*)cached;
+        }
+        byte* table = *(byte**)Addr.CharacterTableBasePtr;
+        if (table == null)
+            return null;
+        int count = *(int*)(table + Off.CharacterTableCount);
+        byte** entries = *(byte***)(table + Off.CharacterTableArray);
+        if (entries == null || count <= 0 || count > 0x1000)
+            return null;
+        for (int i = 0; i < count; i++)
+        {
+            byte* e = entries[i];
+            if (e != null && *(ushort*)(e + Off.CharacterEntryId) == (ushort)characterId)
+            {
+                lock (CharacterEntryCache)
+                    CharacterEntryCache[characterId] = (nint)e;
+                return e;
+            }
+        }
+        Game.PrintToLog($"[SpellHandler] Character 0x{characterId:X} not found in the character table ({count} entries)");
+        return null;
+    }
+
+    // Entries are recreated when a save loads, which always goes through the menu (map 402)
+    public static void ClearCharacterCache()
+    {
+        lock (CharacterEntryCache)
+            CharacterEntryCache.Clear();
     }
 
     // Default Game spells that we aren't shuffling
@@ -789,6 +849,29 @@ public class SpellHandler
         return *spellArray4;
     }
 
+    // 64-bit: the game tests the full qword of the minifig's spells (RCX)
+    public static unsafe ulong CheckSpecsUnlock64()
+    {
+        byte* spells = GetActiveSpellPointer(true);
+        if (spells == null)
+        {
+            Game.PrintToLog("Active Spell Pointer Null - can't return unlocked spells");
+            return 0;
+        }
+        return *(ulong*)spells;
+    }
+
+    public static unsafe ulong CheckHermBagUnlock64()
+    {
+        int bagUnlocked = Mod.LHP2_Archipelago!.CountItemsReceivedWithId(1026);
+        if (bagUnlocked == 0)
+        {
+            LockActiveSpell(51);
+        }
+        byte* spells = GetActiveSpellPointer(true);
+        return spells == null ? 0 : *(ulong*)spells;
+    }
+
     /* 
     This code is run when the player steps on a herm bag pad. 
     I adjusted the behavior so that you can't complete Herm Bag lesson without first unlocking the bag.
@@ -820,12 +903,22 @@ public class SpellHandler
     // Used to make it so the WWW boxes lesson actually requires WWW Boxes instead of always being unlocked
     public static void LockBoxes()
     {
-        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x71CA5, [0xB9, 0x00, 0x00, 0x00, 0x00, 0x90]); // mov ecx, 0
+        if (GameVersion.Is64)
+        {
+            HooksX64.LockBoxes();
+            return;
+        }
+        Memory.Instance.SafeWrite(Mod.BaseAddress + 0x71CA5, [0xB9, 0x00, 0x00, 0x00, 0x00, 0x90]);
     }
 
     // Restores the code effects from the function above to original behavior.
     private static void UnlockBoxes()
     {
+        if (GameVersion.Is64)
+        {
+            HooksX64.UnlockBoxes();
+            return;
+        }
         Memory.Instance.SafeWrite(Mod.BaseAddress + 0x71CA5, [0x8B, 0x0D, 0xB4, 0x6A, 0xF0, 0x00]); // harry2.exe+71CA5 - mov ecx, [harry2.exe+B06AB4] (no risk of change cause it is a static address)
     }
 
@@ -898,7 +991,7 @@ public class SpellHandler
             case 197 when !Mod.LHP2_Archipelago!.IsLocationChecked(1018) || (*y6GhostPtr & (1 << 4)) == 0:
                 // Due to the order of operations, if this variable isn't set, the game thinks that you aren't the lesson if you enter with draught so the cauldron is closed if we lock the spell.
                 // We need to do this or the cutscene can play way later than intended
-                int* lessonVariable = (int*)(Mod.BaseAddress + 0x94E4D4);
+                int* lessonVariable = (int*)Addr.LessonVariable;
                 *lessonVariable = 0x2A;
                 LockGlobalSpell(42);
                 break;

@@ -1,21 +1,39 @@
 using System.Text;
+using LHP2_Archi_Mod.Addresses;
 
 namespace LHP2_Archi_Mod;
 
 // Handles hub-related game state management, including collectibles, time travel, and map adjustments.
 public class HubHandler
 {
-    public static unsafe byte* HubBaseAddress => *(byte**)(Mod.BaseAddress + 0xC5B3B4);
-    private static unsafe byte* GoldBrickBaseAddress => *(byte**)(Mod.BaseAddress + 0xC54554);
-    private static unsafe byte* RedBrickPurchBaseAddress => *(byte**)(Mod.BaseAddress + 0xC575F4);
-    private static unsafe long* StudTotalBaseAddress => *(long**)(Mod.BaseAddress + 0xC5B600);
-    private static unsafe byte* PurpleCountAddress => (byte*)StudTotalBaseAddress + 0x30;
-    private static unsafe byte* RedBrickSaveFileAddress => PurpleCountAddress + 0x04;
-    private static unsafe byte* RedBrickEnabledAddress => (byte*)(Mod.BaseAddress + 0x94CEF3);
-    public static unsafe byte* GhostPathBaseAddress => *(byte**)(Mod.BaseAddress + 0xC55F2C);
-    private static unsafe byte* MapFlagsBaseAddress => *(byte**)(Mod.BaseAddress + 0xC5D5F4);
-    private static unsafe byte* HogwartWarpEntranceBaseAddress => *(byte**)(Mod.BaseAddress + 0x00C4EE5C);
-    private static unsafe byte* SecondPointerWarp => *(byte**)(HogwartWarpEntranceBaseAddress + 0x04);
+    public static unsafe byte* HubBaseAddress => *(byte**)Addr.HubBasePtr;
+    private static unsafe byte* GoldBrickBaseAddress => *(byte**)Addr.GoldBrickBasePtr;
+    private static unsafe byte* RedBrickPurchBaseAddress => *(byte**)Addr.RedBrickPurchasedPtr;
+    private static unsafe long* StudTotalBaseAddress => *(long**)Addr.StudTotalPtr;
+    // Mod storage inside the save: unused header bytes, same offsets on 32-bit and 64-bit
+    private static bool ModSaveStorageAvailable => Off.PurpleStudCount >= 0 && Off.RedBrickSaveFile >= 0;
+    private static unsafe byte* PurpleCountAddress => (byte*)StudTotalBaseAddress + Off.PurpleStudCount;
+    private static unsafe byte* RedBrickSaveFileAddress => (byte*)StudTotalBaseAddress + Off.RedBrickSaveFile;
+    private static unsafe byte* RedBrickEnabledAddress => (byte*)Addr.RedBrickEnabled;
+    public static unsafe byte* GhostPathBaseAddress => *(byte**)Addr.LevelBasePtr;
+    // Guards in case a signature is not found: the functions using them are then skipped
+    private static bool MapFlagsAvailable => Addr.MapFlagsBasePtr != 0;
+    private static unsafe bool WarpAvailable
+    {
+        get
+        {
+            if (Addr.HogwartsWarpBasePtr == 0 || HogwartWarpEntranceBaseAddress == null || SecondPointerWarp == null)
+                return false;
+            if (!GameVersion.Is64)
+                return true;
+            // 64-bit: only write if the object's vtable is inside the exe (LegoGameThing)
+            nuint vtable = *(nuint*)SecondPointerWarp;
+            return vtable > Mod.BaseAddress && vtable < Mod.BaseAddress + GameVersion.SizeOfImage;
+        }
+    }
+    private static unsafe byte* MapFlagsBaseAddress => *(byte**)Addr.MapFlagsBasePtr;
+    private static unsafe byte* HogwartWarpEntranceBaseAddress => *(byte**)Addr.HogwartsWarpBasePtr;
+    private static unsafe byte* SecondPointerWarp => *(byte**)(HogwartWarpEntranceBaseAddress + Off.PtrSize);
 
 
 
@@ -292,12 +310,17 @@ public class HubHandler
     */
     public static unsafe void SaveRedBricksEnabled()
     {
+        if (!ModSaveStorageAvailable)
+        {
+            Game.PrintToLog("[Hub] Saving the enabled red bricks is disabled (save storage unavailable).");
+            return;
+        }
         // Create a new byte array with 24 bits, 1 for each red brick
         byte[] enabledArray = new byte[3];
         for (int i = 0; i < 24; i++)
         {
-            // Each Red Brick Enabled/Disabled is a byte, 0x18 bytes apart
-            byte* ptr = RedBrickEnabledAddress + i * 0x18;
+            // Each Red Brick Enabled/Disabled is a byte, 0x18 bytes apart (0x20 on 64-bit)
+            byte* ptr = RedBrickEnabledAddress + i * Off.RedBrickShopStride;
             bool isEnabled = *ptr != 0;
 
             if (isEnabled)
@@ -319,6 +342,11 @@ public class HubHandler
     // This helper function is the inverse of the one above. It reads the save file and enables the red bricks as applicable.
     public static unsafe void LoadRedBricksEnabled()
     {
+        if (!ModSaveStorageAvailable)
+        {
+            Game.PrintToLog("[Hub] Restoring the enabled red bricks is disabled (save storage unavailable).");
+            return;
+        }
         byte[] enabledArray = new byte[3];
         for (int i = 0; i < 3; i++)
         {
@@ -329,7 +357,7 @@ public class HubHandler
             int byteIndex = i / 8;
             int bitIndex = i % 8;
             bool isEnabled = (enabledArray[byteIndex] & (1 << bitIndex)) != 0;
-            byte* ptr = RedBrickEnabledAddress + i * 0x18;
+            byte* ptr = RedBrickEnabledAddress + i * Off.RedBrickShopStride;
             *ptr = isEnabled ? (byte)1 : (byte)0;
         }
     }
@@ -342,6 +370,12 @@ public class HubHandler
 
         if (purpleStudCount == 0)
         {
+            return;
+        }
+
+        if (!ModSaveStorageAvailable)
+        {
+            Game.PrintToLog("[Hub] Purple studs not applied (save storage unavailable).");
             return;
         }
 
@@ -385,7 +419,7 @@ public class HubHandler
     // TODO: Update this to use the AP count function rather than a separate variable.
     public static unsafe void UpdateGoldBrickCount()
     {
-        byte* ptr = GoldBrickBaseAddress + 0x01A7A;
+        byte* ptr = GoldBrickBaseAddress + Off.GoldBrickCount;
         if (ptr == null || GoldBrickBaseAddress == null)
         {
             Game.PrintToLog($"Can't Show Gold Bricks, null pointer at 0x{(nuint)ptr:X}");
@@ -401,11 +435,23 @@ public class HubHandler
     }
 
     private static Dictionary<string, Map>? GameMaps;
-    private static unsafe ushort* Y5MapBase => *(ushort**)(Mod.BaseAddress + 0xB06914); // Y5 London
-    private static unsafe ushort* Y6MapBase => *(ushort**)(Mod.BaseAddress + 0xB06918); // Y6 London
-    private static unsafe ushort* Y7MapBase => *(ushort**)(Mod.BaseAddress + 0xB0691C); // Y7 London
-    private static unsafe ushort* Y8MapBase => *(ushort**)(Mod.BaseAddress + 0xB06920); // Y8 London
-    private static unsafe ushort* DarkTimesMapBase => *(ushort**)(Mod.BaseAddress + 0xB069AC); // Dark Times
+    private static unsafe ushort* Y5MapBase => *(ushort**)Addr.MapY5Ptr; // Y5 London
+    private static unsafe ushort* Y6MapBase => *(ushort**)Addr.MapY6Ptr; // Y6 London
+    private static unsafe ushort* Y7MapBase => *(ushort**)Addr.MapY7Ptr; // Y7 London
+    private static unsafe ushort* Y8MapBase => *(ushort**)Addr.MapY8Ptr; // Y8 London
+    private static unsafe ushort* DarkTimesMapBase => *(ushort**)Addr.MapDarkTimesPtr; // Dark Times
+    private static unsafe ushort* Y5DiagonMapBase => *(ushort**)Addr.MapY5DiagonPtr; // Y5 Diagon
+
+    // ushort offsets into 0xA0-byte map records (field +0x64); 64-bit: 0x118 bytes, +0xC0
+    private static unsafe ushort* MapField(ushort* recordBase, int ushortOffset)
+    {
+        if (!Addresses.GameVersion.Is64)
+            return recordBase + ushortOffset;
+        int k = Math.DivRem(ushortOffset - 0x32, 0x50, out int remainder);
+        if (remainder != 0)
+            throw new InvalidOperationException($"Unexpected map offset: {ushortOffset:X}");
+        return (ushort*)((byte*)recordBase + (nint)k * Off.MapRecordSize + Off.MapRecordConstant);
+    }
 
     public static unsafe void InitializeGameMaps()
     {
@@ -414,55 +460,55 @@ public class HubHandler
 
         GameMaps = new Dictionary<string, Map>
         {
-            { "Y5London", new Map("Y5London", Y5MapBase + 0x32) },
-            { "Y6London", new Map("Y6London", Y6MapBase + 0x32) },
-            { "Y7London", new Map("Y7London", Y7MapBase + 0x32) },
-            { "Y8London", new Map("Y8London", Y8MapBase + 0x32) },
-            { "Y7Cafe", new Map("Y7Cafe", Y7MapBase - 0xF0 + 0x32)},
-            // { "Y8Cafe", new Map("Y8Cafe", Y8MapBase - 0xA0 + 0x32)},
-            { "Y5Foyer", new Map("Y5Foyer", Y5MapBase + 0x960 + 0x32) },
-            { "Y6Foyer", new Map("Y6Foyer", Y6MapBase + 0xA00 + 0x32) },
-            { "Y7Foyer", new Map("Y7Foyer", Y7MapBase + 0xA00 + 0x32) },
-            { "Y8Foyer", new Map("Y8Foyer", Y8MapBase + 0xA50 + 0x32) },
-            { "Y5ClassLobby", new Map("Y5ClassLobby", Y5MapBase + 0x870 + 0x32) },
-            { "Y6ClassLobby", new Map("Y6ClassLobby", Y6MapBase + 0x8C0 + 0x32) },
-            { "Y7ClassLobby", new Map("Y7ClassLobby", Y7MapBase + 0x8C0 + 0x32) },
-            { "Y8ClassLobby", new Map("Y8ClassLobby", Y8MapBase + 0x910 + 0x32) },
-            { "Y5Quad", new Map("Y5Quad", Y5MapBase + 0x2D0 + 0x32) },
-            { "Y6Quad", new Map("Y6Quad", Y6MapBase + 0x370 + 0x32) },
-            { "Y7Quad", new Map("Y7Quad", Y7MapBase + 0x2D0 + 0x32) },
-            { "Y8Quad", new Map("Y8Quad", Y8MapBase + 0x2D0 + 0x32) },
-            { "Y6Library", new Map("Y6Library", Y6MapBase + 0x9B0 + 0x32) },
-            { "Y7Library", new Map("Y7Library", Y7MapBase + 0x9B0 + 0x32) },
-            { "Y8Library", new Map("Y8Library", Y8MapBase + 0xA00 + 0x32) },
-            { "Y6Potions", new Map("Y6Potions", Y6MapBase + 0x780 + 0x32) },
-            { "Y7Potions", new Map("Y7Potions", Y7MapBase + 0x780 + 0x32) },
-            { "Y8Potions", new Map("Y8Potions", Y8MapBase + 0x7D0 + 0x32) },
-            { "Y6HogsmeadePath", new Map("Y6HogsmeadePath", Y6MapBase + 0xF0 + 0x32) },
-            { "Y7HogsmeadePath", new Map("Y7HogsmeadePath", Y7MapBase + 0xF0 + 0x32) },
-            { "Y8HogsmeadePath", new Map("Y8HogsmeadePath", Y8MapBase + 0xF0 + 0x32) },
-            { "Y6AstronomyTower", new Map("Y6AstronomyTower", Y6MapBase + 0x320 + 0x32) },
-            { "Y7AstronomyTower", new Map("Y7AstronomyTower", Y7MapBase + 0x690 + 0x32) },
-            { "Y8AstronomyTower", new Map("Y8AstronomyTower", Y8MapBase + 0x6E0 + 0x32) },
-            { "Y6RavenclawTower", new Map("Y6RavenclawTower", Y6MapBase + 0x5F0 + 0x32) },
-            { "Y7RavenclawTower", new Map("Y7RavenclawTower", Y7MapBase + 0x5A0 + 0x32) },
-            { "Y8RavenclawTower", new Map("Y8RavenclawTower", Y8MapBase + 0x5F0 + 0x32) },
-            { "Y6AguaCharms", new Map("Y6AguaCharms", Y6MapBase + 0x6E0 + 0x32) },
-            { "Y7AguaCharms", new Map("Y7AguaCharms", Y7MapBase + 0x6E0 + 0x32) },
-            { "Y8AguaCharms", new Map("Y8AguaCharms", Y8MapBase + 0x730 + 0x32) },
-            { "Y5DivinationCourtyard", new Map("Y5DivinationCourtyard", Y5MapBase + 0x820 + 0x32)},
-            { "Y5DiagonAlley", new Map("Y5DiagonAlley", *(ushort**)(Mod.BaseAddress + 0xB06A30) + 0x32) },
-            { "Y5DormLobby", new Map("Y5DormLobby", Y5MapBase + 0x6E0 + 0x32)},
-            { "Y5HogwartsPath", new Map("Y5HogwartsPath", Y5MapBase + 0x1E0 + 0x32)},
-            { "Y5Grounds", new Map("Y5Grounds", Y5MapBase + 0x640 + 0x32)},
-            { "Y6Grounds", new Map("Y6Grounds", Y6MapBase + 0x5A0 + 0x32)},
-            { "Y7Grounds", new Map("Y7Grounds", Y7MapBase + 0x550 + 0x32)},
-            { "Y8Quidditch", new Map("Y8Quidditch", Y8MapBase + 0x500 + 0x32) },
-            { "Y8BlackLake", new Map("Y8BlackLake",  Y8MapBase + 0x4B0 + 0x32) },
-            { "DarkTimes", new Map("DarkTimes", DarkTimesMapBase + 0x32) },
-            { "OutOfRetirement", new Map("OutOfRetirement", DarkTimesMapBase - 0x1AFE)},
-            { "TheSevenHarrys", new Map("TheSevenHarrys", DarkTimesMapBase - 0x3C1E)},
-            { "TheThiefsDownfall", new Map("TheThiefsDownfall", DarkTimesMapBase - 0x54CE)},
+            { "Y5London", new Map("Y5London", MapField(Y5MapBase, 0x32)) },
+            { "Y6London", new Map("Y6London", MapField(Y6MapBase, 0x32)) },
+            { "Y7London", new Map("Y7London", MapField(Y7MapBase, 0x32)) },
+            { "Y8London", new Map("Y8London", MapField(Y8MapBase, 0x32)) },
+            { "Y7Cafe", new Map("Y7Cafe", MapField(Y7MapBase, -0xF0 + 0x32))},
+            // { "Y8Cafe", new Map("Y8Cafe", MapField(Y8MapBase, -0xA0 + 0x32))},
+            { "Y5Foyer", new Map("Y5Foyer", MapField(Y5MapBase, 0x960 + 0x32)) },
+            { "Y6Foyer", new Map("Y6Foyer", MapField(Y6MapBase, 0xA00 + 0x32)) },
+            { "Y7Foyer", new Map("Y7Foyer", MapField(Y7MapBase, 0xA00 + 0x32)) },
+            { "Y8Foyer", new Map("Y8Foyer", MapField(Y8MapBase, 0xA50 + 0x32)) },
+            { "Y5ClassLobby", new Map("Y5ClassLobby", MapField(Y5MapBase, 0x870 + 0x32)) },
+            { "Y6ClassLobby", new Map("Y6ClassLobby", MapField(Y6MapBase, 0x8C0 + 0x32)) },
+            { "Y7ClassLobby", new Map("Y7ClassLobby", MapField(Y7MapBase, 0x8C0 + 0x32)) },
+            { "Y8ClassLobby", new Map("Y8ClassLobby", MapField(Y8MapBase, 0x910 + 0x32)) },
+            { "Y5Quad", new Map("Y5Quad", MapField(Y5MapBase, 0x2D0 + 0x32)) },
+            { "Y6Quad", new Map("Y6Quad", MapField(Y6MapBase, 0x370 + 0x32)) },
+            { "Y7Quad", new Map("Y7Quad", MapField(Y7MapBase, 0x2D0 + 0x32)) },
+            { "Y8Quad", new Map("Y8Quad", MapField(Y8MapBase, 0x2D0 + 0x32)) },
+            { "Y6Library", new Map("Y6Library", MapField(Y6MapBase, 0x9B0 + 0x32)) },
+            { "Y7Library", new Map("Y7Library", MapField(Y7MapBase, 0x9B0 + 0x32)) },
+            { "Y8Library", new Map("Y8Library", MapField(Y8MapBase, 0xA00 + 0x32)) },
+            { "Y6Potions", new Map("Y6Potions", MapField(Y6MapBase, 0x780 + 0x32)) },
+            { "Y7Potions", new Map("Y7Potions", MapField(Y7MapBase, 0x780 + 0x32)) },
+            { "Y8Potions", new Map("Y8Potions", MapField(Y8MapBase, 0x7D0 + 0x32)) },
+            { "Y6HogsmeadePath", new Map("Y6HogsmeadePath", MapField(Y6MapBase, 0xF0 + 0x32)) },
+            { "Y7HogsmeadePath", new Map("Y7HogsmeadePath", MapField(Y7MapBase, 0xF0 + 0x32)) },
+            { "Y8HogsmeadePath", new Map("Y8HogsmeadePath", MapField(Y8MapBase, 0xF0 + 0x32)) },
+            { "Y6AstronomyTower", new Map("Y6AstronomyTower", MapField(Y6MapBase, 0x320 + 0x32)) },
+            { "Y7AstronomyTower", new Map("Y7AstronomyTower", MapField(Y7MapBase, 0x690 + 0x32)) },
+            { "Y8AstronomyTower", new Map("Y8AstronomyTower", MapField(Y8MapBase, 0x6E0 + 0x32)) },
+            { "Y6RavenclawTower", new Map("Y6RavenclawTower", MapField(Y6MapBase, 0x5F0 + 0x32)) },
+            { "Y7RavenclawTower", new Map("Y7RavenclawTower", MapField(Y7MapBase, 0x5A0 + 0x32)) },
+            { "Y8RavenclawTower", new Map("Y8RavenclawTower", MapField(Y8MapBase, 0x5F0 + 0x32)) },
+            { "Y6AguaCharms", new Map("Y6AguaCharms", MapField(Y6MapBase, 0x6E0 + 0x32)) },
+            { "Y7AguaCharms", new Map("Y7AguaCharms", MapField(Y7MapBase, 0x6E0 + 0x32)) },
+            { "Y8AguaCharms", new Map("Y8AguaCharms", MapField(Y8MapBase, 0x730 + 0x32)) },
+            { "Y5DivinationCourtyard", new Map("Y5DivinationCourtyard", MapField(Y5MapBase, 0x820 + 0x32))},
+            { "Y5DiagonAlley", new Map("Y5DiagonAlley", MapField(Y5DiagonMapBase, 0x32)) },
+            { "Y5DormLobby", new Map("Y5DormLobby", MapField(Y5MapBase, 0x6E0 + 0x32))},
+            { "Y5HogwartsPath", new Map("Y5HogwartsPath", MapField(Y5MapBase, 0x1E0 + 0x32))},
+            { "Y5Grounds", new Map("Y5Grounds", MapField(Y5MapBase, 0x640 + 0x32))},
+            { "Y6Grounds", new Map("Y6Grounds", MapField(Y6MapBase, 0x5A0 + 0x32))},
+            { "Y7Grounds", new Map("Y7Grounds", MapField(Y7MapBase, 0x550 + 0x32))},
+            { "Y8Quidditch", new Map("Y8Quidditch", MapField(Y8MapBase, 0x500 + 0x32)) },
+            { "Y8BlackLake", new Map("Y8BlackLake", MapField(Y8MapBase, 0x4B0 + 0x32)) },
+            { "DarkTimes", new Map("DarkTimes", MapField(DarkTimesMapBase, 0x32)) },
+            { "OutOfRetirement", new Map("OutOfRetirement", MapField(DarkTimesMapBase, -0x1AFE))},
+            { "TheSevenHarrys", new Map("TheSevenHarrys", MapField(DarkTimesMapBase, -0x3C1E))},
+            { "TheThiefsDownfall", new Map("TheThiefsDownfall", MapField(DarkTimesMapBase, -0x54CE))},
         };
     }
 
@@ -510,8 +556,8 @@ public class HubHandler
             return;
         }
 
-        byte* N0CUT5CheatCodeConstant = (byte*)(Mod.BaseAddress + 0x8968A4);
-        HintSystem.WriteTextToMemory(mapRequested, (uint)N0CUT5CheatCodeConstant);
+        byte* N0CUT5CheatCodeConstant = (byte*)Addr.N0CUT5String;
+        HintSystem.WriteTextToMemory(mapRequested, (nuint)N0CUT5CheatCodeConstant);
 
         currentMap.UpdateMap(destinationMap.MapConstant);
         AdjustLeakyMapConstants(destinationMap.MapConstant, destinationMap.EntranceConstant);
@@ -801,7 +847,12 @@ public class HubHandler
     */
     public static unsafe void ClearReturnToHogwartsLocation()
     {
-        byte* entrancePTR = SecondPointerWarp + 0x31C;
+        if (!WarpAvailable)
+        {
+            Game.PrintToLog("[Hub] Return warp to Hogwarts: game object unavailable, skipped.");
+            return;
+        }
+        byte* entrancePTR = SecondPointerWarp + Off.WarpHogwartsEntrance;
         for (int i = 0; i < 0x40; i++)
         {
             byte* ptr = entrancePTR + i;
@@ -817,7 +868,12 @@ public class HubHandler
     */
     public static unsafe void FixReturnToLeakyCauldron()
     {
-        byte* returnToLeakyPTR = SecondPointerWarp + 0x2FC;
+        if (!WarpAvailable)
+        {
+            Game.PrintToLog("[Hub] Return to Leaky Cauldron: game object unavailable, skipped.");
+            return;
+        }
+        byte* returnToLeakyPTR = SecondPointerWarp + Off.WarpReturnMap;
         byte year = (byte)(Mod.GameInstance!.PrevLevelID + 0x4);
         if (year < 5 || year > 8)
         {
@@ -825,8 +881,8 @@ public class HubHandler
             return;
         }
         string hubName = $"{year}HubLeakyCauldron";
-        Game.PrintToLog($"Return to Leaky address: 0x{(uint)returnToLeakyPTR:X}, year: {year}");
-        HintSystem.WriteTextToMemory(hubName, (uint)returnToLeakyPTR);
+        Game.PrintToLog($"Return to Leaky address: 0x{(nuint)returnToLeakyPTR:X}, year: {year}");
+        HintSystem.WriteTextToMemory(hubName, (nuint)returnToLeakyPTR);
     }
 
     /*
@@ -859,7 +915,7 @@ public class HubHandler
     We have turned off the vanilla treatment and updated it to match our own functionality.
     This includes sending archi locations, marking level tasks as complete, or nothing.
     */
-    public static unsafe void HandleGhostPaths(int eax, int edx)
+    public static unsafe void HandleGhostPaths(nint eax, int edx)
     {
         // Game.PrintToLog("Handling Ghost Paths");
         ushort dx = (ushort)(edx & 0xFFFF); // Game only writes dx to this address, converting for safety
@@ -872,7 +928,7 @@ public class HubHandler
         byte* y7GhostPtr = GhostPathBaseAddress + 0x48;
 
         // Handle Y5 Ghost Tasks
-        if (eax == (int)y5GhostPtr)
+        if (eax == (nint)y5GhostPtr)
         {
             switch (dx)
             {
@@ -965,7 +1021,7 @@ public class HubHandler
             }
         }
         // Handle Y6 Ghost Tasks
-        else if (eax == (int)y6GhostPtr)
+        else if (eax == (nint)y6GhostPtr)
         {
             switch (dx)
             {
@@ -1033,7 +1089,7 @@ public class HubHandler
             }
         }
         // Handle Y7 Ghost Tasks
-        else if (eax == (int)y7GhostPtr)
+        else if (eax == (nint)y7GhostPtr)
         {
             if (dx == 4) // Cafe Fight
             {
@@ -1077,6 +1133,11 @@ public class HubHandler
     */
     public static unsafe void AdjustHubMaps(int year)
     {
+        if (!MapFlagsAvailable)
+        {
+            Game.PrintToLog("[Hub] Map flag fixes skipped: map flags container not resolved.");
+            return;
+        }
         leaky2LondonAddress = GetHubMapAddress("HubLeakyCauldron", 0xB7B); // Leaky2London Loading Zone
         hogsPathAddress = GetHubMapAddress("HogsApproach", 0); // HogPath2Courtyard Loading Zone
         quadAddress = GetHubMapAddress("Quad", 0); // Quad
@@ -1114,6 +1175,24 @@ public class HubHandler
             AdjustKingsCross();
         }
 
+        AdjustMainCorridor(year, y5GhostPtr);
+
+        if (year == 7 || year == 8)
+        {
+            AdjustWilderness();
+        }
+
+    }
+
+    // Helper function to handle the Weasley lesson loading zone and the courtyard doors in the Main Corridor
+    private static unsafe void AdjustMainCorridor(int year, byte* y5GhostPtr)
+    {
+        if (mainCorridorAddress == MapFlagsBaseAddress + 0x40)
+        {
+            Game.PrintToLog("Main Corridor Save info hasn't been written yet.");
+            return;
+        }
+
         byte* weasleyLessonLoadingZone = mainCorridorAddress + 0x149D;
 
         // Ensure Weasley Lesson loading zone isn't active
@@ -1149,12 +1228,6 @@ public class HubHandler
             courtyardFlags += 2; // Object 4 position
             *courtyardFlags = 56;
         }
-
-        if (year == 7 || year == 8)
-        {
-            AdjustWilderness();
-        }
-
     }
 
     // Helper function to ensure that First Level loading zones aren't active in Leaky Cauldron
@@ -1209,6 +1282,11 @@ public class HubHandler
     // Leaving the invisible wall code for now in case something goes wrong
     public static unsafe void AdjustWilderness()
     {
+        if (!MapFlagsAvailable)
+        {
+            Game.PrintToLog("[Hub] Wilderness fix skipped: map flags container not resolved.");
+            return;
+        }
         wildernessAddress = GetHubMapAddress("ForestHub", 0); // Wilderness
         if (wildernessAddress == MapFlagsBaseAddress + 0x40)
         {
@@ -1437,8 +1515,38 @@ public class HubHandler
         return returningAddress;
     }
 
+    // Save sections: 0x20-byte name, total size, data size, then a pointer (8 bytes, aligned, on 64-bit)
+    private const int SectionTotalSize = 0x20;
+    private const int SectionPointer32 = 0x2C;
+    private const int SectionHeader32 = 0x30;
+    private const int SectionHeader64 = 0x38;
+
+    // The blocks are 32-bit sections: only the header grows on 64-bit, the data is identical
+    private static unsafe int WriteSaveSection(byte* dest, byte[] block)
+    {
+        if (!GameVersion.Is64)
+        {
+            for (int i = 0; i < block.Length; i++)
+                dest[i] = block[i];
+            return *(int*)(dest + SectionTotalSize);
+        }
+        for (int i = 0; i < SectionPointer32; i++)
+            dest[i] = block[i];
+        *(int*)(dest + SectionTotalSize) += SectionHeader64 - SectionHeader32;
+        *(uint*)(dest + SectionPointer32) = 0;
+        *(ulong*)(dest + SectionHeader32) = BitConverter.ToUInt32(block, SectionPointer32);
+        for (int i = SectionHeader32; i < block.Length; i++)
+            dest[i + SectionHeader64 - SectionHeader32] = block[i];
+        return *(int*)(dest + SectionTotalSize);
+    }
+
     public static unsafe void WriteInitialHubSaveFlags()
     {
+        if (!MapFlagsAvailable)
+        {
+            Game.PrintToLog("[Hub] Initial hub save flags skipped: map flags container not resolved.");
+            return;
+        }
         wildernessAddress = GetHubMapAddress("ForestHub", 0);
         byte* knockturnAddress = GetHubMapAddress("Knockturn", 0);
         if (wildernessAddress == MapFlagsBaseAddress + 0x40 && knockturnAddress == MapFlagsBaseAddress + 0x40)
@@ -1449,16 +1557,11 @@ public class HubHandler
                 Game.PrintToLog("Diagon Save has not been written yet. Returning");
                 return;
             }
-            diagonAddress += 0xC36; // Move the address to the spot after Diagon
+            // Diagon's own size field: 0xC36 on 32-bit, 0xC3E on 64-bit
+            byte* nextSection = diagonAddress + *(int*)(diagonAddress + SectionTotalSize);
             Game.PrintToLog("Writing Foyer & Forest Hub Flags");
-            for (int i = 0; i < SaveDataFlags.FoyerSaveDataFlags.Length; i++)
-            {
-                *(diagonAddress + i) = SaveDataFlags.FoyerSaveDataFlags[i];
-            }
-            for (int i = 0; i < SaveDataFlags.ForestHubSaveDataFlags.Length; i++)
-            {
-                *(diagonAddress + SaveDataFlags.FoyerSaveDataFlags.Length + i) = SaveDataFlags.ForestHubSaveDataFlags[i];
-            }
+            nextSection += WriteSaveSection(nextSection, SaveDataFlags.FoyerSaveDataFlags);
+            WriteSaveSection(nextSection, SaveDataFlags.ForestHubSaveDataFlags);
             Game.PrintToLog("Foyer & Forest Hub Flags written");
             return;
         }
