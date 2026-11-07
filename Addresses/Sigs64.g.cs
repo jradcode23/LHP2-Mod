@@ -36,7 +36,7 @@ internal static partial class Sigs64
         new(SigKind.Code, "Hook_ClosePolyjuicePot", 0x5FC25E, "89 88 6C 0B 00 00 48 8B 05 ?? ?? ?? ?? 48 85 C0", 0, 0, 0, 0x0, 0),
         new(SigKind.Code, "Hook_ChangeCharacters", 0x3F3F08, "89 77 10 48 8B CB", 0, 0, 0, 0x0, 0),
         new(SigKind.Code, "Hook_ChangeYears", 0x4CABD0, "48 8B CD E8 ?? ?? ?? ?? 85 C0 75 26", 0, 0, 0, 0x0, 0),
-        new(SigKind.Code, "Hook_InterruptedMessage1", 0x414600, "E8 ?? ?? ?? ?? 48 C7 05 ?? ?? ?? ?? 00 00 00 00 45 33 C0", 0, 0, 0, 0x0, 0),
+        new(SigKind.Code, "Hook_InterruptedMessage1", 0x414605, "48 C7 05 ?? ?? ?? ?? 00 00 00 00 45 33 C0", 0, 0, 0, 0x0, 0),
         new(SigKind.Code, "Hook_InterruptedMessage2", 0x4146A6, "33 D2 C6 05 ?? ?? ?? ?? 02 4C 89 05 ?? ?? ?? ??", 0, 0, 0, 0x0, 0),
         new(SigKind.Code, "Hook_SpecsAnim1", 0x5A66B, "BA 32 00 00 00 E8 ?? ?? ?? ?? 84 C0 75 30 48 85 DB 74 1C 48 8B 43 10 48 85 C0 74 13 48 B9 00 00 00 00 02 00 00 00 48 85 88 08 01 00 00 75 0F 48 8B 5C 24 20", 0, 0, 0, 0x0, 0),
         new(SigKind.Code, "Hook_SpecsAnim2", 0x5B19B, "BA 32 00 00 00 E8 ?? ?? ?? ?? 84 C0 75 30 48 85 DB 74 1C 48 8B 43 10 48 85 C0 74 13 48 B9 00 00 00 00 02 00 00 00 48 85 88 08 01 00 00 75 0F 48 8B 5C 24 20", 0, 0, 0, 0x0, 1),

@@ -125,9 +125,11 @@ internal static unsafe class HooksX64
         // ChangeYears: before the strcmp with "N0CUT5", as on 32-bit
         Hook(hooks, "Hook_ChangeYears", AsmHookBehaviour.ExecuteFirst,
             Call((nint)(delegate* unmanaged<void>)&OnChangeYears, []));
-        // Interrupted messages: before "hint pointer = 0", and before the timer reset (site 2)
-        Hook(hooks, "Hook_InterruptedMessage1", AsmHookBehaviour.ExecuteAfter,
-            Call((nint)(delegate* unmanaged<int, void>)&OnInterruptedMessage, ["xor ecx, ecx"]));
+        // Interrupted messages: site 1 replaces "hint pointer = 0", our messages jump straight to it
+        Hook(hooks, "Hook_InterruptedMessage1", AsmHookBehaviour.DoNotExecuteOriginal,
+            Call((nint)(delegate* unmanaged<int, void>)&OnInterruptedMessage, ["xor ecx, ecx"],
+                tail: ["push rax", $"mov rax, 0x{Address("HintPtr"):X}", "mov qword [rax], 0", "pop rax"]));
+        // Site 2 runs before the timer reset
         // Site 2 is only safe once Nop_HintColor2 removed the RIP-relative write after it
         nuint interrupted2 = Address("Hook_InterruptedMessage2");
         if (DefinitionSink != null || (interrupted2 != 0 && *(byte*)(interrupted2 + 2) == 0x90 && *(byte*)(interrupted2 + 4) == 0x90))
