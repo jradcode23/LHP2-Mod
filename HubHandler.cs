@@ -12,7 +12,7 @@ public class HubHandler
     private static unsafe long* StudTotalBaseAddress => *(long**)Addr.StudTotalPtr;
     // Mod storage inside the save: unused header bytes, same offsets on 32-bit and 64-bit
     private static bool ModSaveStorageAvailable => Off.PurpleStudCount >= 0 && Off.RedBrickSaveFile >= 0;
-    private static unsafe byte* PurpleCountAddress => (byte*)StudTotalBaseAddress + Off.PurpleStudCount;
+    public static unsafe byte* PurpleCountAddress => (byte*)StudTotalBaseAddress + Off.PurpleStudCount;
     private static unsafe byte* RedBrickSaveFileAddress => (byte*)StudTotalBaseAddress + Off.RedBrickSaveFile;
     private static unsafe byte* RedBrickEnabledAddress => (byte*)Addr.RedBrickEnabled;
     public static unsafe byte* GhostPathBaseAddress => *(byte**)Addr.LevelBasePtr;

@@ -5,6 +5,7 @@ namespace LHP2_Archi_Mod;
 public enum EffectType : ushort
 {
     // Values to give the first state address which seems to be type (+ 0x54C)
+    Stupefy = 0x69,
     Immobulus = 0xA5,
     SlugulusEructo = 0xA7,
     Incarcerous = 0xF4,
@@ -26,7 +27,7 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
     // Memory offsets for the Player struct (they differ on the Collection, see Off)
     private static int PlayerStateOffset1 => Off.PlayerStateEffect;
     private static int PlayerStateOffset2 => Off.PlayerStateAnimation;
-    private static int PlayerEffectTimer => Off.PlayerEffectTimer;
+    private static int PlayerEffectTimerOffset => Off.PlayerEffectTimer;
     private static int PlayerMaxHealthOffset => Off.PlayerMaxHealth;
     private static int PlayerCurrentHealthOffset => Off.PlayerCurrentHealth;
     private static int PlayerDespawnedStateOffset => Off.PlayerDespawnedState;
@@ -39,6 +40,7 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
     private byte* PointerToPlayerStruct => *(byte**)PlayerBaseAddress;
     private ushort* PlayerStateEffect => (ushort*)(PointerToPlayerStruct + PlayerStateOffset1); // This seems to be effect that the player receives
     private ushort* PlayerStateAnimation => (ushort*)(PointerToPlayerStruct + PlayerStateOffset2); // This seems to be how the player is animation of the effect
+    private float* PlayerEffectTimer => (float*)(PointerToPlayerStruct + PlayerEffectTimerOffset); // This seems to be how long the effect/animation lasts (excluding death)
     private byte* PlayerMaxHealth => PointerToPlayerStruct + PlayerMaxHealthOffset;
     // private byte* PlayerCurrentHealth => PointerToPlayerStruct + PlayerCurrentHealthOffset; // Keeping for Damage Link in the future
 
@@ -68,6 +70,8 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
 
         StartBackgroundProcessor(ProcessInboundEffectQueue, "InboundEffectProcessor");
     }
+
+    private static readonly EffectType[] Traps = [EffectType.Stupefy, EffectType.Incarcerous, EffectType.Immobulus, EffectType.SlugulusEructo];
 
     private void ProcessInboundEffectQueue()
     {
@@ -99,6 +103,12 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
             if (nextEffect.PlayerEffect == EffectType.KillPlayer)
             {
                 ProcessInboundDeathLink(nextEffect.Reason);
+            }
+            if (Traps.Contains(nextEffect.PlayerEffect))
+            {
+                *PlayerStateEffect = (ushort)nextEffect.PlayerEffect;
+                *PlayerEffectTimer = 5;
+                WriteToPlayerAnimationState((ushort)EffectType.GivePlayerEffect);
             }
         }
     }
@@ -132,6 +142,19 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
     {
         QueueInboundEffect(reason, EffectType.KillPlayer);
         Game.PrintToLog($"Death Link queued: {reason}.");
+    }
+
+    public void ReceiveTrap(int itemID)
+    {
+        EffectType trap = itemID switch
+        {
+            800 => EffectType.Stupefy,
+            801 => EffectType.Immobulus,
+            802 => EffectType.SlugulusEructo,
+            _ => EffectType.Incarcerous,
+        };
+        QueueInboundEffect("trap", trap);
+        Game.PrintToLog($"Trap queued. ID: {itemID}");
     }
 
     // checkScreen false: the death message itself is on screen when the deferred death runs
@@ -182,7 +205,7 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
         if ((deathValue & 0xFFFF) == 0x300)
         {
             if (checkScreen)
-                Game.PrintToLog("Player can die");
+                Game.PrintToLog("Player can Receive Effect");
             return true;
         }
         return false;
@@ -246,7 +269,7 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
             Mod.Logger!.WriteLine($"Player Studs Lost: {studsLost}");
             // playerDeathFunction((int)PointerToPlayerStruct, 5, 0, 1, 0, 0); // Removed for now, was randomly crashing. It seemed to be corrupting other function call addresses
 
-            WriteToPlayerState((ushort)EffectType.KillPlayer);
+            WriteToPlayerAnimationState((ushort)EffectType.KillPlayer);
 
             if (studsLost == 0)
             {
@@ -319,7 +342,7 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
             if (Addr.LoseStudsFunction == 0 || Addr.StudDropSpawnerFunction == 0 || Addr.WorldObjectPtr == 0)
             {
                 Mod.Logger!.WriteLine("LoseStuds, StudDropSpawner or the world object not found: death only.");
-                WriteToPlayerState((ushort)EffectType.KillPlayer);
+                WriteToPlayerAnimationState((ushort)EffectType.KillPlayer);
                 return;
             }
 
@@ -327,7 +350,7 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
             ulong studsLost = loseStuds((nint)PointerToPlayerStruct, 1);
             Mod.Logger!.WriteLine($"Player Studs Lost: {studsLost}");
 
-            WriteToPlayerState((ushort)EffectType.KillPlayer);
+            WriteToPlayerAnimationState((ushort)EffectType.KillPlayer);
 
             nint worldObj = *(nint*)Addr.WorldObjectPtr;
             if (studsLost == 0 || worldObj == 0)
@@ -355,7 +378,7 @@ public unsafe class Player(byte* BaseAddress, int amnesty)
         }.Start();
     }
 
-    private void WriteToPlayerState(ushort value)
+    private void WriteToPlayerAnimationState(ushort value)
     {
         if (PointerToPlayerStruct == null)
         {
