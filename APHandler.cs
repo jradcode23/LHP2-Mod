@@ -523,7 +523,8 @@ public class ArchipelagoHandler
         }
         if ((item.Flags & ItemFlags.NeverExclude) == ItemFlags.NeverExclude)
         {
-            return 6; // 6 is Dark Blue
+            // The Collection's palette has no index 6 (shows black)
+            return (byte)(Addresses.GameVersion.Is64 ? 1 : 6); // 6 is Dark Blue
         }
         if ((item.Flags & ItemFlags.None) == ItemFlags.None)
         {

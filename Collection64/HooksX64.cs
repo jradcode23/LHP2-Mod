@@ -66,14 +66,16 @@ internal static unsafe class HooksX64
         Hook(hooks, "Hook_HubRB", AsmHookBehaviour.ExecuteFirst,
             Call((nint)(delegate* unmanaged<int, void>)&OnHubRB, ["mov ecx, dword [rbx+0x38]"]));
 
-        // Ghost tasks: bts/bt/write/jc replaced by the mod's call, then "return 0" as on 32-bit
-        nuint ghostReturn0 = Address("Jmp_GhostPathReturn0");
-        if (ghostReturn0 != 0)
+        // Ghost tasks: the mod's call, then the game's task refresh (callers ignore the return)
+        nuint ghostNext = Address("Jmp_GhostPathRefresh");
+        if (ghostNext == 0)
+            ghostNext = Address("Jmp_GhostPathReturn0");
+        if (ghostNext != 0)
         {
             Hook(hooks, "Hook_GhostPath", AsmHookBehaviour.DoNotExecuteOriginal,
                 Call((nint)(delegate* unmanaged<nint, int, void>)&OnGhostPath,
                     ["mov edx, 1", "mov ecx, dword [rbx+0x30]", "shl edx, cl", "mov rcx, qword [rbx+0x18]", "add rcx, 0xC"],
-                    tail: AbsoluteJump(ghostReturn0)));
+                    tail: AbsoluteJump(ghostNext)));
         }
 
         // Shop / level select: the 6 calls to SetShopOpen; the caller replaces the esp & 0xF trick

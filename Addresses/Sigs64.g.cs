@@ -21,6 +21,7 @@ internal static partial class Sigs64
         new(SigKind.Code, "Hook_HubRB", 0x46DC8, "80 4C 81 02 10 48 8B CB", 0, 0, 0, 0x0, 0),
         new(SigKind.Code, "Hook_GhostPath", 0x399EA0, "0F AB C8 41 0F A3 C8", 0, 0, 0, 0x0, 0),
         new(SigKind.Code, "Jmp_GhostPathReturn0", 0x399F01, "48 8B 74 24 38 33 C0", 0, 0, 0, 0x0, 0),
+        new(SigKind.Code, "Jmp_GhostPathRefresh", 0x399EAE, "48 89 5C 24 30 48 8B CF 48 8B 9F 78 05 00 00", 0, 0, 0, 0x0, 0),
         new(SigKind.Code, "Hook_LevelAndMap", 0x3FE0F5, "0F BF 83 C0 00 00 00 89 05 ?? ?? ?? ??", 0, 0, 0, 0x0, 0),
         new(SigKind.Code, "Call_SetShopOpen_Shop", 0x6E096, "E8 ?? ?? ?? ?? C7 05 ?? ?? ?? ?? 00 00 00 00 48 83 C4 28 C3 CC CC CC CC CC CC 48 89 5C 24 08", 0, 0, 0, 0x0, 0),
         new(SigKind.Code, "Call_SetShopOpen_LevelSelect", 0x6E510, "E8 ?? ?? ?? ?? C7 05 ?? ?? ?? ?? 00 00 00 00 48 83 C4 20 5B C3 CC CC CC CC CC CC CC CC CC CC CC E9 ?? ?? ?? ??", 0, 0, 0, 0x0, 0),

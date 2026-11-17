@@ -586,6 +586,7 @@ public class Game
             $"{hooks.Utilities.GetAbsoluteCallMnemonics(OnHubGhostPath, out _reverseWrapOnHubGhostPath)}",
             "popad",
             "popfd",
+            "test esi, esi", // Stolen with the OR, the jnz needs it
         };
         _asmHooks.Add(hooks.CreateAsmHook(handleHubGhostPathUpdatesHook, (long)(Mod.BaseAddress + 0x37CE63), AsmHookBehaviour.DoNotExecuteOriginal).Activate());
 

@@ -154,11 +154,19 @@ public class Shops
             Game.PrintToLog($"[ShopPrices] {count} character prices divided at 0x{(nuint)entries:X}");
         }
 
-        // Madam Malkin's grid: DLC entries keep their own price (0) instead of pointing into A/B
+        // Grid entries use their own price unless the game redirects them into A/B
         nuint grid = Addr.CharacterPricesC;
         byte* gridEntries = grid == 0 ? null : *(byte**)grid;
-        if (CharacterHandler.DLCCharactersEnabled && gridEntries != null)
-            SetDLCCharacterPrices(gridEntries, *(ushort*)(grid + 0xA), multiplier);
+        if (gridEntries == null || gridEntries == divided)
+        {
+            Game.PrintToLog("[ShopPrices] Character grid table unavailable, grid prices unchanged");
+            return;
+        }
+        int gridCount = *(ushort*)(grid + 0xA);
+        ApplyPriceOperation((int*)(gridEntries + 4), gridCount, 0x20 / sizeof(int), multiplier);
+        if (CharacterHandler.DLCCharactersEnabled)
+            SetDLCCharacterPrices(gridEntries, gridCount, multiplier);
+        Game.PrintToLog($"[ShopPrices] {gridCount} grid prices divided at 0x{(nuint)gridEntries:X}");
     }
 
     // Entries start with the character's game id (low word), the price is at +4
