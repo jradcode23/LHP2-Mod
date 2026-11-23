@@ -122,7 +122,7 @@ public class SlotData(Dictionary<string, object> slotData)
         Game.PrintToLog($"Faster Duels: {FasterDuels}");
         Game.PrintToLog($"Game Version: {SeedGameVersion}");
         Game.PrintToLog($"APWorld Version: {APWorldVersion}");
-        PrintDictionary();
+        // PrintDictionary();
 
 
         if (EndGoal == -1 || NumberOfRequiredHorcruxes == -1 || NumberOfRequiredLevels == -1 || ShuffleJokeSpells == -1 || ShuffleGoldBrickPurchases == -1 || CheaperShops == -1 || FasterDuels == -1)
