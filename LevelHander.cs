@@ -196,6 +196,44 @@ public class LevelHandler
         }
     }
 
+    private static readonly int[] HintLevels = [1022, 456, 463, 468, 471, 464, 472]; //ordered based on the horcrux ID
+    private static readonly string[] HorcruxNames = [
+        "Horcrux: Tom Riddle's Diary",
+        "Horcrux: Gaunt Family Ring",
+        "Horcrux: Slytherin's Locket",
+        "Horcrux: Hufflepuff's Cup",
+        "Horcrux: Ravenclaw's Diadem",
+        "Horcrux: Nagini",
+        "Horcrux: Harry",
+        ];
+
+    public static void CheckEndOfLevelHint(int? levelID)
+    {
+        if (levelID is not int id)
+            return;
+
+        int horcruxIndex = Array.IndexOf(HintLevels, id);
+        if (horcruxIndex >= 0)
+        {
+            string horcruxName = HorcruxNames[horcruxIndex];
+            var slotData = Mod.LHP2_Archipelago?.SlotDataInstance;
+            if (slotData is null)
+            {
+                Game.PrintToLog("Cannot create Horcrux hint: slot data is unavailable.");
+                return;
+            }
+
+            if (!slotData.TryGetHorcruxLocation(horcruxName, out var location) || location is null)
+            {
+                Game.PrintToLog($"Cannot create Horcrux hint: location '{horcruxName}' is missing or invalid.");
+                return;
+            }
+
+            Game.PrintToLog($"horcruxIndex is: {horcruxIndex}. horcruxName is: {horcruxName}. player ID is: {location.Player}. location ID is: {location.ID}");
+            Mod.LHP2_Archipelago!.CreateHint(location.Player, [location.ID]);
+        }
+    }
+
     // If you unlock a level in a later year before having 1 level in all years before, you can't select the any levels on the later level board. This makes sure to temporarily show a level in all years so all level boards are selectable.
     public static void MakeAllBoardsVisible()
     {

@@ -923,13 +923,16 @@ public class Game
         int? apID = GetApID(level, prevLevel);
         if (apID is int id)
         {
-            CheckAndReportLocation(id + levelOffset);
+            id += levelOffset;
+            CheckAndReportLocation(id);
             if (id == 12)
             {
                 CheckAndReportLocation(1026); // Apparition is unlocked at the end of 7 Harrys
             }
             CheckWinCon();
+            LevelHandler.CheckEndOfLevelHint(id);
         }
+
     }
 
     [Function(CallingConventions.Fastcall)]

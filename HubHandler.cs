@@ -1117,6 +1117,7 @@ public class HubHandler
                     *y6GhostPtr2 |= 1 << 3; // Mark Love Hurts Story Complete
                     *y6GhostPtr2 |= 1 << 4; // Mark Felix Felicis Story Complete
                     *y6GhostPtr2 |= 1 << 5; // Mark The Horcrux and The Hand Story Complete
+                    LevelHandler.CheckEndOfLevelHint(1022); // Create the horcrux hint
                     Game.CheckAndReportLocation(1022); // Send Dumbledore's Second Lesson
                     Game.CheckAndReportLocation(1023); // Send Y6 Story Complete
                     break;

@@ -182,9 +182,13 @@ public class ArchipelagoHandler
     private static long[] BuildLocationIds()
     {
         var ids = new List<long>();
-        ids.AddRange(Enumerable.Range(400000, 1030).Select(i => (long)i));
-        ids.AddRange(Enumerable.Range(400000 + CharacterHandler.DLCCharacterOffset, 10).Select(i => (long)i));
+        ids.AddRange(Enumerable.Range(gameOffset, Game.MaxItemID).Select(i => (long)i));
         return [.. ids];
+    }
+
+    public void CreateHint(int player, long[] hintLocationID)
+    {
+        Session.Hints.CreateHints(player, locationIds: hintLocationID);
     }
 
     /* Tells archi want we want to do when an item is received. 
