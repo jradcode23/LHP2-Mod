@@ -930,7 +930,8 @@ public class Game
                 CheckAndReportLocation(1026); // Apparition is unlocked at the end of 7 Harrys
             }
             CheckWinCon();
-            LevelHandler.CheckEndOfLevelHint(id);
+            if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 0)
+                LevelHandler.CheckEndOfLevelHint(id);
         }
 
     }
