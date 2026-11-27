@@ -292,7 +292,10 @@ public class HintSystem
     private static unsafe nuint* PausedTextSlot => (nuint*)(*(byte**)Addr.TextTablePtr + Off.PauseTextSlot);
     private static bool WinConTextAvailable => HintTextAvailable && Addr.TextTablePtr != 0;
 
-    // This is a helper function that verifies the count of horcruxes received and updates the on screen text
+    // This function is used to display win con progress on the paused screen
+    // We overwrite the text that says "Paused" to display the win con progress
+    // 32 bit game uses an existing hint message, overwrites it, and changes the pointer the game uses to point to that hint message
+    // 64 bit game creates its own buffer and changes the pointer the game uses to point to the buffer
     public static unsafe void UpdateWinConText()
     {
         if (!WinConTextAvailable)
@@ -307,16 +310,20 @@ public class HintSystem
 
         *pausedTextBaseAddress = UseMagicAsHarryTextAddress;
 
-        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 0)
+        var slotData = Mod.LHP2_Archipelago!.SlotDataInstance!;
+        if (slotData == null || slotData.EndGoal < 0 || slotData.NumberOfRequiredCrests < 0 || slotData.NumberOfRequiredHorcruxes < 0 || slotData.NumberOfRequiredLevels < 0)
         {
-            byte HorcruxCount = (byte)Mod.LHP2_Archipelago!.CountItemsCheckedInRange(440, 446);
-            DisplayHorcruxCount(HorcruxCount);
+            Game.PrintToLog("[Pause Menu] Can't check the win con for the player. 1 or more Slot Data values is missing");
+            return;
         }
-        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 2)
+        byte winConProgress = (byte)Game.GetWinConProgress(slotData.EndGoal);
+        byte winConRequirement = (byte)Game.GetWinConRequirement(slotData.EndGoal);
+        string? winConText = Game.WinConStatus(slotData.EndGoal, winConProgress, winConRequirement);
+        if (winConText == null)
         {
-            byte levelsBeaten = (byte)Mod.LHP2_Archipelago!.CountLocationsCheckedInRange(450, 473);
-            DisplayLevelsBeaten(levelsBeaten);
+            return;
         }
+        WriteTextToMemory(winConText, UseMagicAsHarryTextAddress);
     }
 
     public static unsafe void RestoreWinConText()
@@ -325,20 +332,6 @@ public class HintSystem
             return;
         nuint* pausedTextBaseAddress = PausedTextSlot;
         *pausedTextBaseAddress = OriginalPausedAddress;
-    }
-
-    // Helper function to write the received Horcrux count to the Player 2 slot name
-    public static unsafe void DisplayHorcruxCount(byte count)
-    {
-        string message = $"Horcruxes Collected: {count}/{Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredHorcruxes}";
-        WriteTextToMemory(message, UseMagicAsHarryTextAddress);
-    }
-
-    // Helper function to write the Levels Beaten to the Player 2 slot name
-    public static unsafe void DisplayLevelsBeaten(byte count)
-    {
-        string message = $"Levels Beaten: {count}/{Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredLevels}";
-        WriteTextToMemory(message, UseMagicAsHarryTextAddress);
     }
 
     // New Game text on the main menu. We show connection status here.

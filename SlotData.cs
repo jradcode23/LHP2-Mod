@@ -20,6 +20,7 @@ public class SlotData(Dictionary<string, object> slotData)
     private Dictionary<string, object> SlotDataDictionary { get; set; } = slotData ?? [];
     public int EndGoal => GetIntSlotValue("EndGoal");
     public int NumberOfRequiredHorcruxes => GetIntSlotValue("NumHorcruxRequired");
+    public int NumberOfRequiredCrests => GetIntSlotValue("NumHogwartsCrestsRequired");
     public int NumberOfRequiredLevels => GetIntSlotValue("NumLevelsRequired");
     public int ShuffleCharacterTokens => GetIntSlotValue("ShuffleCharacterTokens");
     public int ShuffleRedBricks => GetIntSlotValue("ShuffleRedBricks");
@@ -113,6 +114,7 @@ public class SlotData(Dictionary<string, object> slotData)
         Game.PrintToLog("=== Slot Data ===");
         Game.PrintToLog($"EndGoal: {EndGoal}");
         Game.PrintToLog($"Required Horcruxes: {NumberOfRequiredHorcruxes}");
+        Game.PrintToLog($"Required Hogwarts Crests: {NumberOfRequiredCrests}");
         Game.PrintToLog($"Required Levels: {NumberOfRequiredLevels}");
         Game.PrintToLog($"Shuffle Character Tokens: {ShuffleCharacterTokens}");
         Game.PrintToLog($"Shuffle Red Bricks: {ShuffleRedBricks}");
@@ -125,7 +127,7 @@ public class SlotData(Dictionary<string, object> slotData)
         // PrintDictionary();
 
 
-        if (EndGoal == -1 || NumberOfRequiredHorcruxes == -1 || NumberOfRequiredLevels == -1 || ShuffleJokeSpells == -1 || ShuffleGoldBrickPurchases == -1 || CheaperShops == -1 || FasterDuels == -1)
+        if (EndGoal == -1 || NumberOfRequiredHorcruxes == -1 || NumberOfRequiredCrests == -1 || NumberOfRequiredLevels == -1 || ShuffleJokeSpells == -1 || ShuffleGoldBrickPurchases == -1 || CheaperShops == -1 || FasterDuels == -1)
         {
             Game.PrintToLog("One or more values not found or invalid. Please report to the devs.");
         }

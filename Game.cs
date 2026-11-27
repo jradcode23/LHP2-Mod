@@ -2053,8 +2053,13 @@ public class Game
     private static nint _codeAnswerText;
 
     // Shown as a message, and on the code screen if the player is still there
-    private static void AnswerWinCon(string message)
+    private static void AnswerWinCon(string? message)
     {
+        if (message == null)
+        {
+            PrintToLog("Cannot answer Win Con request. Message is null");
+            return;
+        }
         HintSystem.EnqueueMessage(message, 0);
         if (_codeAnswerText == 0)
             _codeAnswerText = System.Runtime.InteropServices.Marshal.AllocHGlobal(256);
@@ -2112,13 +2117,27 @@ public class Game
         try
         {
             string entered = System.Runtime.InteropServices.Marshal.PtrToStringAnsi((nint)code) ?? "";
-            int mapID = Mod.GameInstance?.MapID ?? 0;
+            int mapID;
+            lock (Mod.GameInstance!.MapLock)
+            {
+                mapID = Mod.GameInstance?.MapID ?? 0;
+            }
             if (FastTravelRequests.Contains(entered))
                 return AnswerTravelCode(entered, mapID, text) ? 1 : 0;
             if (entered != WinConCode)
                 return 0;
+            var slotData = Mod.LHP2_Archipelago!.SlotDataInstance!;
+            if (slotData == null || slotData.EndGoal < 0 || slotData.NumberOfRequiredCrests < 0 || slotData.NumberOfRequiredHorcruxes < 0 || slotData.NumberOfRequiredLevels < 0)
+            {
+                PrintToLog("Can't check the win con for the player. 1 or more Slot Data values is missing");
+                return 0;
+            }
+
+            int winConProgress = GetWinConProgress(slotData.EndGoal);
+            int winConRequirement = GetWinConRequirement(slotData.EndGoal);
+
             // Built here too: this can run without CheckWinCon having answered first
-            string? status = WinConStatus(out _);
+            string? status = WinConStatus(slotData.EndGoal, winConProgress, winConRequirement);
             if (status != null)
             {
                 if (_codeAnswerText == 0)
@@ -2137,75 +2156,142 @@ public class Game
         }
     }
 
-    // requested: the player entered WINCON; the levels goal is only sent then
+    /* 
+    This function is used to verify if the person has achieved their win con.
+    It runs when either 1) the player enters "WINCON" into the cheat menu or
+    2) the player completes The Flaw in The Plan. "requested" is whether it was
+    the code rather than the game checking.
+    */
     public static void CheckWinCon(bool requested = false)
     {
-        // Defeat Voldemort
-        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 0)
+        // Get Slot data and make sure it isn't null
+        var slotData = Mod.LHP2_Archipelago!.SlotDataInstance!;
+        if (slotData == null || slotData.EndGoal < 0 || slotData.NumberOfRequiredCrests < 0 || slotData.NumberOfRequiredHorcruxes < 0 || slotData.NumberOfRequiredLevels < 0)
         {
-            int horcruxesReceived = Mod.LHP2_Archipelago!.CountItemsCheckedInRange(440, 446);
-            int requiredHorcruxes = Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredHorcruxes;
-            if (requiredHorcruxes == -1)
-            {
-                PrintToLog("Can't Determine if the game is completed, Horcrux slot data not available.");
-                return;
-            }
-            if (requested)
-            {
-                AnswerWinCon(WinConStatus(out _)!);
-                return;
-            }
-            if (Mod.GameInstance!.PrevLevelID != 27 && Mod.GameInstance!.LevelID != 27)
-                return;
-            PrintToLog($"Player Has Received {horcruxesReceived} Horcruxes");
-            if (horcruxesReceived >= requiredHorcruxes)
-            {
-                Mod.LHP2_Archipelago!.Release();
-            }
+            PrintToLog("Can't check the win con for the player. 1 or more Slot Data values is missing");
             return;
         }
 
-        // Levels Beaten
-        if (Mod.LHP2_Archipelago!.SlotDataInstance!.EndGoal == 2 && requested)
+        // Get the Win Con Progress, Requirement, & create the status string
+        int winConProgress = GetWinConProgress(slotData.EndGoal);
+        int winConRequirement = GetWinConRequirement(slotData.EndGoal);
+        string? status = WinConStatus(slotData.EndGoal, winConProgress, winConRequirement, out bool complete);
+
+        if (status == null)
+            return;
+
+        PrintToLog(status);
+
+        // If the player requested the win con check, write the beneath the Cheat Code
+        if (requested)
+            AnswerWinCon(status);
+
+        // House Champion and Levels Beaten Win Con Check
+        if (slotData.EndGoal > 0 && slotData.EndGoal < 3 && requested)
         {
-            int levelsCompleted = Mod.LHP2_Archipelago!.CountLocationsCheckedInRange(450, 473);
-            int requiredLevels = Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredLevels;
-            if (requiredLevels == -1)
-            {
-                PrintToLog("Can't Determine if the game is completed, Level slot data not available.");
-                return;
-            }
-            PrintToLog($"Player Has Completed {levelsCompleted} Levels");
-            string status = WinConStatus(out bool complete)!;
             if (complete)
             {
                 Mod.LHP2_Archipelago!.Release();
             }
-            AnswerWinCon(status);
             return;
+        }
+
+        // Defeat Voldemort Win Con Check
+        if (slotData.EndGoal == 0 && !requested)
+        {
+            // Check to see if previous level was The Flaw in the Plan
+            if (Mod.GameInstance!.PrevLevelID == 27)
+            {
+                if (complete)
+                {
+                    Mod.LHP2_Archipelago!.Release();
+                }
+            }
         }
     }
 
-    // The WINCON answer, or null when the slot data doesn't say what the goal needs
-    private static string? WinConStatus(out bool complete)
+    // This function determines the player's progress towards their win con
+    public static int GetWinConProgress(int endGoal)
     {
-        complete = false;
-        var slotData = Mod.LHP2_Archipelago!.SlotDataInstance!;
-        if (slotData.EndGoal == 0)
+        // If end goal is missing or invalid, return
+        if (endGoal < 0 || endGoal > 2)
         {
-            int horcruxesReceived = Mod.LHP2_Archipelago!.CountItemsCheckedInRange(440, 446);
-            if (slotData.NumberOfRequiredHorcruxes == -1)
-                return null;
-            return $"Horcruxes Collected: {horcruxesReceived}/{slotData.NumberOfRequiredHorcruxes}. Defeat Voldemort to win.";
+            return -1;
         }
-        if (slotData.EndGoal == 2)
+
+        return endGoal switch
         {
-            int levelsCompleted = Mod.LHP2_Archipelago!.CountLocationsCheckedInRange(450, 473);
-            if (slotData.NumberOfRequiredLevels == -1)
-                return null;
-            complete = levelsCompleted >= slotData.NumberOfRequiredLevels;
-            return complete ? "Goal complete!" : $"Levels Beaten: {levelsCompleted}/{slotData.NumberOfRequiredLevels}";
+            0 => Mod.LHP2_Archipelago!.CountItemsCheckedInRange(440, 446), // Horcrux Count
+            1 => GetCrestCount(), // Crest Count
+            2 => Mod.LHP2_Archipelago!.CountLocationsCheckedInRange(450, 473), // Levels Beaten Count
+            _ => -1
+        };
+    }
+
+    // This function takes the end goal and will return the player's win con requirement
+    public static int GetWinConRequirement(int endGoal)
+    {
+        // If end goal is missing or invalid, return
+        if (endGoal < 0 || endGoal > 2)
+        {
+            return -1;
         }
-        return null;
+
+        return endGoal switch
+        {
+            0 => Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredHorcruxes,
+            1 => Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredCrests,
+            2 => Mod.LHP2_Archipelago!.SlotDataInstance!.NumberOfRequiredLevels,
+            _ => -1
+        };
+    }
+
+    // This function calculates how many Hogwarts Crests the Player has received
+    private static int GetCrestCount()
+    {
+        int crestsReceived = 0;
+        for (int i = 0; i < 24; i++)
+        {
+            bool hasAllHouseCrests = true;
+            for (int j = 0; j < 4; j++)
+            {
+                if (Mod.LHP2_Archipelago!.CountItemsReceivedWithId(GryfCrestOffset + i + (24 * j)) == 0)
+                {
+                    hasAllHouseCrests = false;
+                    break;
+                }
+            }
+            if (hasAllHouseCrests)
+            {
+                crestsReceived++;
+            }
+        }
+        return crestsReceived;
+    }
+
+    // This function: 1) creates the string that shows how close we are to beating a wincon and 2) determines 
+    // if the player has beaten their game
+    private static string? WinConStatus(int endGoal, int received, int required, out bool complete)
+    {
+        if (received < 0 || required < 0)
+        {
+            complete = false;
+            return null;
+        }
+
+        complete = received >= required;
+        return WinConStatus(endGoal, received, required);
+    }
+
+    // Overloaded function for when the complete bool isn't required
+    public static string? WinConStatus(int endGoal, int received, int required)
+    {
+        return endGoal switch
+        {
+            0 => $"Horcruxes Collected: {received}/{required}",
+            1 => $"Hogwarts Crests Received: {received}/{required}",
+            2 => $"Levels Beaten: {received}/{required}",
+            _ => null
+        };
     }
 }
